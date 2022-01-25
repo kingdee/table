@@ -1,0 +1,67 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: product
+---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kui-component-ui
+  labels:
+    app: kui-component-ui
+  namespace: product
+spec:
+  selector:
+    matchLabels:
+      app: kui-component-ui
+  template:
+    metadata:
+      labels:
+        app: kui-component-ui
+    spec:     
+      containers:
+      - name: kui-component-ui
+        image: <IMAGE>:<IMAGE_TAG>
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: ui
+      imagePullSecrets:
+        - name: hubreg
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kui-component-ui
+  namespace: product
+  labels:
+    app: kui-component-ui
+spec:
+  selector:
+    app: kui-component-ui
+  ports:
+  - name: ui-port
+    port: 80                     
+    targetPort: ui
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kui-component-ui
+  namespace: product
+  labels:
+    app: kui-component-ui
+spec:
+  rules: 
+    - host: kd-ui.kingdee.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: 
+                name: kui-component-ui
+                port:
+                  name: ui-port

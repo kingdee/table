@@ -1,0 +1,142 @@
+# image: docker:19.03.13
+
+# variables:
+#   # When using dind service, you must instruct Docker to talk with
+#   # the daemon started inside of the service. The daemon is available
+#   # with a network connection instead of the default
+#   # /var/run/docker.sock socket.
+#   DOCKER_HOST: tcp://docker:2376
+#   #
+#   # The 'docker' hostname is the alias of the service container as described at
+#   # https://docs.gitlab.com/ee/ci/docker/using_docker_images.html#accessing-the-services.
+#   # If you're using GitLab Runner 12.7 or earlier with the Kubernetes executor and Kubernetes 1.6 or earlier,
+#   # the variable must be set to tcp://localhost:2376 because of how the
+#   # Kubernetes executor connects services to the job container
+#   # DOCKER_HOST: tcp://localhost:2376
+#   #
+#   # Specify to Docker where to create the certificates. Docker
+#   # creates them automatically on boot, and creates
+#   # `/certs/client` to share between the service and job
+#   # container, thanks to volume mount from config.toml
+#   DOCKER_TLS_CERTDIR: "/certs"
+#   # These are usually specified by the entrypoint, however the
+#   # Kubernetes executor doesn't run entrypoints
+#   # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/4125
+#   DOCKER_TLS_VERIFY: 1
+#   DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+
+# services:
+#   - docker:19.03.13-dind
+
+#variables:
+  # COMMIT_URL: $CI_PROJECT_URL/commit/$CI_COMMIT_SHA
+  # JOB_URL: $CI_PROJECT_URL/-/jobs/$CI_JOB_ID
+
+stages:
+  - test
+  - pages
+  # - report
+  # - build
+  # - copy
+  # - docker 
+
+cache:
+  paths:
+    - node_modules/
+    - _site
+
+unit-test:
+  before_script:
+    - echo "FAIL" > .job_status
+  script:
+    - echo 'testing'
+    - echo "=====start install======"
+    - npm install --registry=https://registry.npm.taobao.org 
+    - echo "=====end install======"
+    - npm run test:ci
+    - echo "SUCCESS" > .job_status
+    # - if [ ! -d "public/dev" ]; then mkdir -p public/dev; fi
+    # - cp -r coverage/lcov-report/* public/dev/
+  stage: test
+  only:
+    - schedules
+  image: node:13
+  artifacts:
+    paths:
+      - coverage/lcov-report/
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  #after_script:
+  #  - if [ "$(cat .job_status)" == FAIL ]; then chmod +x py/NoticeToYZJ.py; ./py/NoticeToYZJ.py ${CI_JOB_NAME} $COMMIT_URL ${JOB_URL} $CI_COMMIT_REF_NAME $SONAR_CHECK_URL; fi
+
+pages:
+  stage: pages
+  dependencies:
+    - unit-test
+  script:
+    - if [ ! -d "public/master" ]; then mkdir -p public/master; fi
+    - cp -r coverage/lcov-report/* public/master/
+  artifacts:
+    paths:
+      - public
+    expire_in: 7 days
+  only:
+    - schedules
+
+
+# build: 
+#   script:
+#     - echo "=====start install======"
+#     - npm install --registry=https://registry.npm.taobao.org 
+#     - echo "=====end install======"
+#     - echo "=====start build======"
+#     - npm run build
+#     - echo "=====end build======"
+#     - npm run site
+    
+#   stage: build
+#   only: 
+#     - master 
+#   image: node:13
+
+# copy:
+#   stage: copy
+#   # before_script:
+#   #   ##
+#   #   ## Install ssh-agent if not already installed, it is required by Docker.
+#   #   ## (change apt-get to yum if you use an RPM-based image)
+#   #   ##
+#   #   - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+
+#   #   ##
+#   #   ## Run ssh-agent (inside the build environment)
+#   #   ##
+#   #   - eval $(ssh-agent -s)
+
+#   #   ##
+#   #   ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+#   #   ## We're using tr to fix line endings which makes ed25519 keys work
+#   #   ## without extra base64 encoding.
+#   #   ## https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
+#   #   ##
+#   #   - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+
+#   #   ##
+#   #   ## Create the SSH directory and give it the right permissions
+#   #   ##
+#   #   - mkdir -p ~/.ssh
+#   #   - chmod 700 ~/.ssh
+#   script:
+#     - scp -r ./_site/* hongsir@172.20.158.88:/tmp/site
+#   only:
+#     - master
+
+# docker: 
+#   dependencies:
+#     - build
+#   script:
+#     - docker build -f ./Dockerfile -t table .
+#     - docker run -d --name tab -p 9002:3000 table
+    
+#   stage: docker
+#   only: 
+#     - master 

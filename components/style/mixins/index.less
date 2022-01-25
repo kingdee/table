@@ -1,0 +1,19 @@
+// Mixins
+//----------------------------------------
+@import 'reset';
+
+/* 多行显示省略号 */
+.multilpleEllipsis(@n: n) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: @n;
+  -webkit-box-orient: vertical;
+}
+
+/* 单行显示省略号 */
+.ellipsis() {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

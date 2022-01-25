@@ -1,0 +1,13 @@
+node_modules
+dist
+es
+lib
+!site/*/lib
+_site
+coverage
+yarn.lock
+yarn-error.log
+package-lock.json
+.DS_store
+report.html
+/.history
