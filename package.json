@@ -209,5 +209,6 @@
     "commitizen": {
       "path": "./node_modules/cz-customizable"
     }
-  }
+  }, 
+  "license": "Apache-2.0"
 }
