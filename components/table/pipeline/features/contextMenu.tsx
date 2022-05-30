@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
+import cx from 'classnames'
 import { ContextMenuStyleWrap } from '../../common-views'
 import { copyDataToClipboard, executeOnTempElement, console, getEventPath, isElementInEventPath, getTargetEleInEventPath } from '../../utils'
 import { findByTree } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
 import { internals } from '../../internals'
-import { MenuClasses } from '../../base/styles'
+import { Classes, MenuClasses } from '../../base/styles'
 
 const stateKey = 'contextMenu'
 
@@ -27,9 +28,8 @@ export interface ContextMenuFeatureOptions {
   popupParent?: HTMLElement
 }
 
-export function contextMenu(opts: ContextMenuFeatureOptions = {}) {
-  return function step(pipeline: TablePipeline) {
-
+export function contextMenu (opts: ContextMenuFeatureOptions = {}) {
+  return function step (pipeline: TablePipeline) {
     const popupParent = opts.popupParent || document.body
     const menuHelper = new MenuHelper()
 
@@ -66,16 +66,18 @@ export function contextMenu(opts: ContextMenuFeatureOptions = {}) {
       return hidePopup
     }
 
-
     const onContextMenu = (e: React.MouseEvent<HTMLTableElement, MouseEvent>) => {
+      if (suppressShowContextMenu(e)) {
+        return
+      }
       e.preventDefault()
       showContextMenu(e)
     }
 
     pipeline.addTableProps({ onContextMenu })
 
-    const getContextMenuOptions = (record, column, value) => {
-      var defaultMenuOptions = []
+    const getContextMenuOptions = (record, column, value, event) => {
+      const defaultMenuOptions = []
       if (column) {
         defaultMenuOptions.push(getCopyItem(value))
       }
@@ -83,7 +85,8 @@ export function contextMenu(opts: ContextMenuFeatureOptions = {}) {
         const params = {
           record,
           column,
-          value
+          value,
+          event
         }
         return opts.getContextMenuItems(params)
       }
@@ -103,16 +106,16 @@ export function contextMenu(opts: ContextMenuFeatureOptions = {}) {
       let rowIndex
       if (cellEle) {
         code = cellEle.getAttribute('data-code'),
-        rowIndex = cellEle.getAttribute('data-rowindex')     
+        rowIndex = cellEle.getAttribute('data-rowindex')
       } else {
         const rowEle = getRowEleForEvent(e, dataSource)
-        rowIndex = rowEle?.getAttribute('data-rowindex') 
+        rowIndex = rowEle?.getAttribute('data-rowindex')
       }
       const record = dataSource[rowIndex]
-      const column = code !== undefined && findByTree(pipeline.getColumns(), (item, index) =>item.code === code ? index : -1)
+      const column = code !== undefined && findByTree(pipeline.getColumns(), (item, index) => item.code === code)
       const value = column && record && internals.safeGetValue(column, record, rowIndex)
 
-      const options = getContextMenuOptions(record, column, value)
+      const options = getContextMenuOptions(record, column, value, e)
       if (options.length === 0) {
         console.warn('context menu options is empty')
         return
@@ -127,7 +130,7 @@ export function contextMenu(opts: ContextMenuFeatureOptions = {}) {
   }
 }
 
-function getMenuItemKey({ name, index }) {
+function getMenuItemKey ({ name, index }) {
   if (name) {
     let _key = 0
     name = name + ''
@@ -140,7 +143,7 @@ function getMenuItemKey({ name, index }) {
   return index
 }
 
-function Menu(props) {
+function Menu (props) {
   const { options = [], hideContextMenu, position, getPopupParent } = props
   const menuRef = useRef<HTMLElement>()
 
@@ -157,17 +160,20 @@ function Menu(props) {
 
   return <ContextMenuStyleWrap className={MenuClasses.menu} ref={menuRef} style={{ left: position.x, top: position.y }}>
     <div className={MenuClasses.menuList}>
-      {options.map((item, index) => <MenuItem key={item.key ? item.key : getMenuItemKey({ name: item.name, index })} name={item.name} action={item.action} hideContextMenu={hideContextMenu} />)}
+      {options.map((item, index) => <MenuItem key={item.key ? item.key : getMenuItemKey({ name: item.name, index })} name={item.name} action={item.action} disabled={item.disabled} hideContextMenu={hideContextMenu} />)}
     </div>
   </ContextMenuStyleWrap>
 }
 
-function MenuItem(props) {
+function MenuItem (props) {
   const { name, action, disabled, hideContextMenu } = props
 
   const itemRef = useRef()
 
   const handleClick = () => {
+    if (disabled) {
+      return
+    }
     hideContextMenu()
     typeof action === 'function' && action()
   }
@@ -194,20 +200,20 @@ function MenuItem(props) {
     }
   }
 
-  return <div className={MenuClasses.menuOption} ref={itemRef} onClick={handleClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+  return <div className={cx(MenuClasses.menuOption, { [MenuClasses.menuOptionDisable]: disabled })} ref={itemRef} onClick={handleClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
     <span className={MenuClasses.menuOptionText}>{name}</span>
   </div>
 }
 
 class MenuHelper {
   hidePopup: () => void
-  constructor() {
+
+  constructor () {
   }
 
   init = (hidePopup) => {
     this.hidePopup = hidePopup
   }
-
 
   destroy = () => {
     this.hidePopup && this.hidePopup()
@@ -215,11 +221,9 @@ class MenuHelper {
   }
 }
 
-
-
 /** 是否点击是外部 start */
 
-function isEventFromCurrentPopup(event?: MouseEvent, ele?: HTMLElement) {
+function isEventFromCurrentPopup (event?: MouseEvent, ele?: HTMLElement) {
   if (!event || !ele) {
     return false
   }
@@ -231,21 +235,18 @@ function isEventFromCurrentPopup(event?: MouseEvent, ele?: HTMLElement) {
   return false
 }
 
-
-
-function getCellEleInEventPath(path: Array<HTMLElement>) {
+function getCellEleInEventPath (path: Array<HTMLElement>) {
   return getTargetEleInEventPath(path, ele => ele && ele.getAttribute('data-role') === 'table-cell')
 }
 
-function getRowEleInEventPath(path: Array<HTMLElement>) {
+function getRowEleInEventPath (path: Array<HTMLElement>) {
   return getTargetEleInEventPath(path, ele => ele && ele.getAttribute('data-role') === 'table-row')
 }
-
 
 /** 是否点击是外部 end */
 
 /** 计算位置 start */
-function calculatePointerRelative(event: React.MouseEvent<HTMLTableElement, MouseEvent>, popupParent: HTMLElement) {
+function calculatePointerRelative (event: React.MouseEvent<HTMLTableElement, MouseEvent>, popupParent: HTMLElement) {
   const parentRect = popupParent.getBoundingClientRect()
   const documentRect = document.documentElement.getBoundingClientRect()
 
@@ -255,7 +256,7 @@ function calculatePointerRelative(event: React.MouseEvent<HTMLTableElement, Mous
   }
 }
 
-function positionForMenu(event: React.MouseEvent<HTMLTableElement, MouseEvent>, popupParent: HTMLElement, params?: positionForMenuParams) {
+function positionForMenu (event: React.MouseEvent<HTMLTableElement, MouseEvent>, popupParent: HTMLElement, params?: positionForMenuParams) {
   let { x, y } = calculatePointerRelative(event, popupParent)
   if (params) {
     const { offsetX, offsetY } = params
@@ -269,7 +270,7 @@ function positionForMenu(event: React.MouseEvent<HTMLTableElement, MouseEvent>, 
   return { x, y }
 }
 
-function keepWithinBounds(popupParent: HTMLElement, ePopup: HTMLElement, x: number, y: number) {
+function keepWithinBounds (popupParent: HTMLElement, ePopup: HTMLElement, x: number, y: number) {
   const parentRect = popupParent.getBoundingClientRect()
   const docElement = document.documentElement
   const documentRect = docElement.getBoundingClientRect()
@@ -286,13 +287,13 @@ function keepWithinBounds(popupParent: HTMLElement, ePopup: HTMLElement, x: numb
     const minWidth = Math.min(ePopupRect.width, 120)
     ePopup.style.minWidth = minWidth + 'px'
     const maxX = parentWidth - minWidth
-    x = Math.min(Math.max(x, 0), Math.abs(maxX)) //目前位置，最大支持的位置
+    x = Math.min(Math.max(x, 0), Math.abs(maxX)) // 目前位置，最大支持的位置
   }
 
   if (y) {
     const minHeight = Math.min(ePopupRect.height, 180)
     const maxY = parentHeight - minHeight
-    y = Math.min(Math.max(y, 0), Math.abs(maxY)) //目前位置，最大支持的位置
+    y = Math.min(Math.max(y, 0), Math.abs(maxY)) // 目前位置，最大支持的位置
   }
 
   return { x, y }
@@ -301,16 +302,31 @@ function keepWithinBounds(popupParent: HTMLElement, ePopup: HTMLElement, x: numb
 /** 计算位置 end */
 
 /** 获得点击的元素 start */
-function getCellEleForEvent(event: React.MouseEvent<HTMLTableElement, MouseEvent>) {
+function getCellEleForEvent (event: React.MouseEvent<HTMLTableElement, MouseEvent>) {
   return getCellEleInEventPath(getEventPath(event))
 }
-function getRowEleForEvent(event: React.MouseEvent<HTMLTableElement, MouseEvent>, dataSource: any[]) {
+function getRowEleForEvent (event: React.MouseEvent<HTMLTableElement, MouseEvent>, dataSource: any[]) {
   return getRowEleInEventPath(getEventPath(event))
 }
 
 /** 获得点击的元素 end */
 
-function getCopyItem(v) {
+// 禁止弹出右键菜单
+function suppressShowContextMenu (e: React.MouseEvent<HTMLTableElement, MouseEvent>) {
+  const path = getEventPath(e.nativeEvent)
+  let pointIndex = 0
+  while (pointIndex < path.length) {
+    const ele = path[pointIndex]
+    if (ele.classList.contains(Classes.tableBody) || ele.classList.contains(Classes.tableFooter)) {
+      return false
+    }
+    pointIndex++
+  }
+  return true
+}
+
+// 默认选项
+function getCopyItem (v) {
   return {
     name: '复制',
     action: () => {
@@ -318,4 +334,3 @@ function getCopyItem(v) {
     }
   }
 }
-

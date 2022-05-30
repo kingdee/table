@@ -45,6 +45,7 @@ function () {
       isLoading={false}
       dataSource={data}
       columns={columns}
+      virtualDebugLabel={'virtual-test'}
       />
   )
 }

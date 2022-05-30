@@ -20,7 +20,7 @@ export default class SpanManager {
   public add(rowIndex: number, colIndex: number, colSpan: number, rowSpan: number) {
     this.rects.push({
       left: colIndex,
-      right: colIndex + colSpan,
+      right: colIndex + (colSpan < 1 ? 1 : colSpan),
       top: rowIndex,
       bottom: rowIndex + rowSpan,
     })

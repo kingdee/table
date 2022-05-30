@@ -68,6 +68,7 @@
   "dependencies": {
     "@babel/runtime": "^7.10.4",
     "@babel/runtime-corejs3": "^7.11.2",
+    "@popperjs/core": "^2.9.1",
     "classnames": "^2.2.6",
     "core-js": "^3.16.1",
     "css-vars-ponyfill": "^2.4.3",
@@ -212,6 +213,6 @@
     "commitizen": {
       "path": "./node_modules/cz-customizable"
     }
-  }, 
+  },
   "license": "Apache-2.0"
 }

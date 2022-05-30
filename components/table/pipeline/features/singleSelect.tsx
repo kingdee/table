@@ -34,7 +34,7 @@ export interface SingleSelectFeatureOptions {
 }
 
 export function singleSelect (opts: SingleSelectFeatureOptions = {}) {
-  return function singleSelectStep(pipeline: TablePipeline) {
+  return function singleSelectStep (pipeline: TablePipeline) {
     const Radio = pipeline.ctx.components.Radio
     if (Radio == null) {
       throw new Error('使用 singleSelect 之前需要通过 pipeline context 设置 components.Radio')
@@ -56,23 +56,24 @@ export function singleSelect (opts: SingleSelectFeatureOptions = {}) {
       width: 50,
       align: 'center',
       ...opts.radioColumn,
-      getCellProps(value: any, row: any, rowIndex: number): CellProps {
+      getCellProps (value: any, row: any, rowIndex: number): CellProps {
+        const preCellProps = opts.radioColumn?.getCellProps?.(value, row, rowIndex)
         if (clickArea === 'cell') {
           const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
           const disabled = isDisabled(row, rowIndex)
-          const preCellProps = opts.radioColumn?.getCellProps?.(value, row, rowIndex)
           return mergeCellProps(preCellProps, {
             style: { cursor: disabled ? 'not-allowed' : 'pointer' },
             onClick: disabled
               ? undefined
               : (e) => {
-                  if (opts.stopClickEventPropagation) {
-                    e.stopPropagation()
-                  }
-                  onChange(rowKey)
-                },
+                if (opts.stopClickEventPropagation) {
+                  e.stopPropagation()
+                }
+                onChange(rowKey)
+              }
           })
         }
+        return preCellProps
       },
       render: (_: any, row: any, rowIndex: number) => {
         const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
@@ -83,17 +84,17 @@ export function singleSelect (opts: SingleSelectFeatureOptions = {}) {
             onChange={
               clickArea === 'radio'
                 ? (arg1: any, arg2: any) => {
-                    const nativeEvent: MouseEvent = arg2?.nativeEvent ?? arg1?.nativeEvent
-                    if (nativeEvent && opts.stopClickEventPropagation) {
-                      nativeEvent.stopPropagation()
-                    }
-                    onChange(rowKey)
+                  const nativeEvent: MouseEvent = arg2?.nativeEvent ?? arg1?.nativeEvent
+                  if (nativeEvent && opts.stopClickEventPropagation) {
+                    nativeEvent.stopPropagation()
                   }
+                  onChange(rowKey)
+                }
                 : undefined
             }
           />
         )
-      },
+      }
     }
 
     const nextColumns = pipeline.getColumns().slice()

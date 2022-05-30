@@ -3,6 +3,9 @@ import { asyncScheduler, BehaviorSubject, defer, fromEvent, Subscription } from 
 import { map, throttleTime } from 'rxjs/operators'
 import ResizeObserver from 'resize-observer-polyfill'
 import * as styledComponents from 'styled-components'
+import mergeCellProps from '../utils/mergeCellProps'
+import { TableDOMHelper } from './helpers/TableDOMUtils'
+import { browserType } from '../utils'
 
 /** styled-components 类库的版本，ali-react-table 同时支持 v3 和 v5 */
 export const STYLED_VERSION = (styledComponents as any).createGlobalStyle != null ? 'v5' : 'v3'
@@ -23,7 +26,9 @@ export function sum(arr: number[]) {
 
 // 使用 defer 避免过早引用 window，导致在 SSR 场景下报错
 export const throttledWindowResize$ = defer(() =>
-  fromEvent(window, 'resize').pipe(throttleTime(150, asyncScheduler, { leading: true, trailing: true })),
+  fromEvent(window, 'resize', { passive: true }).pipe(
+    throttleTime(150, asyncScheduler, { leading: true, trailing: true }),
+  ),
 )
 
 interface ContentRectType {
@@ -120,10 +125,9 @@ export function syncScrollLeft(elements: HTMLElement[], callback: (scrollLeft: n
  * Performs equality by iterating through keys on an object and returning false
  * when any key has values which are not strictly equal between the arguments.
  * Returns true when the values of all keys are strictly equal.
- *
- * 这个函数是从 facebook 某个官方库中复制过来的
  */
-export function shallowEqual (objA: any, objB: any): boolean {
+ export function shallowEqual<T>(objA: T, objB: T): boolean {
+  const hasOwnProperty = Object.prototype.hasOwnProperty
 
   if (Object.is(objA, objB)) {
     return true
@@ -142,10 +146,29 @@ export function shallowEqual (objA: any, objB: any): boolean {
 
   // Test for A's keys different from B.
   for (let i = 0; i < keysA.length; i++) {
-    if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) {
+    if (!hasOwnProperty.call(objB, keysA[i]) || !Object.is((objA as any)[keysA[i]], (objB as any)[keysA[i]])) {
       return false
     }
   }
 
   return true
+}
+
+// todo: 抽出mergeRowProps
+export function composeRowPropsGetter (getRowProps: (record: any, rowIndex: number) => React.HTMLAttributes<HTMLTableRowElement>, pendingRowProps?: React.HTMLAttributes<HTMLTableRowElement>) : (record: any, rowIndex: number) => React.HTMLAttributes<HTMLTableRowElement> {
+  const keys = Object.keys(pendingRowProps)
+  if (keys.length) {
+    return ((row, rowIndex: number) => {
+      return mergeCellProps(getRowProps(row, rowIndex) as any, pendingRowProps as any)
+    }) as any
+  }
+  return getRowProps
+}
+
+export function getTableScrollHeaderDOM (domHelper: TableDOMHelper) : HTMLDivElement {
+  return browserType.isIE ? domHelper.tableHeaderMain : domHelper.tableHeader
+}
+
+export function getTableScrollFooterDOM (domHelper: TableDOMHelper) : HTMLDivElement {
+  return browserType.isIE ? domHelper.tableFooterMain : domHelper.tableFooter
 }

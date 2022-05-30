@@ -34,7 +34,7 @@ order: 401
       children: col([
         { code: 'hc_2014', name: '2014年' },
         { code: 'hc_2015', name: '2015年' },
-        { code: 'hc_lfl', name: '同比增长' },
+        { code: 'hc_lfl', name: '同比增长', children: col([{code:'test', name: 'test'}]) },
       ]),
     },
     {

@@ -57,44 +57,59 @@ export class TableDOMHelper {
 
   readonly stickyScrollItem: HTMLDivElement
 
-  constructor(artTableWrapper: HTMLDivElement) {
+  readonly tableHeaderMain: HTMLDivElement
+
+  readonly tableFooterMain: HTMLDivElement
+
+  constructor (artTableWrapper: HTMLDivElement) {
     this.artTableWrapper = artTableWrapper
     this.artTable = artTableWrapper.querySelector<HTMLDivElement>(`.${Classes.artTable}`)
     this.tableHeader = this.artTable.querySelector(`.${Classes.tableHeader}`)
+    this.tableHeaderMain = this.artTable.querySelector(`.${Classes.tableHeaderMain}`)
     this.tableBody = this.artTable.querySelector(`.${Classes.tableBody}`)
     this.virtual = this.artTable.querySelector(`.${Classes.virtual}`)
     this.tableElement = this.artTable.querySelector(`.${Classes.tableBody} table`)
     this.tableFooter = this.artTable.querySelector(`.${Classes.tableFooter}`)
+    this.tableFooterMain = this.artTable.querySelector(`.${Classes.tableFooterMain}`)
 
     const stickyScrollSelector = `.${Classes.artTable} + .${Classes.stickyScroll}`
     this.stickyScroll = artTableWrapper.querySelector<HTMLDivElement>(stickyScrollSelector)
     this.stickyScrollItem = this.stickyScroll.querySelector(`.${Classes.stickyScrollItem}`)
   }
 
-  getVirtualTop(): HTMLDivElement {
+  getVirtualTop (): HTMLDivElement {
     return this.tableBody.querySelector<HTMLDivElement>(`.${Classes.virtualBlank}.top`)
   }
 
-  getTableRows(): NodeListOf<HTMLTableRowElement> {
+  getTableRows (): NodeListOf<HTMLTableRowElement> {
     const htmlTable = this.getTableBodyHtmlTable()
     return htmlTable.querySelectorAll<HTMLTableRowElement>(`tbody > .${Classes.tableRow}`)
   }
 
-  getTableBodyHtmlTable(): HTMLTableElement {
-    return this.artTable.querySelector(`.${Classes.tableBody} table`)
+  getTableBodyHtmlTable (): HTMLTableElement {
+    return this.artTable.querySelector(`.${Classes.tableBody} .${Classes.virtual} table`)
   }
 
-  getLeftLockShadow(): HTMLDivElement {
+  getLeftLockShadow (): HTMLDivElement {
     const selector = `.${Classes.lockShadowMask} .${Classes.leftLockShadow}`
     return this.artTable.querySelector<HTMLDivElement>(selector)
   }
 
-  getRightLockShadow(): HTMLDivElement {
+  getRightLockShadow (): HTMLDivElement {
     const selector = `.${Classes.lockShadowMask} .${Classes.rightLockShadow}`
     return this.artTable.querySelector<HTMLDivElement>(selector)
   }
 
-  getLoadingIndicator(): HTMLDivElement {
+  getLoadingIndicator (): HTMLDivElement {
     return this.artTableWrapper.querySelector<HTMLDivElement>(`.${Classes.loadingIndicator}`)
+  }
+
+  getRowTop (rowIndex:number) {
+    if (rowIndex === 0) return 0
+    const selector = `.${Classes.tableBody} .${Classes.tableRow}[data-rowindex="${rowIndex}"]`
+    const row = this.artTable.querySelector<HTMLDivElement>(selector)
+    const rowOffsetTop = (row && row.offsetTop) || 0
+    const tableOffsetTop = this.tableElement.offsetTop || 0
+    return rowOffsetTop + tableOffsetTop
   }
 }

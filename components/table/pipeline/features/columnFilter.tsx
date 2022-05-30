@@ -103,11 +103,11 @@ export function filter(opts: FilterFeatureOptions = {}) {
               />
             )
           ]
-          result.headerCellProps = mergeCellProps(col.headerCellProps, {
-            style: {
-              paddingRight: '18px'
-            }
-          })
+          // result.headerCellProps = mergeCellProps(col.headerCellProps, {
+          //   style: {
+          //     paddingRight: '18px'
+          //   }
+          // })
         }
 
         if (!isLeafNode(col)) {

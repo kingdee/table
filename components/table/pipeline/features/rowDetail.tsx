@@ -7,6 +7,7 @@ import { collectNodes, mergeCellProps } from '../../utils'
 import { always, flatMap } from '../../utils/others'
 import console from '../../utils/console'
 import { TablePipeline } from '../pipeline'
+import getTableRenderTemplate from '../../base/renderTemplates'
 
 interface expandIconProps extends React.SVGProps<SVGElement>{
   expanded:boolean
@@ -66,17 +67,15 @@ export function rowDetail (opts: RowDetailFeatureOptions = {}) {
   return function rowDetailStep (pipeline: TablePipeline) {
     const stateKey = 'rowDetail'
 
-    const primaryKey = pipeline.ensurePrimaryKey('rowDetail') as string
-    if (typeof primaryKey !== 'string') {
-      throw new Error('rowDetail 仅支持字符串作为 primaryKey')
-    }
-
     const rowDetailMetaKey = opts.rowDetailMetaKey ?? rowDetailSymbol
+
+    const primaryKey = pipeline.ensurePrimaryKey('rowDetail')
+
     const indents = pipeline.ctx.indents
     const textOffset = indents.iconIndent + indents.iconWidth + indents.iconGap
     const clickArea = opts.clickArea ?? 'cell'
 
-    const getDetailKey = opts.getDetailKey ?? ((row) => row[primaryKey] + '_detail')
+    const getDetailKey = opts.getDetailKey ?? ((row, rowIndex) => internals.safeGetRowKey(primaryKey, row, rowIndex) + '_detail')
     const renderDetail = opts.renderDetail ?? fallbackRenderDetail
     const hasDetail = opts.hasDetail ?? always(true)
 
@@ -87,7 +86,7 @@ export function rowDetail (opts: RowDetailFeatureOptions = {}) {
         ? pipeline
           .getDataSource()
           .filter(hasDetail)
-          .map((row) => row[primaryKey])
+          .map((row, rowIndex) => internals.safeGetRowKey(primaryKey, row, rowIndex))
         : opts.defaultOpenKeys) ??
       []
     const onChangeOpenKeys: RowDetailFeatureOptions['onChangeOpenKeys'] = (nextKeys, key, action) => {
@@ -109,12 +108,12 @@ export function rowDetail (opts: RowDetailFeatureOptions = {}) {
         onChangeOpenKeys([...openKeys, rowKey], rowKey, 'expand')
       }
     }
-
+    const detailPrimaryKey = typeof primaryKey === 'string' ? primaryKey : rowDetailMetaKey.toString() + 'PrimaryKey'
     return pipeline
       .dataSource(
         flatMap(pipeline.getDataSource(), (row, rowIndex) => {
-          if (openKeySet.has(row[primaryKey])) {
-            return [row, { [rowDetailMetaKey]: true, ...row, [primaryKey]: getDetailKey(row, rowIndex) }]
+          if (openKeySet.has(internals.safeGetRowKey(primaryKey, row, rowIndex))) {
+            return [row, { [rowDetailMetaKey]: true, ...row, [detailPrimaryKey]: getDetailKey(row, rowIndex) }]
           } else {
             return [row]
           }
@@ -123,7 +122,7 @@ export function rowDetail (opts: RowDetailFeatureOptions = {}) {
       .columns(processColumns(pipeline.getColumns()))
       .appendRowPropsGetter((row) => {
         if (row[rowDetailMetaKey]) {
-          return { className: 'no-hover' }
+          return { className: 'no-hover', 'data-row-detail-key': row[detailPrimaryKey] }
         }
       })
 
@@ -144,6 +143,12 @@ export function rowDetail (opts: RowDetailFeatureOptions = {}) {
 
       const render = (value: any, row: any, rowIndex: number) => {
         if (row[rowDetailMetaKey]) {
+          // 第一列内容已经渲染
+          if (expandColumnIndex !== 0) return
+          const renderRowDetail = getTableRenderTemplate('rowDetail')
+          if (typeof renderRowDetail === 'function') {
+            return renderRowDetail({ row, rowIndex, domHelper: pipeline.ref.current.domHelper, renderDetail })
+          }
           return renderDetail(row, rowIndex)
         }
 
@@ -153,7 +158,7 @@ export function rowDetail (opts: RowDetailFeatureOptions = {}) {
           return <InlineFlexCell style={{ marginLeft: textOffset }}>{content}</InlineFlexCell>
         }
 
-        const rowKey = row[primaryKey]
+        const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
         const expanded = openKeySet.has(rowKey)
         const onClick = (e: React.MouseEvent) => {
           if (opts.stopClickEventPropagation) {
@@ -213,7 +218,7 @@ export function rowDetail (opts: RowDetailFeatureOptions = {}) {
             if (opts.stopClickEventPropagation) {
               e.stopPropagation()
             }
-            toggle(row[primaryKey])
+            toggle(internals.safeGetRowKey(primaryKey, row, rowIndex))
           },
           style: { cursor: 'pointer' }
         })
@@ -222,6 +227,10 @@ export function rowDetail (opts: RowDetailFeatureOptions = {}) {
       const [firstCol, ...others] = tableColumns
       const firstColRender = (value: any, row: any, rowIndex: number) => {
         if (row[rowDetailMetaKey]) {
+          const renderRowDetail = getTableRenderTemplate('rowDetail')
+          if (typeof renderRowDetail === 'function') {
+            return renderRowDetail({ row, rowIndex, domHelper: pipeline.ref.current.domHelper, renderDetail })
+          }
           return renderDetail(row, rowIndex)
         }
         const content = internals.safeRender(firstCol, row, rowIndex)

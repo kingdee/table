@@ -3,6 +3,7 @@ import { TableProps, PrimaryKey } from '../base'
 import { ArtColumn, TableTransform, Transform } from '../interfaces'
 import { mergeCellProps } from '../utils'
 import { autoFillTableWidth, tableWidthKey } from './features/autoFill'
+import { rangeSelectionKey } from './features/rangeSelection'
 
 type RowPropsGetter = TableProps['getRowProps']
 
@@ -100,7 +101,7 @@ export class TablePipeline {
   }
 
   addTableProps (props:React.HTMLAttributes<HTMLTableElement>) {
-    this._tableProps = { ...this._tableProps, ...props }
+    this._tableProps = mergeCellProps(this._tableProps as any, props as any) as any
   }
 
   getDataSource (name?: string) {
@@ -119,7 +120,7 @@ export class TablePipeline {
     }
   }
 
-  getStateAtKey<T = any>(stateKey: string, defaultValue?: T): T {
+  getStateAtKey<T = any> (stateKey: string, defaultValue?: T): T {
     return this.state[stateKey] ?? defaultValue
   }
 
@@ -173,7 +174,7 @@ export class TablePipeline {
     this._snapshots[name] = {
       dataSource: this._dataSource,
       columns: this._columns,
-      rowPropsGetters: this._rowPropsGetters.slice(),
+      rowPropsGetters: this._rowPropsGetters.slice()
     }
     return this
   }
@@ -203,6 +204,16 @@ export class TablePipeline {
     return this.columns(mapper(this.getColumns()))
   }
 
+  /** 获取featureOptions 内容 */
+  getFeatureOptions (optionKey:string) {
+    return this.ref.current.featureOptions?.[optionKey]
+  }
+
+  /** 设置pipelineOptions 内容 */
+  setFeatureOptions (optionKey:string, value:any) {
+    this.ref.current.featureOptions[optionKey] = value
+  }
+
   /** 获取 BaseTable 的 props，结果中包含 dataSource/columns/primaryKey/getRowProps 四个字段 */
   getProps (this: TablePipeline) {
     this.use(autoFillTableWidth())
@@ -229,6 +240,20 @@ export class TablePipeline {
         this.setStateAtKey(tableWidthKey, tableWidth)
       }
     }
+    result.setTableDomHelper = (domHelper) => {
+      this.ref.current.domHelper = domHelper
+    }
+
+    // if (this.getFeatureOptions(rangeSelectionKey)) {
+    //   result.clearRangeSelectionStatus = () => {
+    //     const { rangeSelectedChange } = this.getFeatureOptions(rangeSelectionKey)
+    //     const rangeSelection = this.getStateAtKey(rangeSelectionKey)
+    //     if (rangeSelection) {
+    //       rangeSelectedChange?.(null)
+    //     }
+    //   }
+    // }
+
     return result
   }
 }
@@ -236,5 +261,6 @@ export class TablePipeline {
 export function useTablePipeline (ctx?: Partial<TablePipelineCtx>) {
   const [state, setState] = useState<any>({})
   const ref = useRef<any>({})
+  ref.current.featureOptions = {}
   return new TablePipeline({ state, setState, ctx, ref })
 }

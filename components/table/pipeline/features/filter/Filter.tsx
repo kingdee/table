@@ -1,4 +1,4 @@
-import React, { CSSProperties, ReactNode } from 'react'
+import React, { CSSProperties, ReactNode, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import styled from 'styled-components'
 import { Classes } from '../../../base/styles'
@@ -8,12 +8,14 @@ import FilterPanel from './FilterPanel'
 import DefaultFilterContent from './DefaultFilterContent'
 
 import { calculatePopupRelative } from '../../../utils'
+import { addResizeObserver } from '../../../base/utils'
+import cx from 'classnames'
 
-const HEADER_ICON_OFFSET_Y = 6 + 1 //padding-top + border
-const HEADER_ICON_OFFSET_X= 16 + 1 //padding-left+ border
+const HEADER_ICON_OFFSET_Y = 6 + 1 // padding-top + border
+const HEADER_ICON_OFFSET_X = 16 + 1 // padding-left+ border
 
 interface FilterProps{
-  style?: CSSProperties 
+  style?: CSSProperties
   className?: string
   size?: number
   isFilterActive:boolean,
@@ -27,15 +29,48 @@ interface FilterProps{
 }
 
 const FilterIconSpanStyle = styled.span`
-  position: absolute;
-  right: 4px;
-  cursor: pointer;
-  transform: translateY(-50%);
-  top: 50%;
-  height: 12px; 
+  // position: absolute;
+  // right: 4px;
+  // cursor: pointer;
+  // transform: translateY(-50%);
+  // top: 50%;
+  // height: 12px; 
 `
 
-function Filter({ size = 12, style, className, FilterPanelContent, filterIcon, setFilter, setFilterModel, filterModel, isFilterActive, stopClickEventPropagation }: FilterProps) {
+function Panel ({ ele, filterIcon, hidePanel, renderPanelContent }) {
+  const filterPanelRef = React.useRef(null)
+  const [position, setPosition] = React.useState(calculatePopupRelative(ele, document.body, { x: HEADER_ICON_OFFSET_X, y: HEADER_ICON_OFFSET_Y }))
+  const style = {
+    position: 'absolute',
+    zIndex: 1050
+  }
+
+  const handleFilterPanelResize = (resize) => {
+    setPosition(calculatePopupRelative(ele, document.body, { x: HEADER_ICON_OFFSET_X, y: HEADER_ICON_OFFSET_Y }))
+  }
+
+  useEffect(() => {
+    const resizeObserver = addResizeObserver(filterPanelRef.current.children[0], handleFilterPanelResize)
+    return () => {
+      resizeObserver && resizeObserver.disconnect()
+    }
+  }, [])
+
+  return (
+    <div ref = {filterPanelRef}>
+      <FilterPanel
+        style={style}
+        onClose={hidePanel}
+        position={position}
+        filterIcon={filterIcon}
+      >
+        {renderPanelContent()}
+      </FilterPanel>
+    </div>
+  )
+}
+
+function Filter ({ size = 12, style, className, FilterPanelContent, filterIcon, setFilter, setFilterModel, filterModel, isFilterActive, stopClickEventPropagation }: FilterProps) {
   const [showPanel, setShowPanel] = React.useState(false)
   const iconRef = React.useRef(null)
 
@@ -53,7 +88,7 @@ function Filter({ size = 12, style, className, FilterPanelContent, filterIcon, s
         isFilterActive={isFilterActive}
         hidePanel={hidePanel}
       />
-    }else{
+    } else {
       return <DefaultFilterContent
         setFilterModel={setFilterModel}
         filterModel={filterModel}
@@ -63,35 +98,21 @@ function Filter({ size = 12, style, className, FilterPanelContent, filterIcon, s
     }
   }
 
-  const renderPanel = (ele) => {
-    const position = calculatePopupRelative(ele, document.body, { x: HEADER_ICON_OFFSET_X, y:HEADER_ICON_OFFSET_Y })
-    const style = {
-      position: 'absolute',
-      zIndex: 1050
-    }
-    return (
-      <FilterPanel
-        style={style}
-        onClose={hidePanel}
-        position={position}
-        filterIcon={filterIcon}
-      >
-        {renderPanelContent()}
-      </FilterPanel>
-    )
-  }
-
   const handleIconClick = (e) => {
     if (stopClickEventPropagation) {
       e.stopPropagation()
     }
     setShowPanel(true)
   }
+  const iconClassName = cx({
+    [className]: true,
+    'filter-panel-open': showPanel
+  })
 
   return (
     <FilterIconSpanStyle
       style={style}
-      className={className}
+      className={iconClassName}
       onMouseDown={handleMouseDown}
       ref={iconRef}
     >
@@ -114,7 +135,16 @@ function Filter({ size = 12, style, className, FilterPanelContent, filterIcon, s
           </svg>
         }
       </span>
-      {showPanel && createPortal(renderPanel(iconRef.current), document.body)}
+      {showPanel &&
+      createPortal(
+        <Panel
+          ele ={iconRef.current}
+          filterIcon ={filterIcon}
+          hidePanel = {hidePanel}
+          renderPanelContent ={renderPanelContent}
+
+        />,
+        document.body)}
     </FilterIconSpanStyle>
   )
 }

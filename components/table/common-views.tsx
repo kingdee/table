@@ -120,6 +120,7 @@ export const ContextMenuStyleWrap = styled.div`
 
   .${MenuClasses.menuList} .${MenuClasses.menuOption}{
     display: table-row;
+    color: #666666;
   }
 
   .${MenuClasses.menuList} .${MenuClasses.menuOptionActive}{
@@ -129,7 +130,9 @@ export const ContextMenuStyleWrap = styled.div`
   .${MenuClasses.menuList} .${MenuClasses.menuOption} .${MenuClasses.menuOptionText}{
     display: table-cell;
     padding: 5px 8px;
-    color: #666666;
+  }
+  .${MenuClasses.menuList} .${MenuClasses.menuOption}.${MenuClasses.menuOptionDisable}{
+    opacity: .5;
   }
 
 `

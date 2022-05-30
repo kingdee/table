@@ -8,7 +8,7 @@ const baseConfig = require('./webpack.base')
 const pkg = require('../package.json')
 const entry = ['./index.js']
 
-baseConfig.output.library = 'kdui'
+baseConfig.output.library = 'KDTable'
 baseConfig.output.libraryTarget = 'umd'
 const uncompressedConfig = merge(baseConfig, {
   mode: 'development',

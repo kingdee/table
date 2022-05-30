@@ -1,5 +1,5 @@
 import { TablePipeline } from '../pipeline'
-import { makeRecursiveMapper, mergeCellProps, collectNodes } from '../../utils'
+import { makeRecursiveMapper, mergeCellProps, collectNodes, isLeafNode } from '../../utils'
 import { ArtColumn, CellProps } from '../../interfaces'
 import { FILL_COLUMN_CODE } from './autoFill'
 
@@ -22,14 +22,15 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
   return (pipeline: TablePipeline) => {
     const { cloumnsSortData, cloumnsTranslateData } = pipeline.getStateAtKey(stateKey, {} as any)
     let columns = pipeline.getColumns()
-    if (cloumnsSortData) {
-      columns = sortColumns(columns, cloumnsSortData)
-    }
+    // if (cloumnsSortData) {
+    //   columns = sortColumns(columns, cloumnsSortData)
+    // }
 
     pipeline.columns(columns.filter(column => column))
 
     return pipeline.mapColumns(
-      makeRecursiveMapper((col) => {
+      makeRecursiveMapper((col, recursiveFlatMapInfo) => {
+        const { path, isLeaf } = recursiveFlatMapInfo
         const style: any = cloumnsTranslateData ? {
           transition: '.3s',
           transform: `translate3d(${cloumnsTranslateData[col.code]}px, 0px, 0px)`
@@ -46,7 +47,7 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
             })
           },
           headerCellProps: mergeCellProps(col.headerCellProps, {
-            onMouseDown: (e) => {
+            onMouseDown: !isLeaf || path.length > 1 ? undefined : (e) => {
               if (e.button !== 0) {
                 return
               }
@@ -74,6 +75,8 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
               const rect = (e.currentTarget as HTMLElement).parentElement.getClientRects()[0]
               const startX = rect.left
               let moveData = []
+
+              const allColumns = collectNodes(columns)
               function handleMouseMove (e) {
                 if (e.clientX - startX < 20) {
                   return
@@ -82,18 +85,7 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                 }
                 document.body.style.userSelect = 'none'
                 currentTarget.style.cursor = 'move'
-                // 计算平移位置
-                let replaceIndex = 0
-                let totalWitdth = columns[replaceIndex].width
-                while (totalWitdth < e.clientX - startX && replaceIndex < columns.length - 1) {
-                  replaceIndex++
-                  totalWitdth += columns[replaceIndex].width
-                }
-                // 重置位置信息
-                cloumnsTranslateData = {}
-                columns.forEach((item) => {
-                  cloumnsTranslateData[item.code] = 0
-                })
+
                 // 循环计算每一个的位置
                 // if (startIndex !== replaceIndex) {
                 //   const optionColumn = columns[startIndex]
@@ -118,38 +110,60 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                 //   index++
                 // }
 
+                // 重置位置信息
+                cloumnsTranslateData = {}
+                allColumns.forEach((item) => {
+                  cloumnsTranslateData[item.code] = 0
+                })
+
+                // 计算平移位置
+                let replaceIndex = 0
+                let totalWitdth = getColumnWidth(columns[replaceIndex])
+                while (totalWitdth < e.clientX - startX && replaceIndex < columns.length - 1) {
+                  replaceIndex++
+                  totalWitdth += getColumnWidth(columns[replaceIndex])
+                }
+
                 // 需要取最新startIndex, 不能直接用makeRecursiveMapper提供的startIndex（因为map时还没添加选择列、充满列等后面use添加的列）
                 let startIndex
-                const leafColumns = collectNodes(collectNodes(columns, 'leaf-only'))
-                leafColumns.forEach((column, index) => {
+                columns.forEach((column, index) => {
                   if (column.code === col.code) {
                     startIndex = index
                   }
                 })
+
                 const optionColumn = columns[startIndex]
                 let index = replaceIndex
                 if (startIndex > replaceIndex) { // 左移
                   while (index < startIndex) {
-                    const code = columns[index].code
-                    if (code && code !== FILL_COLUMN_CODE && !columns[index].lock) {
+                    const { code, lock, width, children } = columns[index]
+                    if (enableMove({ code, lock })) {
                       cloumnsTranslateData[code] += optionColumn.width
-                      cloumnsTranslateData[optionColumn.code] -= columns[index].width
+                      if (isLeafNode(columns[index])) {
+                        cloumnsTranslateData[optionColumn.code] -= width
+                      } else {
+                        cloumnsTranslateData[optionColumn.code] -= getColumnWidth(columns[index])
+                        moveAllChildren(children, cloumnsTranslateData, optionColumn.width)
+                      }
                       columnMoved = true
                     }
                     index++
                   }
                 } else if (startIndex < replaceIndex) { // 右移
                   while (startIndex < index) {
-                    const code = columns[index].code
-                    if (code && code !== FILL_COLUMN_CODE && !columns[index].lock) {
+                    const { code, lock, width, children } = columns[index]
+                    if (enableMove({ code, lock })) {
                       cloumnsTranslateData[code] -= optionColumn.width
-                      cloumnsTranslateData[optionColumn.code] += columns[index].width
+                      if (isLeafNode(columns[index])) {
+                        cloumnsTranslateData[optionColumn.code] += width
+                      } else {
+                        cloumnsTranslateData[optionColumn.code] += getColumnWidth(columns[index])
+                        moveAllChildren(children, cloumnsTranslateData, optionColumn.width, true)
+                      }
                       columnMoved = true
                     }
                     index--
                   }
-                } else { // 不动或者移动回原位
-
                 }
 
                 window.requestAnimationFrame(() => {
@@ -178,8 +192,8 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                   let index = replaceIndex
                   if (startIndex > replaceIndex) { // 左移
                     while (index < startIndex) {
-                      const code = columns[index].code
-                      if (code && code !== FILL_COLUMN_CODE && !columns[index].lock) {
+                      const { code, lock } = columns[index]
+                      if (enableMove({ code, lock })) {
                         cloumnsSortData[code] += 1
                         cloumnsSortData[optionColumn.code] -= 1
                         columnMoved = true
@@ -188,8 +202,8 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                     }
                   } else if (startIndex < replaceIndex) { // 右移
                     while (index > startIndex) {
-                      const code = columns[index].code
-                      if (code && code !== FILL_COLUMN_CODE && !columns[index].lock) {
+                      const { code, lock } = columns[index]
+                      if (enableMove({ code, lock })) {
                         cloumnsSortData[code] -= 1
                         cloumnsSortData[optionColumn.code] += 1
                         columnMoved = true
@@ -226,4 +240,28 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
       })
     )
   }
+}
+
+function enableMove ({ lock, code }) {
+  return code && code !== FILL_COLUMN_CODE && !lock
+}
+
+function getColumnWidth (col : ArtColumn) : number {
+  if (col.children) {
+    return col.children.reduce((acc, col) => {
+      return acc + getColumnWidth(col)
+    }, 0)
+  }
+  return col.width
+}
+
+function moveAllChildren (cols:ArtColumn[], cloumnsTranslateData, width: number, isMinus?:boolean) {
+  cols.forEach(col => {
+    const { code, children } = col
+    const movedWidth = cloumnsTranslateData[code] ?? 0
+    cloumnsTranslateData[code] = movedWidth + (isMinus ? -width : width)
+    if (!isLeafNode(col)) {
+      moveAllChildren(children, cloumnsTranslateData, width)
+    }
+  })
 }
