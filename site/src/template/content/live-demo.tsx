@@ -6,8 +6,8 @@ import lodash from 'lodash'
 import { Language } from 'prism-react-renderer'
 import * as KDTable from 'kd-table'
 
-import { Checkbox, Radio, Input, Button } from '@kingdee-ui/kui'
-import '@kingdee-ui/kui/dist/kui.css'
+import { Checkbox, Radio, Input, Button } from '@kdcloudjs/kdesign'
+import '@kdcloudjs/kdesign/dist/kdesign.css'
 
 import { Utils } from './article'
 
