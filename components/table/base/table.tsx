@@ -1,15 +1,15 @@
 import cx from 'classnames'
 import React, { CSSProperties, ReactNode } from 'react'
-import { animationFrameScheduler, BehaviorSubject, combineLatest, noop, of, Subscription, timer, fromEvent, asyncScheduler, Subject } from 'rxjs'
+import { BehaviorSubject, combineLatest, noop,  Subscription, Subject } from 'rxjs'
 import * as op from 'rxjs/operators'
 import ResizeObserver from 'resize-observer-polyfill'
 import { ArtColumn } from '../interfaces'
 import { calculateRenderInfo } from './calculations'
 import { EmptyHtmlTable } from './empty'
 import TableHeader from './header'
+import { getRichVisibleRectsStream } from './helpers/getRichVisibleRectsStream'
 import { getFullRenderRange, makeRowHeightManager } from './helpers/rowHeightManager'
 import { TableDOMHelper } from './helpers/TableDOMUtils'
-import { getVisiblePartObservable } from './helpers/visible-part'
 import { HtmlTable } from './html-table'
 import { RenderInfo, ResolvedUseVirtual, VerticalRenderRange, VirtualEnum } from './interfaces'
 import Loading, { LoadingContentWrapperProps } from './loading'
@@ -28,37 +28,35 @@ import {
   STYLED_REF_PROP,
   sum,
   syncScrollLeft,
-  throttledWindowResize$
+  throttledWindowResize$,
+  composeRowPropsGetter,
+  getTableScrollFooterDOM,
+  getTableScrollHeaderDOM
 } from './utils'
 import cssVars from 'css-vars-ponyfill'
-import { console } from '../utils'
+import { console, browserType } from '../utils'
+import getTableRenderTemplate from './renderTemplates'
 
 const cssPolifill = ({ variables, enableCSSVariables }) => {
   // const style = document.createElement('style')
   // style.type = 'text/css'
-	// style.innerHTML = '.aaa{ --color: red; }'
-	// document.getElementsByTagName('head').item(0).appendChild(style)
+  // style.innerHTML = '.aaa{ --color: red; }'
+  // document.getElementsByTagName('head').item(0).appendChild(style)
 
   // const variableNames = variableConst.match(/--.*?(?=:)/g)
   // variables = variableNames.map((name) => rootElement.style[name])
-  if(enableCSSVariables === false){
+  if (enableCSSVariables === false) {
     return
   }
-  
-  const t0 = performance.now()
+
   cssVars({
     // exclude: 'link[href*="semantic-ui"]',
     // onlyLegacy: false,
     // rootElement: rootElement,
-    include:'style[data-styled]',
+    include: 'style[data-styled]',
     variables: Object.assign({}, defaultCSSVariables, variables),
     watch: true,
-    silent:true,
-    onComplete: () => {
-      const t1 = performance.now()
-      const time = ((t1 - t0) / 1000).toFixed(2)
-      console.log(`css-vars-ponyfill completed in ${time} seconds`)
-    }
+    silent: true
   })
 }
 
@@ -67,7 +65,7 @@ function warnPropsDotEmptyContentIsDeprecated () {
   if (!propsDotEmptyContentDeprecatedWarned) {
     propsDotEmptyContentDeprecatedWarned = true
     console.warn(
-      'BaseTable props.emptyContent 已经过时，请使用 props.components.EmptyContent 来自定义数据为空时的表格表现',
+      'BaseTable props.emptyContent 已经过时，请使用 props.components.EmptyContent 来自定义数据为空时的表格表现'
     )
   }
 }
@@ -131,9 +129,14 @@ export interface BaseTableProps {
   /** 列的默认宽度 */
   defaultColumnWidth?: number
 
-  /** 表格所处于的块格式化上下文(BFC)
-   * https://developer.mozilla.org/zh-CN/docs/Web/Guide/CSS/Block_formatting_context */
-  flowRoot?: 'auto' | 'self' | (() => HTMLElement | typeof window) | HTMLElement | typeof window
+  /**
+   * @deprecated
+   * flowRoot 在表格 v2.4 后不再需要提供，请移除该属性
+   * */
+   flowRoot?: never
+
+  /** 虚拟滚动调试标签，用于表格内部调试使用 */
+  virtualDebugLabel?: string
 
   getRowProps?(record: any, rowIndex: number): React.HTMLAttributes<HTMLTableRowElement>
 
@@ -141,6 +144,9 @@ export interface BaseTableProps {
 
   setTableWidth?(tableWidth: number): void
 
+  setTableDomHelper?(domHelper: TableDOMHelper):void
+  clearRangeSelectionStatus?():void
+  // css变量兼容
   cssVariables?: { [key:string] : any}
   enableCSSVariables ?: boolean
 }
@@ -186,10 +192,9 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     components: {},
     getTableProps: noop,
     getRowProps: noop,
-    flowRoot: 'auto',
     dataSource: [] as any[],
 
-    useOuterBorder: true,
+    useOuterBorder: true
 
   }
 
@@ -263,7 +268,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         this.setState({ hasScroll: true })
       }
     }
-    if (this.domHelper.tableElement.offsetHeight > this.domHelper.tableBody.offsetHeight) {
+    if (this.domHelper.virtual.offsetHeight > this.domHelper.tableBody.offsetHeight) {
     //   if (!this.state.hasScroll) {
     //     this.setState({
     //       hasScrollY: true
@@ -271,7 +276,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     //   }
       this.hasScrollY = true
     } else {
-      stickyScroll.style.marginRight = `${stickyScrollHeight}px`
+      stickyScroll.style.paddingRight = `${stickyScrollHeight}px`
       //   this.setState({
       //     hasScrollY: false
       //   })
@@ -287,7 +292,10 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
   private renderTableHeader (info: RenderInfo) {
     const { stickyTop, hasHeader } = this.props
-    // console.log('render header')
+    const renderHeader = getTableRenderTemplate('header')
+    if (typeof renderHeader === 'function') {
+      return renderHeader(info, this.props)
+    }
     return (
       <div
         className={cx(Classes.tableHeader, 'no-scrollbar')}
@@ -297,6 +305,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         }}
       >
         <TableHeader info={info} />
+        <div className={Classes.verticalScrollPlaceholder} style={this.hasScrollY ? { width: getScrollbarSize().width } : undefined}></div>
       </div>
     )
   }
@@ -352,10 +361,38 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     }
   }
 
-  private renderTableBody (info: RenderInfo) {
+  private getRowNodeListByEvent = (e: React.MouseEvent<HTMLTableRowElement, MouseEvent>) : HTMLElement[] => {
+    let nodeList = null
+    const rowIndex = e.currentTarget.dataset.rowindex
+    if (rowIndex !== undefined) {
+      const { tableBody, tableFooter } = this.domHelper
+      const targetParent = tableBody.contains(e.currentTarget) ? tableBody : tableFooter
+      nodeList = targetParent.querySelectorAll(`tr[data-rowindex="${rowIndex}"]`)
+    }
+    return nodeList
+  }
+
+  private handleRowMouseEnter = (e: React.MouseEvent<HTMLTableRowElement, MouseEvent>) => {
+    const nodeList = this.getRowNodeListByEvent(e)
+    nodeList && nodeList.forEach(node => {
+      node.classList.add('row-hover')
+    })
+  }
+
+  private handleRowMouseLeave = (e: React.MouseEvent<HTMLTableRowElement, MouseEvent>) => {
+    const nodeList = this.getRowNodeListByEvent(e)
+    nodeList && nodeList.forEach(node => {
+      node.classList.remove('row-hover')
+    })
+  }
+
+  private renderTableBody = (info: RenderInfo) => {
     // console.log('render body')
     const { dataSource, getRowProps, primaryKey, isLoading, emptyCellHeight, footerDataSource } = this.props
     const tableBodyClassName = cx(Classes.tableBody, Classes.horizontalScrollContainer)
+
+    // 低版本Edge浏览器下也会出现双滚动条，这里设置overflow: 'hidden'，先去掉edge的方向键控制滚动条的功能
+    const virtualStyle = browserType.isIE || browserType.isEdge ? { overflow: 'hidden' } : {}
 
     if (dataSource.length === 0) {
       const { components, emptyContent } = this.props
@@ -367,7 +404,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
       return (
         <div className={cx(tableBodyClassName, 'empty')}>
-          <div className={Classes.virtual}>
+          <div className={Classes.virtual} style={virtualStyle}>
             <EmptyHtmlTable
               descriptors={info.visible}
               isLoading={isLoading}
@@ -381,9 +418,14 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
     const { topIndex, bottomBlank, topBlank, bottomIndex } = info.verticalRenderRange
 
+    const renderBody = getTableRenderTemplate('body')
+    if (typeof renderBody === 'function') {
+      return renderBody(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave }, hasScrollY: this.hasScrollY })
+    }
+
     return (
       <div className={tableBodyClassName}>
-        <div className={Classes.virtual}>
+        <div className={Classes.virtual} style={virtualStyle}>
           {topBlank > 0 && (
             <div key="top-blank" className={cx(Classes.virtualBlank, 'top')} style={{ height: topBlank }} />
           )}
@@ -392,6 +434,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
             getRowProps={getRowProps}
             primaryKey={primaryKey}
             data={dataSource.slice(topIndex, bottomIndex)}
+            hasScrollY ={this.hasScrollY}
             horizontalRenderInfo={info}
             verticalRenderInfo={{
               first: 0,
@@ -412,6 +455,11 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     // console.log('render footer')
     const { footerDataSource = [], getRowProps, primaryKey, stickyBottom } = this.props
 
+    const renderFooter = getTableRenderTemplate('footer')
+    if (typeof renderFooter === 'function') {
+      return renderFooter(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave } })
+    }
+
     return (
       <div
         className={cx(Classes.tableFooter, Classes.horizontalScrollContainer)}
@@ -430,6 +478,10 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
             limit: Infinity
           }}
         />
+        <div
+          className={Classes.verticalScrollPlaceholder}
+          style={this.hasScrollY ? { width: getScrollbarSize().width, visibility: 'initial' } : undefined}>
+        </div>
       </div>
     )
   }
@@ -500,7 +552,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         'has-header': hasHeader,
         'sticky-header': isStickyHeader ?? isStickyHead,
         'has-footer': footerDataSource.length > 0,
-        'sticky-footer': isStickyFooter
+        'sticky-footer': isStickyFooter,
+        'ie-polyfill-wrapper': browserType.isIE
       },
       className
     )
@@ -540,8 +593,9 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     this.didMountOrUpdate()
     // console.log('did mount end')
     const { cssVariables, enableCSSVariables } = this.props
-    cssPolifill({variables: cssVariables || {}, enableCSSVariables})
+    cssPolifill({ variables: cssVariables || {}, enableCSSVariables })
     this.props.setTableWidth?.(this.domHelper.tableBody.clientWidth)
+    this.props.setTableDomHelper?.(this.domHelper)
   }
 
   componentDidUpdate (prevProps: Readonly<BaseTableProps>, prevState: Readonly<BaseTableState>) {
@@ -560,9 +614,9 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     this.updateScrollLeftWhenLayoutChanged(prevProps, prevState)
   }
 
-  private updateScrollLeftWhenLayoutChanged(
+  private updateScrollLeftWhenLayoutChanged (
     prevProps?: Readonly<BaseTableProps>,
-    prevState?: Readonly<BaseTableState>,
+    prevState?: Readonly<BaseTableState>
   ) {
     if (prevState != null) {
       if (!prevState.hasScroll && this.state.hasScroll) {
@@ -574,19 +628,20 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       const prevHasFooter = prevProps.footerDataSource.length > 0
       const currentHasFooter = this.props.footerDataSource.length > 0
       if (!prevHasFooter && currentHasFooter) {
-        this.domHelper.tableFooter.scrollLeft = this.domHelper.tableBody.scrollLeft
+        getTableScrollFooterDOM(this.domHelper).scrollLeft = this.domHelper.tableBody.scrollLeft
       }
     }
   }
 
-  private initSubscriptions() {
-    const { tableHeader, virtual, tableFooter, stickyScroll } = this.domHelper
 
+  private initSubscriptions () {
+    const { virtual, stickyScroll } = this.domHelper
+    
     this.rootSubscription.add(
       throttledWindowResize$.subscribe(() => {
         this.updateStickyScroll()
         this.adjustNeedRenderLock()
-      }),
+      })
     )
 
     this.resizeSubject.pipe(op.debounceTime(100)).subscribe(() => {
@@ -601,52 +656,28 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
     // 滚动同步
     this.rootSubscription.add(
-      syncScrollLeft([tableHeader, virtual, tableFooter, stickyScroll], (scrollLeft) => {
+      syncScrollLeft([getTableScrollHeaderDOM(this.domHelper), virtual, getTableScrollFooterDOM(this.domHelper), stickyScroll], (scrollLeft) => {
         this.syncHorizontalScroll(scrollLeft)
       })
     )
 
-    // 表格所处的 flowRoot / BFC
-    const resolvedFlowRoot$ = this.props$.pipe(
-      op.map((props) => props.flowRoot),
-      op.switchMap((flowRoot) => {
-        const wrapper = this.domHelper.tableBody
-        if (flowRoot === 'auto') {
-          const computedStyle = getComputedStyle(wrapper)
-          return of(computedStyle.overflowY !== 'visible' ? wrapper : window)
-        } else if (flowRoot === 'self') {
-          return of(wrapper)
-        } else {
-          if (typeof flowRoot === 'function') {
-            // 在一些情况下 flowRoot 需要在父组件 didMount 时才会准备好
-            // 故这里使用 animationFrameScheduler 等下一个动画帧
-            return timer(0, animationFrameScheduler).pipe(op.map(flowRoot))
-          } else {
-            return of(flowRoot)
-          }
-        }
-      }),
-      op.distinctUntilChanged()
-    )
-
-    // 表格在 flowRoot 中的可见部分
-    const visiblePart$ = resolvedFlowRoot$.pipe(
-      op.switchMap((resolvedFlowRoot) => {
-        return getVisiblePartObservable(this.domHelper.virtual, resolvedFlowRoot)
-      })
-    )
+    const richVisibleRects$ = getRichVisibleRectsStream(
+      this.domHelper.virtual,
+      this.props$.pipe(op.skip(1), op.mapTo('structure-may-change')),
+      this.props.virtualDebugLabel,
+    ).pipe(op.shareReplay())
 
     // 每当可见部分发生变化的时候，调整 loading icon 的未知（如果 loading icon 存在的话）
     this.rootSubscription.add(
       combineLatest([
-        visiblePart$.pipe(
+        richVisibleRects$.pipe(
           op.map((p) => p.clipRect),
           op.distinctUntilChanged(shallowEqual)
         ),
         this.props$.pipe(
           op.startWith(null),
           op.pairwise(),
-          op.filter(([prevProps, props]) => prevProps == null || (!prevProps.isLoading && props.isLoading)),
+          op.filter(([prevProps, props]) => prevProps == null || (!prevProps.isLoading && props.isLoading))
         )
       ]).subscribe(([clipRect]) => {
         const loadingIndicator = this.domHelper.getLoadingIndicator()
@@ -654,6 +685,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
           return
         }
         const height = clipRect.bottom - clipRect.top
+        // fixme 这里的定位在有些特殊情况下可能会出错 see #132
         loadingIndicator.style.top = `${height / 2}px`
         loadingIndicator.style.marginTop = `${height / 2}px`
       })
@@ -661,7 +693,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
     // 每当可见部分发生变化的时候，如果开启了虚拟滚动，则重新触发 render
     this.rootSubscription.add(
-      visiblePart$
+      richVisibleRects$
         .pipe(
           op.filter(() => {
             const { horizontal, vertical } = this.lastInfo.useVirtual

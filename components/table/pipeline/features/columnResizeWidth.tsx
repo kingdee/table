@@ -56,6 +56,8 @@ export interface ColumnResizeOptions {
   /** 列的最大宽度，默认为 1000 */
   maxSize?: number
 
+  doubleClickCallback?(e: React.MouseEvent<HTMLSpanElement>, col: ArtColumn):void
+
   onChangeSize?(nextSize: ColumnSize): void
   afterChangeSize?(nextSize: ColumnSize, changedColumnSize: ChangedColumnSize[]): void
 }
@@ -105,6 +107,10 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
           }
         }
       })
+    }
+
+    const handleDoubleClick = (e: React.MouseEvent<HTMLSpanElement>, col: ArtColumn) => {
+      opts?.doubleClickCallback(e, col)
     }
 
     const handleMouseDown = (e: React.MouseEvent<HTMLSpanElement>, col: ArtColumn) => {
@@ -173,8 +179,8 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
             {prevTitle}
             {features?.resizeable !== false && (
               isGroup
-                ? <TableHeaderGroupCellResize className={Classes.tableHeaderCellResize} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
-                : <TableHeaderCellResize className={Classes.tableHeaderCellResize} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
+                ? <TableHeaderGroupCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
+                : <TableHeaderCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
             )}
           </>
         ),

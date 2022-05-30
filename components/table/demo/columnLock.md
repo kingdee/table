@@ -16,6 +16,10 @@ order: 5
     {id: "5", "No":5,"order":"AP-202009-00004","from":"陕西环宇科技","to":"深圳环球科技","amount":"236,800.00","balance":"1,500.00"}
   ]
 
+  const footerDataSource = [
+    {id: "5", "No":"合计","order":"AP-202009-00004","from":"陕西环宇科技","to":"深圳环球科技","amount":"236,800.00","balance":"1,500.00"}
+  ]
+
   const columns = [
     { code: 'No', name: '序号', width: 60, align: 'center', lock: true, },
     { code: 'order', name: '单据号', width: 200},
@@ -26,6 +30,6 @@ order: 5
   ]
 
   const pipeline = useTablePipeline().input({ dataSource: dataSource, columns: columns })
-  return <Table  style={{ width: 800, overflow: 'auto' }} {...pipeline.getProps()}  />
+  return <Table  style={{ width: 800, height: 250,  overflow: 'auto' }} {...pipeline.getProps()}  footerDataSource={footerDataSource}/>
 }
 ```

@@ -22,7 +22,7 @@ type ColWithRenderInfo =
       isLeaf: boolean
       width: number
     }
-  | { type: 'blank'; blankSide: 'left' | 'right'; width: number }
+  | { type: 'blank'; blankSide: 'left' | 'right'; width: number; isPlacehoder?: boolean }
 
 type IndexedCol = {
   colIndex: number
@@ -170,9 +170,15 @@ function calculateHeaderRenderInfo (
   return calculateLeveledAndFlat(attachColIndex(nested.full, 0), rowCount)
 }
 
-export default function TableHeader ({ info }: { info: RenderInfo }) {
+interface TableHeaderProps {
+  info: RenderInfo
+  theaderPosition ?: 'left' | 'center' | 'right',
+  rowCount?: number
+}
+
+export default function TableHeader ({ info, theaderPosition, rowCount: _rowCount }: TableHeaderProps) {
   const { nested, flat, stickyLeftMap, stickyRightMap } = info
-  const rowCount = getTreeDepth(nested.full) + 1
+  const rowCount = _rowCount ?? (getTreeDepth(nested.full) + 1)
   const headerRenderInfo = calculateHeaderRenderInfo(info, rowCount)
 
   const fullFlatCount = flat.full.length
@@ -180,7 +186,13 @@ export default function TableHeader ({ info }: { info: RenderInfo }) {
   const rightFlatCount = flat.right.length
 
   const thead = headerRenderInfo.leveled.map((wrappedCols, level) => {
-    const headerCells = wrappedCols.map((wrapped, index) => {
+    const _wrappedCols = wrappedCols.concat()
+    // 左中右区域渲染，分组列可能单独位于一个区域，此时其他区域也需要适配分组的高度
+    // rowspan 需要空白的列头去占位, 需要补充额外的空白列头
+    if (rowCount > 1 && ['left', 'right'].indexOf(theaderPosition) > -1) {
+      _wrappedCols.push({ type: 'blank', blankSide: 'left', width: 1, isPlacehoder: true })
+    }
+    const headerCells = _wrappedCols.map((wrapped, index) => {
       if (wrapped.type === 'normal') {
         const { colIndex, colSpan, isLeaf, col } = wrapped
 
@@ -195,6 +207,10 @@ export default function TableHeader ({ info }: { info: RenderInfo }) {
           positionStyle.right = stickyRightMap.get(colIndex)
         }
 
+        const justifyContent = col.align === 'right'
+          ? 'flex-end'
+          : col.align === 'center' ? 'center' : 'flex-start'
+
         const cell = (
           <th
             key={colIndex}
@@ -202,8 +218,8 @@ export default function TableHeader ({ info }: { info: RenderInfo }) {
             className={cx(Classes.tableHeaderCell, headerCellProps.className, {
               first: colIndex === 0,
               last: colIndex + colSpan === fullFlatCount,
-              'lock-left': colIndex < leftFlatCount,
-              'lock-right': colIndex >= fullFlatCount - rightFlatCount,
+              'lock-left': colIndex < leftFlatCount || theaderPosition === 'left',
+              'lock-right': colIndex >= fullFlatCount - rightFlatCount || theaderPosition === 'right',
               leaf: wrapped.isLeaf
             })}
             colSpan={colSpan}
@@ -216,15 +232,18 @@ export default function TableHeader ({ info }: { info: RenderInfo }) {
             }}
             data-code={col.code}
           >
-            {/* <div className={Classes.tableHeaderCellContent}> */}
-            {col.title ?? col.name}
-            {/* </div> */}
+            {
+              theaderPosition === 'center' && positionStyle.position === 'sticky' ? null
+                : <div className={Classes.tableHeaderCellContent} style={{ justifyContent }}>
+                  {col.title ?? col.name}
+                </div>
+            }
           </th>
         )
         return cell
       } else {
         if (wrapped.width > 0) {
-          return <th key={wrapped.blankSide} />
+          return <th key={wrapped.blankSide} style={{ visibility: wrapped.isPlacehoder ? 'hidden' : undefined }}/>
         } else {
           return null
         }

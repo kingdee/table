@@ -9,10 +9,12 @@ export const Classes = {
   artTableWrapper: `${prefix}table-wrapper`,
 
   artTable: `${prefix}table`,
+  tableHeaderMain: `${prefix}table-header-main`,
   tableHeader: `${prefix}table-header`,
   tableBody: `${prefix}table-body`,
   virtual: `${prefix}virtual`,
   tableFooter: `${prefix}table-footer`,
+  tableFooterMain: `${prefix}table-footer-main`,
 
   /** 表格行 */
   tableRow: `${prefix}table-row`,
@@ -29,6 +31,7 @@ export const Classes = {
   stickyScroll: `${prefix}sticky-scroll`,
   stickyScrollItem: `${prefix}sticky-scroll-item`,
   horizontalScrollContainer: `${prefix}horizontal-scroll-container`,
+  verticalScrollPlaceholder: `${prefix}vertical-scroll-placeholder`,
 
   lockShadowMask: `${prefix}lock-shadow-mask`,
   lockShadow: `${prefix}lock-shadow`,
@@ -50,8 +53,21 @@ export const Classes = {
 
   button: `${prefix}btn`,
   buttonPrimary: `${prefix}btn-primary`,
-  filterIcon: `${prefix}filter-icon`
+  filterIcon: `${prefix}filter-icon`,
 
+  tableCellRangeSelected:`${prefix}table-cell-range-selected`,
+  tableCellRangeTop:`${prefix}table-cell-range-top`,
+  tableCellRangeLeft:`${prefix}table-cell-range-left`,
+  tableCellRangeBottom:`${prefix}table-cell-range-bottom`,
+  tableCellRangeRight:`${prefix}table-cell-range-right`,
+
+  fixedLeft: `${prefix}fixed-left`,
+  fixedRight: `${prefix}fixed-right`,
+
+  rowDetailContainer: `${prefix}row-detail-container`,
+  rowDetailItem: `${prefix}row-detail-item`,
+
+  emptyColCell: `${prefix}empty-col-cell`
 
 } as const
 
@@ -60,6 +76,7 @@ export const MenuClasses = {
   menuList: `${prefix}table-menu-list`,
   menuOption: `${prefix}table-menu-option`,
   menuOptionActive: `${prefix}table-menu-option-active`,
+  menuOptionDisable: `${prefix}table-menu-option-disable`,
   menuOptionText: `${prefix}table-menu-option-text`,
 }
 
@@ -69,8 +86,9 @@ const Z = {
   header: 15,
   footer: 10,
   lockShadow: 20,
+  rowDetail: 25,
   scrollItem: 30,
-  loadingIndicator: 40,
+  loadingIndicator: 40
 } as const
 
 export type BaseTableCSSVariables = Partial<{
@@ -233,6 +251,7 @@ export const StyledArtTableWrapper = styled.div`
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    user-select:none;
   }
 
   .${Classes.tableHeader} {
@@ -245,18 +264,25 @@ export const StyledArtTableWrapper = styled.div`
 
   .${Classes.tableHeaderCellContent} {
     display: flex;
-    justify-content: center;
+    // justify-content: flex-start;
     align-items: center;
     height: inherit;
   }
 
   .${Classes.virtual} {
-    overflow: hidden;
-    flex-shrink: 0;
-    flex-grow: 0;
-  }
+     overflow-x:auto;
+     flex-shrink: 0;
+     flex-grow: 0;
+     scrollbar-width: none; // 兼容火狐
+     & {
+       ::-webkit-scrollbar {
+         display:none;
+       }
+     }
+   }
 
   .${Classes.tableFooter} {
+    display: flex;
     flex: none;
   }
   .${Classes.tableBody}, .${Classes.tableFooter} {
@@ -264,6 +290,7 @@ export const StyledArtTableWrapper = styled.div`
     overflow: auto;
     overflow-x: hidden;
     overflow-anchor: none;
+    position:relative;
     &.empty {
       position: relative;
     }
@@ -271,8 +298,25 @@ export const StyledArtTableWrapper = styled.div`
 
   .${Classes.tableRow} {
     position: relative;
-    transform: translate(0px);
   }
+  .${Classes.tableBody} {
+    .${Classes.tableCellRangeSelected}{
+      background-color: #e6effb !important;
+    }
+    .${Classes.tableCellRangeTop}{
+      border-top: 1px solid #0E5FD8 !important;
+    }
+    .${Classes.tableCellRangeLeft}{
+      border-left: 1px solid #0E5FD8 !important;
+    }
+    .${Classes.tableCellRangeBottom}{
+      border-bottom: 1px solid #0E5FD8 !important;
+    }
+    .${Classes.tableCellRangeRight}{
+      border-right: 1px solid #0E5FD8 !important;
+    }
+  }
+  
 
   &.sticky-header .${Classes.tableHeader} {
     position: sticky;
@@ -296,6 +340,7 @@ export const StyledArtTableWrapper = styled.div`
     padding: 0;
     flex-shrink: 0;
     flex-grow: 0;
+    position:relative;
   }
 
   // 在 tr 上设置 .no-hover 可以禁用鼠标悬停效果
@@ -315,7 +360,7 @@ export const StyledArtTableWrapper = styled.div`
     height: var(--header-row-height);
     color: var(--header-color);
     background: var(--header-bgcolor);
-    border: none;
+    border:1px solid transparent;
     border-right: var(--header-cell-border-vertical);
     border-bottom: var(--header-cell-border-horizontal);
     position: relative;
@@ -341,7 +386,7 @@ export const StyledArtTableWrapper = styled.div`
     padding: var(--cell-padding);
     background: var(--bgcolor);
     height: var(--row-height);
-    border: none;
+    border:1px solid transparent;
     border-right: var(--cell-border-vertical);
     border-bottom: var(--cell-border-horizontal);
     word-break: break-all;
@@ -422,6 +467,55 @@ export const StyledArtTableWrapper = styled.div`
   }
   //#endregion
 
+  //#region IE兼容
+  &.ie-polyfill-wrapper {
+    //锁定列兼容 仅在锁定列的情况下生效
+    .${Classes.virtual} {
+      overflow-x: hidden;
+    }
+    .${Classes.tableBody}, .${Classes.tableFooter} {
+      position:relative;
+    }
+    .${Classes.tableHeaderMain} {
+      overflow: hidden;
+    }
+    .${Classes.tableHeader} {
+      position: relative;
+    }
+
+    .${Classes.tableFooterMain} {
+      overflow: auto;
+      overflow-x: hidden;
+      overflow-anchor: none;
+    }
+
+    .${Classes.fixedLeft}, .${Classes.fixedRight}{
+      position: absolute;
+      z-index: ${Z.lock};
+      top: 0;
+    }
+    .${Classes.fixedLeft}{
+      left:0;
+    }
+    .${Classes.fixedRight}{
+      right:0;
+    }
+
+    .${Classes.rowDetailContainer}{
+      .${Classes.rowDetailItem}{
+        position: absolute;
+        top: 0;
+        width: 100%;
+        z-index: ${Z.rowDetail};
+      }
+    }
+
+    tr:not(.no-hover).row-hover > td {
+      background: var(--hover-bgcolor);
+    }
+  }
+  //#endregion
+
   //#region 粘性滚动条
   .${Classes.stickyScroll} {
     overflow-y: hidden;
@@ -429,6 +523,8 @@ export const StyledArtTableWrapper = styled.div`
     z-index: ${Z.scrollItem};
     flex-shrink: 0;
     flex-grow: 0;
+    border-top: 1px solid var(--border-color);
+    background: var(--bgcolor);
   }
 
   .${Classes.stickyScrollItem} {
@@ -487,6 +583,16 @@ export const StyledArtTableWrapper = styled.div`
     &.active{
       color:var(--primary-color);
     }
+  }
+  //#endregion
+
+  //#region 滚动条占位
+  .${Classes.verticalScrollPlaceholder} {
+    visibility: hidden;
+    flex-shrink: 0;
+  }
+  .${Classes.tableFooter} .${Classes.verticalScrollPlaceholder} {
+    border-top: var(--cell-border-horizontal);
   }
   //#endregion
   `

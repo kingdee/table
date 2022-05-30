@@ -81,6 +81,7 @@ const TableHeaderCell = styled.div`
   cursor: pointer;
   display: flex;
   align-items: center;
+  // flex: auto;
 `
 
 export interface SortHeaderCellProps {

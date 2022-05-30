@@ -1,6 +1,7 @@
 import { getLeftNestedLockCount } from '../../base/calculations'
 import { isLeafNode, makeRecursiveMapper } from '../../utils'
 import { TablePipeline } from '../pipeline'
+import { Classes } from '../../base/styles'
 
 export const FILL_COLUMN_CODE = '$_fill_column_&'
 
@@ -23,9 +24,14 @@ export const autoFillTableWidth = () => (pipeline: TablePipeline) => {
       width: width,
       features: {
         resizeable: false
+      },
+      getCellProps: (value: any, record: any, rowIndex: number) => {
+        return {
+          className: Classes.emptyColCell
+        }
       }
     }
-    columns.splice(spliceIndex, 0, fillColumns)
+    columns.splice(spliceIndex || columns.length, 0, fillColumns)
   }
   pipeline.columns(columns)
   setAutoFillWidth(pipeline)

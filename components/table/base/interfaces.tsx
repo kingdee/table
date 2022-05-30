@@ -19,7 +19,7 @@ export interface HorizontalRenderRange {
 
 // VisibleColumnDescriptor 用于在表格内部描述「那些在页面中可见的列」
 export type VisibleColumnDescriptor =
-  | { type: 'blank'; blankSide: 'left' | 'right'; width: number }
+  | { type: 'blank'; blankSide: 'left' | 'right'; width: number; isPlacehoder?:boolean }
   | { type: 'normal'; colIndex: number; col: ArtColumn }
 
 export interface ResolvedUseVirtual {

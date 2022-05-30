@@ -36,15 +36,18 @@ interface treeItem {
   code?: string
 }
 
-export function findByTree<T extends treeItem, U>(array: T[], callback: (value: T, index: number, array: T[]) => number): T {
-  return array.find((item, index) => {
-    let result = false
-    let findedIndex = callback(item, index, array)
-    if (findedIndex >= 0) {
-      result = true
-    } else if (item.children) {
-      result = findByTree(item.children,callback)
+export function findByTree <T extends treeItem, U> (array: T[], condition:(item: T, index: number) => boolean): T {
+  let index = 0
+  const len = array.length
+  const stack = []
+  while (index < len || stack.length) {
+    const item = array[index++] || stack.pop()
+    if (condition(item, index)) {
+      return item
     }
-    return result
-  })
+    if (item.children) {
+      stack.splice(0, 0, ...item.children)
+    }
+  }
+  return null
 }
