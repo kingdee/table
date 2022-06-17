@@ -82,86 +82,89 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
     })
 
     const set = new Set(value)
-    const isAllChecked = allKeys.length > 0 && allKeys.every((key) => set.has(key))
-    const isAnyChecked = allKeys.some((key) => set.has(key))
 
-    const defaultCheckboxColumnTitle = (
-      <Checkbox
-        checked={isAllChecked}
-        indeterminate={!isAllChecked && isAnyChecked}
-        onChange={(_: any) => {
-          if (isAllChecked) {
-            onChange(arrayUtils.diff(value, allKeys), '', allKeys, 'uncheck-all')
-          } else {
-            onChange(arrayUtils.merge(value, allKeys), '', allKeys, 'check-all')
-          }
-        }}
-      />
-    )
-
-    const checkboxColumn: ArtColumn = {
-      name: '是否选中',
-      title: defaultCheckboxColumnTitle,
-      width: 50,
-      align: 'center',
-      ...opts.checkboxColumn,
-      getCellProps (value: any, row: any, rowIndex: number): CellProps {
-        const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
-        let checkboxCellProps = {}
-        const preCellProps = opts.checkboxColumn?.getCellProps?.(value, row, rowIndex)
-        if (fullKeySet.has(rowKey) && clickArea === 'cell') {
-          const prevChecked = set.has(rowKey)
-          const disabled = isDisabled(row, rowIndex)
-          checkboxCellProps = {
-            style: { cursor: disabled ? 'not-allowed' : 'pointer' },
-            onClick: disabled
-              ? undefined
-              : (e) => {
-                if (opts.stopClickEventPropagation) {
-                  e.stopPropagation()
-                }
-                onCheckboxChange(prevChecked, rowKey, e.shiftKey)
-              }
-          }
-        }
-        return mergeCellProps(preCellProps, checkboxCellProps)
-      },
-      render(_: any, row: any, rowIndex: number) {
-        const key = internals.safeGetRowKey(primaryKey, row, rowIndex)
-        const checked = set.has(key)
-        return (
-          <Checkbox
-            checked={checked}
-            disabled={isDisabled(row, rowIndex)}
-            onChange={
-              clickArea === 'checkbox'
-                ? (arg1: any, arg2: any) => {
-                  // 这里要同时兼容 antd 和 fusion 的用法
-                  // fusion: arg2?.nativeEvent
-                  // antd: arg1.nativeEvent
-                  const nativeEvent: MouseEvent = arg2?.nativeEvent ?? arg1.nativeEvent
-                  if (nativeEvent) {
-                    if (opts.stopClickEventPropagation) {
-                      nativeEvent.stopPropagation()
-                    }
-                    onCheckboxChange(checked, key, nativeEvent.shiftKey)
-                  }
-                }
-                : undefined
+    // todo: 暂使用hidden隐藏选择列 后续增加配置
+    if (opts.checkboxColumn && opts.checkboxColumn.hidden !== true) {
+      const isAllChecked = allKeys.length > 0 && allKeys.every((key) => set.has(key))
+      const isAnyChecked = allKeys.some((key) => set.has(key))
+      const defaultCheckboxColumnTitle = (
+        <Checkbox
+          checked={isAllChecked}
+          indeterminate={!isAllChecked && isAnyChecked}
+          onChange={(_: any) => {
+            if (isAllChecked) {
+              onChange(arrayUtils.diff(value, allKeys), '', allKeys, 'uncheck-all')
+            } else {
+              onChange(arrayUtils.merge(value, allKeys), '', allKeys, 'check-all')
             }
-          />
-        )
-      },
-    }
+          }}
+        />
+      )
 
-    const nextColumns = pipeline.getColumns().slice()
-    const checkboxPlacement = opts.checkboxPlacement ?? 'start'
-    if (checkboxPlacement === 'start') {
-      nextColumns.unshift(checkboxColumn)
-    } else {
-      nextColumns.push(checkboxColumn)
+      const checkboxColumn: ArtColumn = {
+        name: '是否选中',
+        title: defaultCheckboxColumnTitle,
+        width: 50,
+        align: 'center',
+        ...opts.checkboxColumn,
+        getCellProps (value: any, row: any, rowIndex: number): CellProps {
+          const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
+          let checkboxCellProps = {}
+          const preCellProps = opts.checkboxColumn?.getCellProps?.(value, row, rowIndex)
+          if (fullKeySet.has(rowKey) && clickArea === 'cell') {
+            const prevChecked = set.has(rowKey)
+            const disabled = isDisabled(row, rowIndex)
+            checkboxCellProps = {
+              style: { cursor: disabled ? 'not-allowed' : 'pointer' },
+              onClick: disabled
+                ? undefined
+                : (e) => {
+                  if (opts.stopClickEventPropagation) {
+                    e.stopPropagation()
+                  }
+                  onCheckboxChange(prevChecked, rowKey, e.shiftKey)
+                }
+            }
+          }
+          return mergeCellProps(preCellProps, checkboxCellProps)
+        },
+        render(_: any, row: any, rowIndex: number) {
+          const key = internals.safeGetRowKey(primaryKey, row, rowIndex)
+          const checked = set.has(key)
+          return (
+            <Checkbox
+              checked={checked}
+              disabled={isDisabled(row, rowIndex)}
+              onChange={
+                clickArea === 'checkbox'
+                  ? (arg1: any, arg2: any) => {
+                    // 这里要同时兼容 antd 和 fusion 的用法
+                    // fusion: arg2?.nativeEvent
+                    // antd: arg1.nativeEvent
+                    const nativeEvent: MouseEvent = arg2?.nativeEvent ?? arg1.nativeEvent
+                    if (nativeEvent) {
+                      if (opts.stopClickEventPropagation) {
+                        nativeEvent.stopPropagation()
+                      }
+                      onCheckboxChange(checked, key, nativeEvent.shiftKey)
+                    }
+                  }
+                  : undefined
+              }
+            />
+          )
+        },
+      }
+
+      const nextColumns = pipeline.getColumns().slice()
+      const checkboxPlacement = opts.checkboxPlacement ?? 'start'
+      if (checkboxPlacement === 'start') {
+        nextColumns.unshift(checkboxColumn)
+      } else {
+        nextColumns.push(checkboxColumn)
+      }
+      pipeline.columns(nextColumns)
     }
-    pipeline.columns(nextColumns)
 
     pipeline.appendRowPropsGetter((row, rowIndex) => {
       const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)

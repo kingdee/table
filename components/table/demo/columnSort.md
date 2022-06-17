@@ -17,7 +17,7 @@ pipeline.use(features.columnDrag)
     {id: "5", "No":5,"order":"AP-202009-00004","from":"陕西环宇科技","to":"深圳环球科技","amount":"236,800.00","balance":"1,500.00"}
   ]
 
-  const columns = [
+  const mockColumns = [
     { code: 'No', name: '序号', width: 60, align: 'center' },
     { code: 'order', name: '单据号', width: 200, features: { sortable: true }},
     { code: 'from', name: '来户', width: 200, features: { sortable: true} },
@@ -25,6 +25,7 @@ pipeline.use(features.columnDrag)
     { code: 'amount', name: '应付金额', width: 100, align: 'right', features: { sortable: true} },
     { code: 'balance', name: '应收余额', width: 100, align: 'right', features: { sortable: true} }
   ]
+  const [columns, setColumns] = useState(mockColumns)
   function SortIcon ({ size = 32, style, className, order }) {
     return (
       <svg
@@ -42,6 +43,22 @@ pipeline.use(features.columnDrag)
       </svg>
     )
   }
+
+    const handleColumnDragStopped = (columnMoved, newColumns) => {
+      if (columnMoved) {
+        const columnSort = newColumns.reduce((columnSort, { code }, index) => {
+          columnSort[code] = index
+          return columnSort
+        }, {})
+        const columnAfterSort = columns.reduce((sortColumns, column) => {
+          const { code } = column
+          sortColumns[columnSort[code]] = column
+          return sortColumns
+        }, new Array(columns.length))
+        if (columnAfterSort.filter(Boolean).length !== columns.length) return
+        setColumns(columnAfterSort)
+      }
+    }
     const pipeline = useTablePipeline({
       components: {
         SortIcon: SortIcon
@@ -51,8 +68,12 @@ pipeline.use(features.columnDrag)
     .use(
       features.columnDrag({
         onColumnDragStart: () => {},
-        onColumnDragEnd: () => {}
+        onColumnDragEnd: () => {},
+        onColumnDragStopped: handleColumnDragStopped
       })
+    )
+    .use(
+      features.sort({})
     )
   return <Table {...pipeline.getProps()} className="aaa" />
 }

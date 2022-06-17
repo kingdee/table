@@ -3,6 +3,7 @@ import { useTablePipeline } from '../../pipeline'
 import { ArtColumn } from '../../../interfaces'
 import { mount } from 'enzyme'
 import { renderHook } from '@testing-library/react-hooks'
+import { Classes } from '../../../base/styles'
 
 function makeChildren (prefix) {
   return [
@@ -116,7 +117,7 @@ describe('treeMode 单元测试', () => {
 
     // 叶子节点渲染
     const leafWrapper = mount(col[0].render('一级标题', newPipeline.getDataSource()[9], 9))
-    expect(leafWrapper.find('.expansion-cell.leaf').length).toBe(2)
+    expect(leafWrapper.find(`.expansion-cell.${Classes.leaf}`).length).toBe(2)
   })
   it('getCellProps', () => {
     const col = newPipeline.getColumns()

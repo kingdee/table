@@ -216,11 +216,11 @@ export default function TableHeader ({ info, theaderPosition, rowCount: _rowCoun
             key={colIndex}
             {...headerCellProps}
             className={cx(Classes.tableHeaderCell, headerCellProps.className, {
-              first: colIndex === 0,
-              last: colIndex + colSpan === fullFlatCount,
-              'lock-left': colIndex < leftFlatCount || theaderPosition === 'left',
-              'lock-right': colIndex >= fullFlatCount - rightFlatCount || theaderPosition === 'right',
-              leaf: wrapped.isLeaf
+              [Classes.first]: colIndex === 0,
+              [Classes.last]: colIndex + colSpan === fullFlatCount,
+              [Classes.lockLeft]: colIndex < leftFlatCount || theaderPosition === 'left',
+              [Classes.lockRight]: colIndex >= fullFlatCount - rightFlatCount || theaderPosition === 'right',
+              [Classes.leaf]: wrapped.isLeaf
             })}
             colSpan={colSpan}
             rowSpan={isLeaf ? rowCount - level : undefined}
@@ -254,8 +254,8 @@ export default function TableHeader ({ info, theaderPosition, rowCount: _rowCoun
       <tr
         key={level}
         className={cx(Classes.tableHeaderRow, {
-          first: level === 0,
-          last: level === rowCount - 1
+          [Classes.first]: level === 0,
+          [Classes.last]: level === rowCount - 1
         })}
       >
         {headerCells}

@@ -8,6 +8,7 @@ import { always, flatMap } from '../../utils/others'
 import console from '../../utils/console'
 import { TablePipeline } from '../pipeline'
 import getTableRenderTemplate from '../../base/renderTemplates'
+import { Classes } from '../../base'
 
 interface expandIconProps extends React.SVGProps<SVGElement>{
   expanded:boolean
@@ -167,7 +168,7 @@ export function rowDetail (opts: RowDetailFeatureOptions = {}) {
           toggle(rowKey)
         }
 
-        const expandCls = expanded ? 'expanded' : 'collapsed'
+        const expandCls = expanded ? Classes.expanded : Classes.collapsed
         const ExpandIcon = opts.expandIcon
         return (
           <ExpansionCell

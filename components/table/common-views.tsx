@@ -1,7 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 
-import { MenuClasses } from './base/styles'
+import { MenuClasses, Classes } from './base/styles'
 
 export const InlineFlexCell = styled.div`
   display: inline-flex;
@@ -9,7 +9,7 @@ export const InlineFlexCell = styled.div`
 `
 
 export const ExpansionCell = styled(InlineFlexCell)`
-  &.leaf {
+  &.${Classes.leaf} {
     cursor: default;
   }
 
@@ -18,7 +18,7 @@ export const ExpansionCell = styled(InlineFlexCell)`
     flex: 0 0 16px;
     transition: transform 200ms;
 
-    &.expanded {
+    &.${Classes.expanded} {
       transform-origin: center center;
       transform: rotate(90deg);
     }

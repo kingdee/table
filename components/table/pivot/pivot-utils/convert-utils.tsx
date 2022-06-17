@@ -1,11 +1,13 @@
 import React from 'react'
 import { noop } from 'rxjs'
 import styled from 'styled-components'
+import cx from 'classnames'
 import { icons } from '../../common-views'
 import { isLeafNode } from '../../utils'
 import { CrossTableIndicator, CrossTreeNode } from '../cross-table'
 import { DrillNode } from './interfaces'
 import simpleEncode from './simpleEncode'
+import { Classes } from '../../base/styles'
 
 const ExpandSpan = styled.span`
   display: inline-flex;
@@ -17,7 +19,7 @@ const ExpandSpan = styled.span`
     fill: #999;
     margin-right: 4px;
 
-    &.expanded {
+    &.${Classes.expanded} {
       transform-origin: center center;
       transform: rotate(90deg);
     }
@@ -141,7 +143,7 @@ export function convertDrillTreeToCrossTree<T extends CrossTreeNode = CrossTreeN
                 )
               }}
             >
-              <icons.CaretRight className="icon expanded" />
+              <icons.CaretRight className={cx('icon', Classes.expanded)} />
               {node.value}
             </ExpandSpan>
           )
