@@ -6,6 +6,7 @@ import { internals } from '../../internals'
 import { collectNodes, isLeafNode, mergeCellProps } from '../../utils'
 import { flatMap } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
+import { Classes } from '../../base'
 
 const groupingMetaSymbol = Symbol('row-grouping-meta')
 
@@ -105,7 +106,7 @@ export function rowGrouping (opts: RowGroupingFeatureOptions = {}) {
         }
 
         const expanded = openKeySet.has(row[primaryKey])
-        const expandCls = expanded ? 'expanded' : 'collapsed'
+        const expandCls = expanded ? Classes.expanded : Classes.collapsed
         return (
           <ExpansionCell className={cx('expansion-cell', expandCls)}>
             <icons.CaretRight

@@ -35,9 +35,9 @@ export function EmptyHtmlTable ({
       <table key="table">
         <Colgroup descriptors={descriptors} />
         <tbody>
-          <tr className={cx(Classes.tableRow, 'first', 'last', 'no-hover')} data-rowindex={0}>
+          <tr className={cx(Classes.tableRow, Classes.first, Classes.last, 'no-hover')} data-rowindex={0}>
             <td
-              className={cx(Classes.tableCell, 'first', 'last')}
+              className={cx(Classes.tableCell, Classes.first, Classes.last)}
               colSpan={descriptors.length}
               style={{ height: emptyCellHeight ?? 200 }}
             >

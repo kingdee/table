@@ -143,7 +143,7 @@ function getHorizontalRenderRange({
   return {
     leftIndex: leftIndex,
     leftBlank,
-    rightIndex: leftIndex + centerCount + flat.right.length,
+    rightIndex: leftIndex + centerCount,
     rightBlank
   }
 }

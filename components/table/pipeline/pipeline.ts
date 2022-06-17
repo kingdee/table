@@ -54,6 +54,8 @@ export class TablePipeline {
 
   private _columns: any[]
 
+  private _footerDataSource: any[]
+
   static defaultIndents: TablePipelineIndentsConfig = {
     iconIndent: -8,
     iconWidth: 16,
@@ -120,6 +122,10 @@ export class TablePipeline {
     }
   }
 
+  getFooterDataSource () {
+    return this._footerDataSource
+  }
+
   getStateAtKey<T = any> (stateKey: string, defaultValue?: T): T {
     return this.state[stateKey] ?? defaultValue
   }
@@ -166,6 +172,12 @@ export class TablePipeline {
   /** 设置主键 */
   primaryKey (key: PrimaryKey) {
     this.ctx.primaryKey = key
+    return this
+  }
+
+  /** 设置页脚数据 */
+  footerDataSource (rows: any[]) {
+    this._footerDataSource = rows
     return this
   }
 
@@ -223,6 +235,10 @@ export class TablePipeline {
     }
     if (this.ctx.primaryKey) {
       result.primaryKey = this.ctx.primaryKey
+    }
+
+    if (this._footerDataSource) {
+      result.footerDataSource = this._footerDataSource
     }
 
     if (this._rowPropsGetters.length > 0) {

@@ -5,6 +5,7 @@ import { ArtColumn } from '../../interfaces'
 import { internals } from '../../internals'
 import { isLeafNode as standardIsLeafNode, mergeCellProps } from '../../utils'
 import { TablePipeline } from '../pipeline'
+import { Classes } from '../../base/styles'
 
 export const treeMetaSymbol = Symbol('treeMetaSymbol')
 
@@ -135,7 +136,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
 
         if (isLeaf) {
           return (
-            <InlineFlexCell className="expansion-cell leaf">
+            <InlineFlexCell className={cx('expansion-cell', Classes.leaf)}>
               <span style={{ marginLeft: indent + iconWidth + iconGap }}>{content}</span>
             </InlineFlexCell>
           )
@@ -148,7 +149,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
           toggle(rowKey)
         }
 
-        const expandCls = expanded ? 'expanded' : 'collapsed'
+        const expandCls = expanded ? Classes.expanded : Classes.collapsed
         return (
           <ExpansionCell
             className={cx('expansion-cell', expandCls)}

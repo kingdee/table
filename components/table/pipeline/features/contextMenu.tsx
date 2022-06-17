@@ -100,19 +100,24 @@ export function contextMenu (opts: ContextMenuFeatureOptions = {}) {
     const getPopupParent = () => popupParent
 
     const showContextMenu = (e: React.MouseEvent<HTMLTableElement, MouseEvent>) => {
-      const dataSource = pipeline.getDataSource()
-      const cellEle = getCellEleForEvent(e)
+      const path = getEventPath(e)
+      const cellEle = getCellEleInEventPath(path)
       let code
       let rowIndex
+      let isInFooter
       if (cellEle) {
-        code = cellEle.getAttribute('data-code'),
+        code = cellEle.getAttribute('data-code')
         rowIndex = cellEle.getAttribute('data-rowindex')
+        isInFooter = isElementInsideTheFooter(cellEle)
       } else {
-        const rowEle = getRowEleForEvent(e, dataSource)
+        const rowEle = getRowEleInEventPath(path)
         rowIndex = rowEle?.getAttribute('data-rowindex')
+        isInFooter = isElementInsideTheFooter(rowEle)
       }
+
+      const dataSource = isInFooter ? (pipeline.getFooterDataSource() || []) : pipeline.getDataSource()
       const record = dataSource[rowIndex]
-      const column = code !== undefined && findByTree(pipeline.getColumns(), (item, index) => item.code === code)
+      const column = code !== undefined && findByTree(pipeline.getColumns(), item => item.code === code)
       const value = column && record && internals.safeGetValue(column, record, rowIndex)
 
       const options = getContextMenuOptions(record, column, value, e)
@@ -235,14 +240,6 @@ function isEventFromCurrentPopup (event?: MouseEvent, ele?: HTMLElement) {
   return false
 }
 
-function getCellEleInEventPath (path: Array<HTMLElement>) {
-  return getTargetEleInEventPath(path, ele => ele && ele.getAttribute('data-role') === 'table-cell')
-}
-
-function getRowEleInEventPath (path: Array<HTMLElement>) {
-  return getTargetEleInEventPath(path, ele => ele && ele.getAttribute('data-role') === 'table-row')
-}
-
 /** 是否点击是外部 end */
 
 /** 计算位置 start */
@@ -302,14 +299,30 @@ function keepWithinBounds (popupParent: HTMLElement, ePopup: HTMLElement, x: num
 /** 计算位置 end */
 
 /** 获得点击的元素 start */
-function getCellEleForEvent (event: React.MouseEvent<HTMLTableElement, MouseEvent>) {
-  return getCellEleInEventPath(getEventPath(event))
+
+function getCellEleInEventPath (path: Array<HTMLElement>) {
+  return getTargetEleInEventPath(path, ele => ele && ele.getAttribute('data-role') === 'table-cell')
 }
-function getRowEleForEvent (event: React.MouseEvent<HTMLTableElement, MouseEvent>, dataSource: any[]) {
-  return getRowEleInEventPath(getEventPath(event))
+
+function getRowEleInEventPath (path: Array<HTMLElement>) {
+  return getTargetEleInEventPath(path, ele => ele && ele.getAttribute('data-role') === 'table-row')
 }
 
 /** 获得点击的元素 end */
+
+function isElementInsideTheFooter (ele: HTMLElement): boolean {
+  let pointer = ele
+  while (pointer) {
+    if (pointer.tagName === 'TFOOT') {
+      return true
+    }
+    if (pointer.tagName === 'TABLE' || pointer.tagName === 'TBODY') {
+      return false
+    }
+    pointer = pointer.parentElement
+  }
+  return false
+}
 
 // 禁止弹出右键菜单
 function suppressShowContextMenu (e: React.MouseEvent<HTMLTableElement, MouseEvent>) {

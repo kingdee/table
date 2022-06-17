@@ -4,24 +4,33 @@ import { ArtColumn, CellProps } from '../../interfaces'
 import { FILL_COLUMN_CODE } from './autoFill'
 
 const stateKey = 'columnDrag'
-
+const SCROLL_SIZE = 30
 export interface ColumnDragOptions {
   onColumnDragStopped?: (columnMoved: boolean, columns: ArtColumn[]) => void
 }
 
-function sortColumns (cloumns: any[], sort: any) {
-  const res = new Array(cloumns.length)
-  while (cloumns.length) {
-    const cloumn = cloumns.pop()
+function sortColumns (columns: any[], sort: any) {
+  const res = new Array(columns.length)
+  const lastColumns = [...columns]
+  while (columns.length) {
+    const cloumn = columns.pop()
     res[sort[cloumn.code]] = cloumn
+  }
+  if (res.filter(Boolean).length !== lastColumns.length) {
+    return lastColumns
   }
   return res
 }
 
+function stopClickPropagation (e) {
+  e.stopPropagation()
+}
+
 export function columnDrag (opts: ColumnDragOptions = {}) {
   return (pipeline: TablePipeline) => {
-    const { cloumnsSortData, cloumnsTranslateData } = pipeline.getStateAtKey(stateKey, {} as any)
-    let columns = pipeline.getColumns()
+    const { cloumnsTranslateData } = pipeline.getStateAtKey(stateKey, {} as any)
+    const columns = pipeline.getColumns()
+    const tableBody = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.tableBody
     // if (cloumnsSortData) {
     //   columns = sortColumns(columns, cloumnsSortData)
     // }
@@ -60,16 +69,12 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
               // let newStartIndex = startIndex
               // let endIdx = endIndex
               let columnMoved = false
-              let columns = pipeline.getColumns()
-              let { cloumnsSortData, cloumnsTranslateData } = pipeline.getStateAtKey(stateKey, {} as any)
-              if (cloumnsSortData) {
-                columns = sortColumns(columns, cloumnsSortData)
-              } else {
-                cloumnsSortData = {}
-                columns.forEach((item, index) => {
-                  cloumnsSortData[item.code] = index
-                })
-              }
+              const columns = pipeline.getColumns()
+              let { cloumnsTranslateData } = pipeline.getStateAtKey(stateKey, {} as any)
+              const cloumnsSortData = {}
+              columns.forEach((item, index) => {
+                cloumnsSortData[item.code] = index
+              })
 
               let currentTarget = e.currentTarget as HTMLElement
               const rect = (e.currentTarget as HTMLElement).parentElement.getClientRects()[0]
@@ -77,10 +82,36 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
               let moveData = []
 
               const allColumns = collectNodes(columns)
+              const tableBodyClientRect = tableBody.getBoundingClientRect()
+              const startScrollLeft = pipeline.ref.current.domHelper.virtual.scrollLeft
+              const updateScrollPosition = (client) => {
+                const { clientX } = client
+                const { left, width } = tableBodyClientRect
+                if (clientX + SCROLL_SIZE >= left + width) {
+                  pipeline.ref.current.domHelper.virtual.scrollLeft += SCROLL_SIZE
+                }
+                if (clientX - SCROLL_SIZE <= left) {
+                  pipeline.ref.current.domHelper.virtual.scrollLeft -= SCROLL_SIZE
+                }
+              }
+              let stopClickPropagationFlag = false
+
               function handleMouseMove (e) {
-                if (e.clientX - startX < 20) {
+                const client = {
+                  clientX: e.clientX,
+                  clientY: e.clientY
+                }
+                const scrollDistance = pipeline.ref.current.domHelper.virtual.scrollLeft - startScrollLeft
+                const leftPosition = startX - scrollDistance // 表头最左边起点
+                updateScrollPosition(client)
+                if (e.clientX - leftPosition < 20) {
                   return
                 } else {
+                  // 阻止列头点击事件，防止拖动后触发列头过滤事件
+                  if (stopClickPropagationFlag === false) {
+                    stopClickPropagationFlag = true
+                    currentTarget.addEventListener('click', stopClickPropagation)
+                  }
                   e.stopPropagation()
                 }
                 document.body.style.userSelect = 'none'
@@ -119,7 +150,7 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                 // 计算平移位置
                 let replaceIndex = 0
                 let totalWitdth = getColumnWidth(columns[replaceIndex])
-                while (totalWitdth < e.clientX - startX && replaceIndex < columns.length - 1) {
+                while (totalWitdth < e.clientX - leftPosition && replaceIndex < columns.length - 1) {
                   replaceIndex++
                   totalWitdth += getColumnWidth(columns[replaceIndex])
                 }
@@ -168,7 +199,6 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
 
                 window.requestAnimationFrame(() => {
                   pipeline.setStateAtKey(stateKey, {
-                    cloumnsSortData,
                     cloumnsTranslateData
                   })
                   moveData = [startIndex, replaceIndex]
@@ -179,6 +209,11 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                 document.body.removeEventListener('mousemove', handleMouseMove)
                 document.body.removeEventListener('mouseup', handleMouseUp)
                 window.requestAnimationFrame(() => {
+                  // 取消阻止列头点击事件
+                  currentTarget.removeEventListener('click', stopClickPropagation)
+                  stopClickPropagationFlag = false
+                  currentTarget = null
+
                   const [startIndex, replaceIndex] = moveData
                   const optionColumn = columns[startIndex]
                   // const move = startIndex > replaceIndex ? 1 : -1
@@ -219,14 +254,12 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                     onColumnDragStopped(columnMoved, newColumns)
                   }
                   pipeline.setStateAtKey(stateKey, {
-                    cloumnsSortData,
                     cloumnsTranslateData: null
                   })
                 })
                 document.body.style.userSelect = ''
                 currentTarget.style.opacity = ''
                 currentTarget.style.cursor = ''
-                currentTarget = null
               }
               document.body.addEventListener('mousemove', handleMouseMove)
               document.body.addEventListener('mouseup', handleMouseUp)

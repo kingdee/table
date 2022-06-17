@@ -61,10 +61,10 @@ export function HtmlTable ({
     const rowClass = cx(
       Classes.tableRow,
       {
-        first: rowIndex === verInfo.first,
-        last: rowIndex === verInfo.last,
-        even: rowIndex % 2 === 0,
-        odd: rowIndex % 2 === 1
+        [Classes.first]: rowIndex === verInfo.first,
+        [Classes.last]: rowIndex === verInfo.last,
+        [Classes.even]: rowIndex % 2 === 0,
+        [Classes.odd]: rowIndex % 2 === 1
       },
       rowProps?.className
     )
@@ -129,18 +129,18 @@ export function HtmlTable ({
       }
     }
 
-    // rowSpan/colSpan 不能过大，避免 rowSpan/colSpan 影响因虚拟滚动而未渲染的单元格
-    rowSpan = Math.min(rowSpan, verInfo.limit - rowIndex)
-    colSpan = Math.min(colSpan, leftFlatCount + hoz.rightIndex + rightFlatCount - colIndex)
-
-    // todo: 右侧有列固定的情况下colSpan计算不对，这里先限制一下
-    rowSpan = Math.max(rowSpan, 1)
-    colSpan = Math.max(colSpan, 1)
-
     const hasSpan = colSpan > 1 || rowSpan > 1
     if (hasSpan) {
       spanManager.add(rowIndex, colIndex, colSpan, rowSpan)
     }
+
+    // rowSpan/colSpan 不能过大，避免 rowSpan/colSpan 影响因虚拟滚动而未渲染的单元格
+    rowSpan = Math.min(rowSpan, verInfo.limit - rowIndex)
+    colSpan = Math.min(colSpan, hozInfo.visible.length - colIndex)
+
+    // todo: 右侧有列固定的情况下colSpan计算不对，这里先限制一下
+    rowSpan = Math.max(rowSpan, 1)
+    colSpan = Math.max(colSpan, 1)
 
     const positionStyle: CSSProperties = {}
     const scrollbarWidth = hasScrollY ? getScrollbarSize().width : 0
@@ -160,11 +160,11 @@ export function HtmlTable ({
         ...cellProps,
         className: cx(Classes.tableCell, cellProps.className, {
           // class
-          first: colIndex === 0,
-          last: colIndex + colSpan === fullFlatCount,
-          'lock-left': colIndex < leftFlatCount || tbodyPosition === 'left',
-          'lock-right': colIndex >= fullFlatCount - rightFlatCount,
-          'row-span': rowSpan > 1
+          [Classes.first]: colIndex === 0,
+          [Classes.last]: colIndex + colSpan === fullFlatCount,
+          [Classes.lockLeft]: colIndex < leftFlatCount || tbodyPosition === 'left',
+          [Classes.lockRight]: colIndex >= fullFlatCount - rightFlatCount,
+          [Classes.rowSpan]: rowSpan > 1
         }),
         ...(hasSpan ? { colSpan, rowSpan } : null),
         style: {

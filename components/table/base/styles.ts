@@ -67,7 +67,20 @@ export const Classes = {
   rowDetailContainer: `${prefix}row-detail-container`,
   rowDetailItem: `${prefix}row-detail-item`,
 
-  emptyColCell: `${prefix}empty-col-cell`
+  emptyColCell: `${prefix}empty-col-cell`,
+
+  first: `${prefix}first`,
+  last: `${prefix}last`,
+  even: `${prefix}even`,
+  odd: `${prefix}odd`,
+
+  lockLeft: `${prefix}lock-left`,
+  lockRight: `${prefix}lock-right`,
+  rowSpan: `${prefix}row-span`,
+  leaf: `${prefix}leaf`,
+
+  expanded: `${prefix}expanded`,
+  collapsed: `${prefix}collapsed`
 
 } as const
 
@@ -156,29 +169,29 @@ const outerBorderStyleMixin = css`
   border-bottom: 1px solid #cccccc;
   border-left: 1px solid #cccccc;
 
-  td.first,
-  th.first {
+  td.${Classes.first},
+  th.${Classes.first} {
     border-left: none;
   }
-  td.last,
-  th.last {
+  td.${Classes.last},
+  th.${Classes.last} {
     --border-right: none;
   }
 
-  thead tr.first th,
-  tbody tr.first td {
+  thead tr.${Classes.first} th,
+  tbody tr.${Classes.first} td {
     border-top: none;
   }
-  &.has-footer tfoot tr.last td {
+  &.has-footer tfoot tr.${Classes.last} td {
     border-bottom: none;
   }
-  &:not(.has-footer) tbody tr.last td {
+  &:not(.has-footer) tbody tr.${Classes.last} td {
     border-bottom: none;
   }
-  td.row-span:not(.first){
+  td.${Classes.rowSpan}:not(.${Classes.first}){
     border-left: var(---cell-border-vertical);
   }
-  td.row-span:not(.last){
+  td.${Classes.rowSpan}:not(.${Classes.last}){
     border-right: var(---cell-border-vertical);
   }
 `
@@ -370,15 +383,15 @@ export const StyledArtTableWrapper = styled.div`
     border-right:none
   }
 
-  th.leaf {
+  th.${Classes.leaf} {
     border-right: none;
     border-bottom: none;
   }
 
-  tr.first th {
+  tr.${Classes.first} th {
     border-top: var(--header-cell-border-horizontal);
   }
-  th.first {
+  th.${Classes.first} {
     border-left: var(--header-cell-border-vertical);
   }
 
@@ -391,21 +404,21 @@ export const StyledArtTableWrapper = styled.div`
     border-bottom: var(--cell-border-horizontal);
     word-break: break-all;
   }
-  td.first {
+  td.${Classes.first} {
     border-left: var(--cell-border-vertical);
   }
-  tr.first td {
+  tr.${Classes.first} td {
     border-top: var(--cell-border-horizontal);
   }
-  &.has-header tbody tr.first td {
+  &.has-header tbody tr.${Classes.first} td {
     border-top: none;
   }
-  &.has-footer tbody tr.last td {
+  &.has-footer tbody tr.${Classes.last} td {
     border-bottom: none;
   }
 
-  .lock-left,
-  .lock-right {
+  .${Classes.lockLeft},
+  .${Classes.lockRight} {
     z-index: ${Z.lock};
   }
 
