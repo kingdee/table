@@ -6,12 +6,12 @@ import { renderHook } from '@testing-library/react-hooks'
 import React from 'react'
 
 const dataSource = [
-  { id: '1', name: '阿里巴巴网络技术有限公司', amount: '600,000.00(CNY)', dept: '招商银行丨杭州分行', applier: 'James Collier' },
-  { id: '2', name: '阿里巴巴网络技术有限公司', amount: '600,000.00(CNY)', dept: '建设银行丨未来科技城', applier: 'Philip Burke' },
-  { id: '3', name: '阿里巴巴网络技术有限公司', amount: '600,000.00(CNY)', dept: '交通银行丨浙大路支行', applier: 'Wesley Cruz' },
-  { id: '4', name: '阿里巴巴网络技术有限公司', amount: '600,000.00(CNY)', dept: '招商银行丨庆春路支行', applier: 'Billy Horton' },
-  { id: '5', name: '阿里巴巴网络技术有限公司', amount: '600,000.00(CNY)', dept: '招商银行丨文一路分行', applier: 'Paul Tran' },
-  { id: '6', name: '阿里巴巴网络技术有限公司', amount: '600,000.00(CNY)', dept: '农业银行丨杭州分行', applier: 'Anna Poole' }
+  { id: '1', name: '网络技术有限公司', amount: '600,000.00(CNY)', dept: '招商银行丨杭州分行', applier: 'James Collier' },
+  { id: '2', name: '网络技术有限公司', amount: '600,000.00(CNY)', dept: '建设银行丨未来科技城', applier: 'Philip Burke' },
+  { id: '3', name: '网络技术有限公司', amount: '600,000.00(CNY)', dept: '交通银行丨浙大路支行', applier: 'Wesley Cruz' },
+  { id: '4', name: '网络技术有限公司', amount: '600,000.00(CNY)', dept: '招商银行丨庆春路支行', applier: 'Billy Horton' },
+  { id: '5', name: '网络技术有限公司', amount: '600,000.00(CNY)', dept: '招商银行丨文一路分行', applier: 'Paul Tran' },
+  { id: '6', name: '网络技术有限公司', amount: '600,000.00(CNY)', dept: '农业银行丨杭州分行', applier: 'Anna Poole' }
 ]
 
 const columns:ArtColumn[] = [
@@ -53,11 +53,10 @@ describe('singleSelect 单元测试', () => {
   })
 
   it('初始渲染', () => {
-    const col = newPipeline.getColumns()
+    const cols = newPipeline.getColumns()
 
-    // 表格会在最后补一个空白列，加上单选列所以有6列
-    expect(col.length).toBe(6)
-    expect(col[0].code).toBe('__SELECT')
+    // 表格加上单选列所以有5列
+    expect(cols.length).toBe(5)
   })
 
   it('getCellProps', () => {

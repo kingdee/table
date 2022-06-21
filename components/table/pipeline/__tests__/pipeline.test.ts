@@ -88,7 +88,7 @@ describe('TablePipeline', () => {
       style: { color: '#000' }
     }
     tablePipeline.addTableProps(mockProps)
-    expect(tablePipeline.getProps().getTableProps().style).toBe(mockProps.style)
+    expect(tablePipeline.getProps().getTableProps().style).toStrictEqual(mockProps.style)
   })
 
   it('dataSource', () => {
