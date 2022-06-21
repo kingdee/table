@@ -7,7 +7,7 @@ import { renderHook } from '@testing-library/react-hooks'
 const dataSource = [
   {
     id: 'alibaba',
-    groupTitle: '阿里巴巴网络技术有限公司',
+    groupTitle: '网络技术有限公司',
     children: [
       { id: '1-1', title: '二级标题', dept: '消费者事业部-淘宝-UED', dest: '云南大理', guide: 'Douglas Lee' },
       { id: '1-2', title: '二级标题', dept: '消费者事业部-淘宝-UED', dest: '云南大理', guide: 'Douglas Lee' }
@@ -50,20 +50,20 @@ describe('rowGrouping 单元测试', () => {
   })
   it('getCellProps', () => {
     const col = newPipeline.getColumns()
-    const cellProps = col[0].getCellProps('阿里巴巴网络技术有限公司', newPipeline.getDataSource()[0], 0)
+    const cellProps = col[0].getCellProps('网络技术有限公司', newPipeline.getDataSource()[0], 0)
     expect(cellProps.style).toEqual({ cursor: 'pointer' })
 
     cellProps.onClick()
     expect(opts.onChangeOpenKeys).toBeCalled()
 
     // 不是分组行没有cellProps
-    const cellProps1 = col[0].getCellProps('阿里巴巴网络技术有限公司', newPipeline.getDataSource()[1], 1)
+    const cellProps1 = col[0].getCellProps('网络技术有限公司', newPipeline.getDataSource()[1], 1)
     expect(cellProps1).toBe(undefined)
   })
   it('getSpanRect', () => {
     const col = newPipeline.getColumns()
-    const spanRect = col[0].getSpanRect('阿里巴巴网络技术有限公司', newPipeline.getDataSource()[0], 0)
-    expect(spanRect).toEqual({ top: 0, bottom: 1, left: 0, right: 5 })
+    const spanRect = col[0].getSpanRect('网络技术有限公司', newPipeline.getDataSource()[0], 0)
+    expect(spanRect).toEqual({ top: 0, bottom: 1, left: 0, right: 4 })
   })
   it('单元格渲染', () => {
     const col = newPipeline.getColumns()

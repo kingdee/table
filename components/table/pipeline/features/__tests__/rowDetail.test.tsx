@@ -86,7 +86,7 @@ describe('rowDetail 单元测试', () => {
     expect(opt.renderDetail).toBeCalled()
 
     const spanRect = col[0].getSpanRect('1', newPipeline.getDataSource()[2], 2)
-    expect(spanRect).toEqual({ top: 2, bottom: 3, left: 0, right: 6 })
+    expect(spanRect).toEqual({ top: 2, bottom: 3, left: 0, right: 5 })
     delete opt.expandColumnCode
   })
 
@@ -95,15 +95,15 @@ describe('rowDetail 单元测试', () => {
     const { current: tablePipeline } = result
     opt.clickArea = 'cell'
     const newPipeline = rowDetail(opt)(tablePipeline)
-    const col = newPipeline.getColumns()
-    const cellProps = col[0].getCellProps('1', newPipeline.getDataSource()[0], 0)
+    const cols = newPipeline.getColumns()
+    const cellProps = cols[0].getCellProps('1', newPipeline.getDataSource()[0], 0)
     expect(cellProps.style).toEqual({ cursor: 'pointer' })
 
     cellProps.onClick()
     expect(opt.onChangeOpenKeys).toBeCalled()
 
     // detail 总是成一行
-    const spanRect = col[0].getSpanRect('1', newPipeline.getDataSource()[2], 2)
-    expect(spanRect).toEqual({ top: 2, bottom: 3, left: 0, right: 6 })
+    const spanRect = cols[0].getSpanRect('1', newPipeline.getDataSource()[2], 2)
+    expect(spanRect).toEqual({ top: 2, bottom: 3, left: 0, right: 5 })
   })
 })

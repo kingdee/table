@@ -108,8 +108,8 @@ describe('treeSelect 单元测试', () => {
 
   it('初始化展示', () => {
     expect(newPipeline.getDataSource().length).toBe(5)
-    // 多了勾选列和填充列
-    expect(newPipeline.getColumns().length).toBe(6)
+    // 多了勾选列
+    expect(newPipeline.getColumns().length).toBe(5)
   })
   it('不传CheckBox', () => {
     const { result } = renderHook(() => useTablePipeline({ primaryKey: 'id' }).input({ dataSource: dataSource, columns: columns }))
