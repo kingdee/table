@@ -84,8 +84,7 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
     const set = new Set(value)
 
     // todo: 暂使用hidden隐藏选择列 后续增加配置
-    const hiddenSelectColumn = opts.checkboxColumn && opts.checkboxColumn.hidden === true
-    if (!hiddenSelectColumn) {
+    if (opts.checkboxColumn && opts.checkboxColumn.hidden !== true) {
       const isAllChecked = allKeys.length > 0 && allKeys.every((key) => set.has(key))
       const isAnyChecked = allKeys.some((key) => set.has(key))
       const defaultCheckboxColumnTitle = (

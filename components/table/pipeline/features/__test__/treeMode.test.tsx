@@ -1,9 +1,9 @@
-import { treeSelect } from '../treeSelect'
+import { treeMode } from '../treeMode'
 import { useTablePipeline } from '../../pipeline'
 import { ArtColumn } from '../../../interfaces'
 import { mount } from 'enzyme'
 import { renderHook } from '@testing-library/react-hooks'
-import React from 'react'
+import { Classes } from '../../../base/styles'
 
 function makeChildren (prefix) {
   return [
@@ -31,14 +31,6 @@ function makeChildren (prefix) {
     },
     { id: `${prefix}-3`, title: '二级标题', dept: '应用部', dest: '云南大理', guide: 'Douglas Lee' }
   ]
-}
-
-function Checkbox ({ checked, indeterminate, disabled, onChange }) {
-  return (
-    <div>
-      <input type='checkbox' className='checkbox' disabled={disabled} checked={checked} onChange={onChange} />
-    </div>
-  )
 }
 
 const dataSource = [
@@ -83,74 +75,70 @@ const columns:ArtColumn[] = [
   { code: 'guide', name: '当地导游', width: 160 }
 ]
 
-describe('treeSelect 单元测试', () => {
+describe('treeMode 单元测试', () => {
   const opts:any = {
-    tree: dataSource,
-    openKeys: ['1', '3'],
-    clickArea: 'row',
-    highlightRowWhenSelected: true,
-    isDisabled: (row) => {
-      return row.id === '5'
-    },
-    onChange: jest.fn()
+    openKeys: ['4', '4-2'],
+    clickArea: 'content',
+    onChangeOpenKeys: jest.fn()
   }
   let newPipeline = null
 
   beforeEach(() => {
-    const { result } = renderHook(() => useTablePipeline({ primaryKey: 'id', components: { Checkbox: Checkbox } }).input({ dataSource: dataSource, columns: columns }))
+    const { result } = renderHook(() => useTablePipeline({ primaryKey: 'id' }).input({ dataSource: dataSource, columns: columns }))
     const { current: tablePipeline } = result
-    newPipeline = treeSelect(opts)(tablePipeline)
+    newPipeline = treeMode(opts)(tablePipeline)
   })
   afterEach(() => {
     newPipeline = null
-    opts.onChange.mockClear()
+    opts.onChangeOpenKeys.mockClear()
   })
 
   it('初始化展示', () => {
-    expect(newPipeline.getDataSource().length).toBe(5)
-    // 多了勾选列和填充列
-    expect(newPipeline.getColumns().length).toBe(6)
+    // 5 + 3 + 2
+    expect(newPipeline.getDataSource().length).toBe(10)
   })
-  it('不传CheckBox', () => {
-    const { result } = renderHook(() => useTablePipeline({ primaryKey: 'id' }).input({ dataSource: dataSource, columns: columns }))
-    const { current: tablePipeline } = result
 
-    expect(() => treeSelect(opts)(tablePipeline)).toThrow(Error)
-  })
-  it('勾选列渲染', () => {
+  it('展开图标单元格渲染', () => {
     const col = newPipeline.getColumns()
-    const wrapper = mount(col[0].render('1', newPipeline.getDataSource()[0]))
-    expect(wrapper.find('Checkbox').length).toBe(1)
+    const wrapper = mount(col[0].render('一级标题', newPipeline.getDataSource()[0], 0))
+
+    expect(wrapper.find('CaretRightIcon').length).toBe(1)
+    const div = wrapper.find('div').at(0)
+    div.simulate('click')
+    expect(opts.onChangeOpenKeys).toHaveBeenCalled()
+    expect(opts.onChangeOpenKeys).toBeCalledWith(['4', '4-2', '1'], '1', 'expand')
+
+    opts.onChangeOpenKeys.mockClear()
+    // 展开列点击
+    const expandColWrapper = mount(col[0].render('一级标题', newPipeline.getDataSource()[3], 3))
+    const div1 = expandColWrapper.find('div').at(0)
+    div1.simulate('click')
+    expect(opts.onChangeOpenKeys).toBeCalledWith(['4-2'], '4', 'collapse')
+
+    // 叶子节点渲染
+    const leafWrapper = mount(col[0].render('一级标题', newPipeline.getDataSource()[9], 9))
+    expect(leafWrapper.find(`.expansion-cell.${Classes.leaf}`).length).toBe(2)
   })
-  it('clickArea 为row, getCellProps为空', () => {
+  it('getCellProps', () => {
     const col = newPipeline.getColumns()
-    const cellProps = col[0].getCellProps('1', newPipeline.getDataSource()[0])
-    expect(cellProps).toBe(undefined)
+    // clickArea: 'content' 取默认的cellProps
+    expect(col[0].getCellProps()).toEqual({ style: { background: 'red' } })
   })
-  it('clickArea 为cell,getCellProps', () => {
-    const { result } = renderHook(() => useTablePipeline({ primaryKey: 'id', components: { Checkbox: Checkbox } }).input({ dataSource: dataSource, columns: columns }))
+  it('clickArea 为cell', () => {
+    const { result } = renderHook(() => useTablePipeline({ primaryKey: 'id' }).input({ dataSource: dataSource, columns: columns }))
     const { current: tablePipeline } = result
     opts.clickArea = 'cell'
 
-    const newPipeline = treeSelect(opts)(tablePipeline)
-
+    const newPipeline = treeMode(opts)(tablePipeline)
     const col = newPipeline.getColumns()
-    const cellProps = col[0].getCellProps('1', newPipeline.getDataSource()[0])
-    expect(cellProps.style).toEqual({ cursor: 'pointer' })
+    const cellProps = col[0].getCellProps('一级标题', newPipeline.getDataSource()[0], 0)
+    expect(cellProps.style).toEqual({ background: 'red', cursor: 'pointer' })
 
     cellProps.onClick()
-    expect(opts.onChange).toHaveBeenCalled()
+    expect(opts.onChangeOpenKeys).toHaveBeenCalled()
 
-    // 禁用节点的交互
-    const disabledCellProps = col[0].getCellProps('1', newPipeline.getDataSource()[4])
-    expect(disabledCellProps.style).toEqual({ cursor: 'not-allowed' })
-    opts.clickArea = 'row'
-  })
-  it('appendRowPropsGetter', () => {
-    const props = newPipeline.getProps()
-    const rowProps = props.getRowProps(newPipeline.getDataSource()[0], 0)
-    expect(rowProps.style).toEqual({ cursor: 'pointer' })
-    rowProps.onClick()
-    expect(opts.onChange).toHaveBeenCalled()
+    // 叶子节点cellProps
+    const leafCellProps = col[0].getCellProps('一级标题', newPipeline.getDataSource()[9], 9)
+    expect(leafCellProps.style).toEqual({ background: 'red' })
   })
 })

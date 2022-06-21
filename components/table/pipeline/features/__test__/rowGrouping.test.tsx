@@ -30,6 +30,7 @@ const columns : ArtColumn[] = [
   { code: 'dest', name: '团建目的地', width: 160 },
   { code: 'guide', name: '当地导游', width: 160 }
 ]
+
 describe('rowGrouping 单元测试', () => {
   const opts = {
     defaultOpenAll: true,

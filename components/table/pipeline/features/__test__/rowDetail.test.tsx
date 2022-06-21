@@ -31,6 +31,7 @@ describe('rowDetail 单元测试', () => {
     renderDetail: jest.fn(),
     onChangeOpenKeys: jest.fn()
   }
+
   it('初始化', () => {
     const { result } = renderHook(() => useTablePipeline({ primaryKey: 'id' }).input({ dataSource: dataSource, columns: columns }))
     const { current: tablePipeline } = result

@@ -75,6 +75,7 @@ describe('singleSelect 单元测试', () => {
     const wrapper = mount(col[0].render('', newPipeline.getDataSource()[0], 0))
     expect(wrapper.find('Radio').length).toBe(1)
   })
+
   it('触发区域为radio', () => {
     const { result } = renderHook(() => useTablePipeline({ primaryKey: 'id', components: { Radio: Radio } }).input({ dataSource: dataSource, columns: columns }))
     const { current: tablePipeline } = result
