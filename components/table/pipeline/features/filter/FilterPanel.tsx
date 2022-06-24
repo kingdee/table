@@ -51,29 +51,28 @@ export interface FilterPanel {
   style?: CSSProperties
   filterIcon:ReactNode
   children?: ReactNode
-  
 }
 
-function FilterPanel ({ style, children, position,filterIcon, onClose }) {
-  const [perfectPosition, setPerfectPosition ] = useState(position)
-  const [opaque,setOpaque] = useState(false)
+function FilterPanel ({ style, children, position, filterIcon, onClose }) {
+  const [perfectPosition, setPerfectPosition] = useState(position)
+  const [visible, setVisible] = useState(false)
   const ref = React.useRef<HTMLDivElement>(null)
   const isContainPanel = (e) => {
     return isElementInEventPath(ref.current, e)
   }
-  useEffect(()=>{
-    setPerfectPosition(keepWithinBounds(document.body,ref.current,position.x,position.y,true))
-    setOpaque(true)
-  },[position])
+  useEffect(() => {
+    setPerfectPosition(keepWithinBounds(document.body, ref.current, position.x, position.y, true))
+    setVisible(true)
+  }, [position])
   useWindowEvents((e) => !isContainPanel(e) && onClose(), ['mousedown'])
   return (
-    <FilterPanelStyle 
+    <FilterPanelStyle
       style={{
         ...style,
-        left: perfectPosition.x,
-        top: perfectPosition.y,
-        opacity: opaque ? 1 : 0
-      }} 
+        left: visible ? perfectPosition.x : 0,
+        top: visible ? perfectPosition.y : 0,
+        opacity: visible ? 1 : 0
+      }}
       ref={ref}
     >
       <div className={'popup-header'}>
