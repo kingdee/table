@@ -404,7 +404,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
       return (
         <div className={cx(tableBodyClassName, 'empty')}>
-          <div className={Classes.virtual} style={virtualStyle}>
+          <div className={Classes.virtual} tabIndex={-1} style={virtualStyle}>
             <EmptyHtmlTable
               descriptors={info.visible}
               isLoading={isLoading}
@@ -425,7 +425,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
     return (
       <div className={tableBodyClassName}>
-        <div className={Classes.virtual} style={virtualStyle}>
+        <div className={Classes.virtual} tabIndex={-1} style={virtualStyle}>
           {topBlank > 0 && (
             <div key="top-blank" className={cx(Classes.virtualBlank, 'top')} style={{ height: topBlank }} />
           )}

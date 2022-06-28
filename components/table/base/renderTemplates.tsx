@@ -148,7 +148,7 @@ function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: {
 
   return (
     <div className={cx(Classes.tableBody, Classes.horizontalScrollContainer)}>
-      <div className={Classes.virtual}>
+      <div className={Classes.virtual} tabIndex={-1}>
         {topBlank > 0 && (
           <div key="top-blank" className={cx(Classes.virtualBlank, 'top')} style={{ height: topBlank }} />
         )}
