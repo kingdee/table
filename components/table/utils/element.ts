@@ -54,7 +54,7 @@ import React from 'react'
 //   return { top, left, realHeight }
 // }
 
-export function getEventPath(event: MouseEvent | React.MouseEvent<HTMLTableElement, MouseEvent>) {
+export function getEventPath(event: MouseEvent | React.MouseEvent<HTMLTableElement, MouseEvent> | KeyboardEvent) {
 
   if ((event as any).deepPath) {
     // IE supports deep path
@@ -72,7 +72,7 @@ export function getEventPath(event: MouseEvent | React.MouseEvent<HTMLTableEleme
   return createEventPath(event)
 }
 
-function createEventPath(event: MouseEvent | React.MouseEvent<HTMLTableElement, MouseEvent>) {
+function createEventPath(event: MouseEvent | React.MouseEvent<HTMLTableElement, MouseEvent> | KeyboardEvent) {
   const res = []
   let pointer = event.target
   while (pointer) {
@@ -87,7 +87,7 @@ function createEventPath(event: MouseEvent | React.MouseEvent<HTMLTableElement, 
  * @param ele 
  * @param event 
  */
-export function isElementInEventPath (ele?: HTMLElement, event?: MouseEvent) {
+export function isElementInEventPath (ele?: HTMLElement, event?: MouseEvent | KeyboardEvent) {
   if (!ele || !event) {
     return false
   }

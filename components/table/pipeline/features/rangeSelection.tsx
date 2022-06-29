@@ -137,6 +137,8 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
     }
 
     const onKeyDown = (e: React.KeyboardEvent<HTMLTableElement>) => {
+      if (!isElementInEventPath(tableBody, e.nativeEvent)) return
+      
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         const rowLen = pipeline.getDataSource().length
         if (columns.length && rowLen) {
