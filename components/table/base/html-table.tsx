@@ -7,12 +7,11 @@ import SpanManager from './helpers/SpanManager'
 import { RenderInfo } from './interfaces'
 import { Classes } from './styles'
 import { BaseTableProps } from './table'
-import { getScrollbarSize } from './utils'
 
 export interface HtmlTableProps extends Required<Pick<BaseTableProps, 'getRowProps' | 'primaryKey'>> {
   tbodyHtmlTag: 'tbody' | 'tfoot'
   data: any[]
-  verticalScrollBarWidth?:number
+  stickyRightOffset?:number
 
   horizontalRenderInfo: Pick<
     RenderInfo,
@@ -33,7 +32,7 @@ export function HtmlTable ({
   tbodyHtmlTag,
   getRowProps,
   primaryKey,
-  verticalScrollBarWidth,
+  stickyRightOffset,
   data,
   verticalRenderInfo: verInfo,
   horizontalRenderInfo: hozInfo,
@@ -149,7 +148,7 @@ export function HtmlTable ({
       positionStyle.left = hozInfo.stickyLeftMap.get(colIndex)
     } else if (colIndex >= fullFlatCount - rightFlatCount) {
       positionStyle.position = 'sticky'
-      positionStyle.right = hozInfo.stickyRightMap.get(colIndex) - verticalScrollBarWidth
+      positionStyle.right = hozInfo.stickyRightMap.get(colIndex) - stickyRightOffset
     }
 
     return React.createElement(

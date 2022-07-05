@@ -419,11 +419,11 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     }
 
     const { topIndex, bottomBlank, topBlank, bottomIndex } = info.verticalRenderRange
-    const verticalScrollBarWidth =  this.hasScrollY ? this.getScrollBarWidth(): 0 
+    const stickyRightOffset =  this.hasScrollY ? this.getScrollBarWidth(): 0 
 
     const renderBody = getTableRenderTemplate('body')
     if (typeof renderBody === 'function') {
-      return renderBody(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave }, verticalScrollBarWidth: verticalScrollBarWidth })
+      return renderBody(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave }, stickyRightOffset: stickyRightOffset })
     }
 
     return (
@@ -437,7 +437,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
             getRowProps={getRowProps}
             primaryKey={primaryKey}
             data={dataSource.slice(topIndex, bottomIndex)}
-            verticalScrollBarWidth={verticalScrollBarWidth}
+            stickyRightOffset={stickyRightOffset}
             horizontalRenderInfo={info}
             verticalRenderInfo={{
               first: 0,

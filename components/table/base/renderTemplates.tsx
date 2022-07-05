@@ -122,7 +122,7 @@ function renderTableHeaderInIE (info: RenderInfo, props: BaseTableProps) {
   )
 }
 
-function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: { rowProps : React.HTMLAttributes<HTMLTableRowElement>, verticalScrollBarWidth:number}) {
+function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: { rowProps : React.HTMLAttributes<HTMLTableRowElement>, stickyRightOffset:number}) {
   const { dataSource, getRowProps, primaryKey } = props
 
   const { topIndex, bottomBlank, topBlank, bottomIndex } = info.verticalRenderRange
@@ -142,7 +142,7 @@ function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: {
   }
 
   const fixedRightTableStyle = {
-    right: -extra.verticalScrollBarWidth
+    right: -extra.stickyRightOffset
   }
 
   return (
@@ -203,7 +203,7 @@ function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: {
                 tbodyHtmlTag="tbody"
                 {...commonProps}
                 tbodyPosition="right"
-                verticalScrollBarWidth ={extra.verticalScrollBarWidth}
+                stickyRightOffset ={extra.stickyRightOffset}
                 horizontalRenderInfo={{
                   ...info,
                   flat: {
