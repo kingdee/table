@@ -106,6 +106,8 @@ export interface BaseTableProps {
   hasStickyScroll?: boolean
   /** 横向粘性滚动条高度 */
   stickyScrollHeight?: 'auto' | number
+  /** 表格滚动条的宽度 */
+  scrollbarWidth?: number
   /** 使用来自外层 div 的边框代替单元格的外边框 */
   useOuterBorder?: boolean
 
@@ -252,7 +254,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const artTableWidth = artTable.offsetWidth
 
     const stickyScrollHeightProp = this.props.stickyScrollHeight
-    const stickyScrollHeight = stickyScrollHeightProp === 'auto' ? getScrollbarSize().height : stickyScrollHeightProp
+    const stickyScrollHeight = stickyScrollHeightProp === 'auto' ? this.getScrollBarWidth() : stickyScrollHeightProp
 
     // stickyScroll.style.marginTop = `-${stickyScrollHeight + 1}px`
     // 设置滚动条高度
@@ -305,7 +307,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         }}
       >
         <TableHeader info={info} />
-        <div className={Classes.verticalScrollPlaceholder} style={this.hasScrollY ? { width: getScrollbarSize().width } : undefined}></div>
+        <div className={Classes.verticalScrollPlaceholder} style={this.hasScrollY ? { width: this.getScrollBarWidth() } : undefined}></div>
       </div>
     )
   }
@@ -417,10 +419,11 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     }
 
     const { topIndex, bottomBlank, topBlank, bottomIndex } = info.verticalRenderRange
+    const verticalScrollBarWidth =  this.hasScrollY ? this.getScrollBarWidth(): 0 
 
     const renderBody = getTableRenderTemplate('body')
     if (typeof renderBody === 'function') {
-      return renderBody(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave }, hasScrollY: this.hasScrollY })
+      return renderBody(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave }, verticalScrollBarWidth: verticalScrollBarWidth })
     }
 
     return (
@@ -434,7 +437,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
             getRowProps={getRowProps}
             primaryKey={primaryKey}
             data={dataSource.slice(topIndex, bottomIndex)}
-            hasScrollY ={this.hasScrollY}
+            verticalScrollBarWidth={verticalScrollBarWidth}
             horizontalRenderInfo={info}
             verticalRenderInfo={{
               first: 0,
@@ -480,7 +483,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         />
         <div
           className={Classes.verticalScrollPlaceholder}
-          style={this.hasScrollY ? { width: getScrollbarSize().width, visibility: 'initial' } : undefined}>
+          style={this.hasScrollY ? { width: this.getScrollBarWidth(), visibility: 'initial' } : undefined}>
         </div>
       </div>
     )
@@ -521,6 +524,10 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         <div className={Classes.stickyScrollItem} />
       </div>
     )
+  }
+
+  private getScrollBarWidth(){
+    return this.props.scrollbarWidth || getScrollbarSize().width
   }
 
   render () {
