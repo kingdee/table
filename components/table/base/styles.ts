@@ -226,7 +226,6 @@ export const defaultCSSVariables = {
   '---cell-border-vertical': '1px solid #dfe3e8',
   '--header-cell-border': '1px solid #dfe3e8',
   '--header-cell-border-horizontal': '1px solid #dfe3e8',
-  '--header-cell-border-vertical': '1px solid #dfe3e8',
 }
 
 export const variableConst = getCssVariableText(defaultCSSVariables)
