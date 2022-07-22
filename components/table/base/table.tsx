@@ -1,6 +1,6 @@
 import cx from 'classnames'
 import React, { CSSProperties, ReactNode } from 'react'
-import { BehaviorSubject, combineLatest, noop,  Subscription, Subject } from 'rxjs'
+import { BehaviorSubject, combineLatest, noop, Subscription, Subject, from } from 'rxjs'
 import * as op from 'rxjs/operators'
 import ResizeObserver from 'resize-observer-polyfill'
 import { ArtColumn } from '../interfaces'
@@ -151,6 +151,13 @@ export interface BaseTableProps {
   // css变量兼容
   cssVariables?: { [key:string] : any}
   enableCSSVariables ?: boolean
+
+  scrollLoad?:{
+    /** 表格滚动加载回调 */
+    callback(startIndex:number):void
+    /** 每个数据块的数据条数 */
+    blockSize?:number
+  }
 }
 
 export interface BaseTableState {
@@ -218,6 +225,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   private resizeObserver?: ResizeObserver
 
   private resizeSubject = new Subject()
+
+  private offsetY = 0
 
   /** @deprecated BaseTable.getDoms() 已经过时，请勿调用 */
   getDoms () {
@@ -419,7 +428,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     }
 
     const { topIndex, bottomBlank, topBlank, bottomIndex } = info.verticalRenderRange
-    const stickyRightOffset =  this.hasScrollY ? this.getScrollBarWidth(): 0 
+    const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
 
     const renderBody = getTableRenderTemplate('body')
     if (typeof renderBody === 'function') {
@@ -526,7 +535,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     )
   }
 
-  private getScrollBarWidth(){
+  private getScrollBarWidth () {
     return this.props.scrollbarWidth || getScrollbarSize().width
   }
 
@@ -640,10 +649,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     }
   }
 
-
   private initSubscriptions () {
     const { virtual, stickyScroll } = this.domHelper
-    
     this.rootSubscription.add(
       throttledWindowResize$.subscribe(() => {
         this.updateStickyScroll()
@@ -671,7 +678,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const richVisibleRects$ = getRichVisibleRectsStream(
       this.domHelper.virtual,
       this.props$.pipe(op.skip(1), op.mapTo('structure-may-change')),
-      this.props.virtualDebugLabel,
+      this.props.virtualDebugLabel
     ).pipe(op.shareReplay())
 
     // 每当可见部分发生变化的时候，调整 loading icon 的未知（如果 loading icon 存在的话）
@@ -722,6 +729,50 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         )
         .subscribe((sizeAndOffset) => {
           this.setState(sizeAndOffset)
+        })
+    )
+
+    this.rootSubscription.add(
+      richVisibleRects$.pipe(
+        op.map(({ clipRect, offsetY }) => ({
+          maxRenderHeight: clipRect.bottom - clipRect.top,
+          maxRenderWidth: clipRect.right - clipRect.left,
+          offsetY
+        })),
+        op.distinctUntilChanged((x, y) => {
+          return (
+            x.offsetY - y.offsetY === 0
+          )
+        }),
+        // 计算得到当前行索引对应的数据块，blocks改成数组的形式，兼容快速拖动可视区域出现两个数据块的情况
+        op.map((sizeAndOffset) => {
+          const { offsetY, maxRenderHeight } = sizeAndOffset
+          const scrollDirection = offsetY - this.offsetY >= 0 ? 'down' : 'up'
+          this.offsetY = offsetY
+
+          const rowCount = this.props.dataSource.length
+          const vertical = this.rowHeightManager.getRenderRange(offsetY, maxRenderHeight, rowCount)
+          const { topIndex, bottomIndex } = vertical
+          const blockSize = this.props.scrollLoad?.blockSize || 200
+
+          const topBlockStartIndex = Math.floor(Math.max(topIndex - 1, 0) / blockSize) * blockSize
+          const bottomBlockStartIndex = Math.floor((bottomIndex + 1) / blockSize) * blockSize
+          return scrollDirection === 'down' ? [topBlockStartIndex, bottomBlockStartIndex] : [bottomBlockStartIndex, topBlockStartIndex]
+        }),
+        op.distinctUntilChanged((x, y) => {
+          return x[0] === y[0] && x[1] === y[1]
+        }),
+        op.switchMap(startIndexs => {
+          const event$ = from(startIndexs)
+          return event$.pipe(
+            op.map(startIndex => startIndex)
+          )
+        }),
+        // 过滤掉重复掉值
+        op.distinctUntilChanged()
+      )
+        .subscribe((startIndex) => {
+          this.props.scrollLoad?.callback(startIndex)
         })
     )
   }
