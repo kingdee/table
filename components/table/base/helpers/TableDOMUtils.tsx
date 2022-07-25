@@ -82,8 +82,8 @@ export class TableDOMHelper {
   }
 
   getTableRows (): NodeListOf<HTMLTableRowElement> {
-    const htmlTable = this.getTableBodyHtmlTable()
-    return htmlTable.querySelectorAll<HTMLTableRowElement>(`tbody > .${Classes.tableRow}`)
+    const tbody = this.artTable.querySelector(`.${Classes.tableBody} .${Classes.virtual} table tbody`)
+    return tbody.childNodes as NodeListOf<HTMLTableRowElement>
   }
 
   getTableBodyHtmlTable (): HTMLTableElement {
