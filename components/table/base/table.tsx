@@ -719,6 +719,10 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
             offsetY
           })),
           op.distinctUntilChanged((x, y) => {
+            // 如果表格区域被隐藏， 不需要触发组件重渲染
+            if (y.maxRenderHeight === 0 && y.maxRenderWidth === 0) {
+              return true
+            }
             // 因为 overscan 的存在，滚动较小的距离时不需要触发组件重渲染
             return (
               Math.abs(x.maxRenderWidth - y.maxRenderWidth) < OVERSCAN_SIZE / 2 &&
@@ -806,9 +810,11 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       const size = tr.offsetHeight
       if (size === 0) {
         zeroHeightRowCount += 1
+      } else {
+        // 渲染出来的行高度为0，说明是display=none情况，行高不存在该种异常情况，不保存当前的高度
+        this.rowHeightManager.updateRow(rowIndex, offset, size)
       }
       maxTrBottom = Math.max(maxTrBottom, offset + size)
-      this.rowHeightManager.updateRow(rowIndex, offset, size)
     }
 
     // 当 estimatedRowHeight 过大时，可能出现「渲染行数过少，无法覆盖可视范围」的情况
