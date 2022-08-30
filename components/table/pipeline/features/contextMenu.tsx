@@ -71,6 +71,7 @@ export function contextMenu (opts: ContextMenuFeatureOptions = {}) {
         return
       }
       e.preventDefault()
+      e.stopPropagation()
       showContextMenu(e)
     }
 
