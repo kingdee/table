@@ -5,6 +5,10 @@ import { FILL_COLUMN_CODE } from './autoFill'
 
 const stateKey = 'columnDrag'
 const SCROLL_SIZE = 30
+
+function disableSelect (event) {
+  event.preventDefault()
+}
 export interface ColumnDragOptions {
   onColumnDragStopped?: (columnMoved: boolean, columns: ArtColumn[]) => void
 }
@@ -60,6 +64,7 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
               if (e.button !== 0) {
                 return
               }
+              window.addEventListener('selectstart', disableSelect)
               // const cx = e.clientX
               // const width = col.width
               // const a = startIndex
@@ -208,6 +213,7 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                 e.stopPropagation()
                 document.body.removeEventListener('mousemove', handleMouseMove)
                 document.body.removeEventListener('mouseup', handleMouseUp)
+                window.removeEventListener('selectstart', disableSelect)
                 window.requestAnimationFrame(() => {
                   // 取消阻止列头点击事件
                   currentTarget.removeEventListener('click', stopClickPropagation)
@@ -263,9 +269,6 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
               }
               document.body.addEventListener('mousemove', handleMouseMove)
               document.body.addEventListener('mouseup', handleMouseUp)
-              document.body.onselectstart = function () {
-                return false
-              }
             },
             style
           })
