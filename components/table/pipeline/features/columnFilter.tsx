@@ -137,25 +137,29 @@ export function filter(opts: FilterFeatureOptions = {}) {
 
       const defaultFilterOptionsMap = new Map(DEFAULT_FILTER_OPTIONS.map(item => [item.key, { ...item }]))
 
-      function isMatchedFilterCondition(record) {
+      function isMatchedFilterCondition (record, rowIndex: number) {
         return !filtersKeys.some(key => {
           const filterItem = inputFiltersMap.get(key)
           const filterable = columnsMap.get(key)?.features?.filterable
           let comparisonFn
-          if(typeof filterable === 'function'){
+          if (typeof filterable === 'function') {
             comparisonFn = filterable
-          }else if(defaultFilterOptionsMap.get(filterItem.filterCondition)){
+          } else if (defaultFilterOptionsMap.get(filterItem.filterCondition)) {
             comparisonFn = defaultFilterOptionsMap.get(filterItem.filterCondition).filter
-          }else{
+          } else {
             console.warn(`列[${key}]未配置筛选函数，请设置 column.features.filterable 来作为该列的筛选函数, 目前使用默认包含筛选函数`)
             comparisonFn = defaultFilterOptionsMap.get('contain').filter
           }
-          return !comparisonFn(filterItem.filter)(record[key])//不符合过滤条件,退出循环
+          // 不符合过滤条件,退出循环
+          return !comparisonFn(filterItem.filter, filterItem)(
+            internals.safeGetValue(columnsMap.get(key), record, rowIndex),
+            record
+          )
         })
       }
 
-      return dataSource.reduce((pre, record) => {
-        if (isMatchedFilterCondition(record)) {
+      return dataSource.reduce((pre, record, rowIndex) => {
+        if (isMatchedFilterCondition(record, rowIndex)) {
           return pre.concat([record])
         }
         return pre
