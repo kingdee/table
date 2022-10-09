@@ -371,27 +371,15 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       return getFullRenderRange(rowCount)
     }
   }
-
-  private getRowNodeListByEvent = (e: React.MouseEvent<HTMLTableRowElement, MouseEvent>) : HTMLElement[] => {
-    let nodeList = null
-    const rowIndex = e.currentTarget.dataset.rowindex
-    if (rowIndex !== undefined) {
-      const { tableBody, tableFooter } = this.domHelper
-      const targetParent = tableBody.contains(e.currentTarget) ? tableBody : tableFooter
-      nodeList = targetParent.querySelectorAll(`tr[data-rowindex="${rowIndex}"]`)
-    }
-    return nodeList
-  }
-
   private handleRowMouseEnter = (e: React.MouseEvent<HTMLTableRowElement, MouseEvent>) => {
-    const nodeList = this.getRowNodeListByEvent(e)
+    const nodeList = this.domHelper.getRowNodeListByEvent(e)
     nodeList && nodeList.forEach(node => {
       node.classList.add('row-hover')
     })
   }
 
   private handleRowMouseLeave = (e: React.MouseEvent<HTMLTableRowElement, MouseEvent>) => {
-    const nodeList = this.getRowNodeListByEvent(e)
+    const nodeList = this.domHelper.getRowNodeListByEvent(e)
     nodeList && nodeList.forEach(node => {
       node.classList.remove('row-hover')
     })
