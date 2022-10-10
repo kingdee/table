@@ -112,4 +112,29 @@ export class TableDOMHelper {
     const tableOffsetTop = this.tableElement.offsetTop || 0
     return rowOffsetTop + tableOffsetTop
   }
+
+  getRowNodeListByEvent = (e: React.MouseEvent<HTMLTableRowElement, MouseEvent>) : HTMLElement[] => {
+    let nodeList = null
+    const rowIndex = e.currentTarget.dataset.rowindex
+    if (rowIndex !== undefined) {
+      const targetParent = this.tableBody.contains(e.currentTarget) ? this.tableBody : this.tableFooter
+      nodeList = targetParent.querySelectorAll(`tr[data-rowindex="${rowIndex}"]`)
+    }
+    return nodeList
+  }
+
+  getInRangeRowByCellEvent = (e: React.MouseEvent<HTMLTableCellElement, MouseEvent>) => {
+    const getParentNode = (ele, target) => {
+      if (ele.parentNode.nodeName === target) {
+        return ele.parentNode
+      }
+      return getParentNode(ele.parentNode, target)
+    }
+    e = e instanceof Array ? e[0] : e
+    const curCell = e?.currentTarget
+    const curRow = getParentNode(curCell, 'TR')
+    const curRowSpan = parseInt(e.currentTarget.getAttribute('rowspan')) || 1
+    const rows = getParentNode(curCell, 'TABLE')?.rows
+    return  Array.from(rows).slice(curRow.rowIndex,curRow.rowIndex + curRowSpan)
+  }
 }
