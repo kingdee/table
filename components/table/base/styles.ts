@@ -47,7 +47,7 @@ export const Classes = {
   loadingIndicator: `${prefix}loading-indicator`,
 
   tableHeaderCellLine: `${prefix}table-header-cell-line`,
-  
+
   tableFilterTrigger:`${prefix}filter-trigger`,
   tableSortIcon:`${prefix}sort-icon`,
 
@@ -121,7 +121,7 @@ export type BaseTableCSSVariables = Partial<{
   /** 主题色浅色1，浅色选中、悬浮 */
   '--primary-color-level1': string
   /** 主题色浅色2，深色选中、悬浮 */
-  '--primary-color-level2': string 
+  '--primary-color-level2': string
   /**图标默认颜色 */
   '--icon-color':string
   /**边框颜色 */
@@ -328,7 +328,7 @@ export const StyledArtTableWrapper = styled.div`
       border-right: 1px solid #0E5FD8 !important;
     }
   }
-  
+
 
   &.sticky-header .${Classes.tableHeader} {
     position: sticky;
@@ -357,6 +357,10 @@ export const StyledArtTableWrapper = styled.div`
 
   // 在 tr 上设置 .no-hover 可以禁用鼠标悬停效果
   tr:not(.no-hover):hover > td {
+    background: var(--hover-bgcolor);
+  }
+  // 使用 js 添加悬浮效果
+  tr:not(.no-hover).row-hover > td {
     background: var(--hover-bgcolor);
   }
   // 在 tr 设置 highlight 可以为底下的 td 设置为高亮色
@@ -579,7 +583,7 @@ export const StyledArtTableWrapper = styled.div`
     }
   }
   //#endregion
-  
+
   //#region 表格过滤
   .${Classes.tableFilterTrigger} {
     color:var(--icon-color);
