@@ -3,7 +3,7 @@ import { ArtColumn, ArtColumnStaticPart, CellProps } from '../../interfaces'
 import { internals } from '../../internals'
 import { always, arrayUtils } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
-import { mergeCellProps } from '../../utils'
+import { collectNodes, mergeCellProps } from '../../utils'
 
 export interface MultiSelectFeatureOptions {
   /** 非受控用法：默认选中的值 */
@@ -72,7 +72,8 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
     /** 所有有效的 keys（disable 状态为 false） */
     const allKeys: string[] = []
 
-    dataSource.forEach((row, rowIndex) => {
+    const flatDataSource = collectNodes(dataSource)
+    flatDataSource.forEach((row, rowIndex) => {
       const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
       fullKeySet.add(rowKey)
       // 在 allKeys 中排除被禁用的 key
