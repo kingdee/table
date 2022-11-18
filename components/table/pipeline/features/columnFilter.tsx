@@ -1,9 +1,9 @@
-import React,{ReactNode} from 'react'
+import React, { ReactNode } from 'react'
 import cx from 'classnames'
 
-import { ArtColumn, Filters, FilterPanel, FilterItem } from '../../interfaces'
+import { ArtColumn, Filters, FilterPanel, FilterItem, AbstractTreeNode } from '../../interfaces'
 import { internals } from '../../internals'
-import { isLeafNode, mergeCellProps, collectNodes } from '../../utils'
+import { isLeafNode, collectNodes } from '../../utils'
 import { TablePipeline } from '../pipeline'
 import { Filter, DEFAULT_FILTER_OPTIONS } from './filter'
 import { Classes } from '../../base/styles'
@@ -23,7 +23,7 @@ export interface FilterFeatureOptions {
   /** 过滤模式。单列过滤 single，多列过滤 multiple，默认为多选 */
   mode?: 'single' | 'multiple'
 
-  /**过滤图标 */
+  /** 过滤图标 */
   filterIcon?:ReactNode
 
   /** 是否对触发弹出过滤面板 的 click 事件调用 event.stopPropagation() */
@@ -32,8 +32,8 @@ export interface FilterFeatureOptions {
 
 const stateKey = 'filter'
 
-export function filter(opts: FilterFeatureOptions = {}) {
-  return function step(pipeline: TablePipeline) {
+export function filter (opts: FilterFeatureOptions = {}) {
+  return function step (pipeline: TablePipeline) {
     const dataSource = pipeline.getDataSource()
     const columns = pipeline.getColumns()
 
@@ -51,19 +51,18 @@ export function filter(opts: FilterFeatureOptions = {}) {
     inputFilters = mode === 'single' ? inputFilters.slice(0, 1) : inputFilters
     const inputFiltersMap = new Map(inputFilters.map((filterItem) => [filterItem.code, { ...filterItem }]))
 
-    function processColumns(columns: ArtColumn[]) {
+    function processColumns (columns: ArtColumn[]) {
       return columns.map(dfs)
 
-      function dfs(col: ArtColumn): ArtColumn {
+      function dfs (col: ArtColumn): ArtColumn {
         const result = { ...col }
 
         const filterable = col.code && col.features?.filterable
         const filterActive = filterable && inputFiltersMap?.get(col.code)?.filter?.length > 0
 
         if (filterable) {
-
           const handleFilterChanged = function (filterItem?: FilterItem) {
-            let nextFiltersMap = new Map(inputFiltersMap)
+            const nextFiltersMap = new Map(inputFiltersMap)
             const currentFilter = { code: col.code, ...filterItem }
             if (filterItem == null) {
               nextFiltersMap.delete(col.code)
@@ -120,8 +119,8 @@ export function filter(opts: FilterFeatureOptions = {}) {
       }
     }
 
-    function processDataSource(dataSource: any[]) {
-      let filtersKeys = []
+    function processDataSource (dataSource: any[]) {
+      const filtersKeys = []
       inputFiltersMap.forEach((value, key) => {
         filtersKeys.push(key)
       })
@@ -139,8 +138,8 @@ export function filter(opts: FilterFeatureOptions = {}) {
 
       const defaultFilterOptionsMap = new Map(DEFAULT_FILTER_OPTIONS.map(item => [item.key, { ...item }]))
 
-      function isMatchedFilterCondition (record, rowIndex: number) {
-        return !filtersKeys.some(key => {
+      function isMatchedFilterCondition (record) {
+        return filtersKeys.every(key => {
           const filterItem = inputFiltersMap.get(key)
           const filterable = columnsMap.get(key)?.features?.filterable
           let comparisonFn
@@ -152,20 +151,13 @@ export function filter(opts: FilterFeatureOptions = {}) {
             console.warn(`列[${key}]未配置筛选函数，请设置 column.features.filterable 来作为该列的筛选函数, 目前使用默认包含筛选函数`)
             comparisonFn = defaultFilterOptionsMap.get('contain').filter
           }
-          // 不符合过滤条件,退出循环
-          return !comparisonFn(filterItem.filter, filterItem)(
-            internals.safeGetValue(columnsMap.get(key), record, rowIndex),
+          return comparisonFn(filterItem.filter, filterItem)(
+            internals.safeGetValue(columnsMap.get(key), record, -1),
             record
           )
         })
       }
-
-      return dataSource.reduce((pre, record, rowIndex) => {
-        if (isMatchedFilterCondition(record, rowIndex)) {
-          return pre.concat([record])
-        }
-        return pre
-      }, [])
+      return layeredFilter(dataSource, isMatchedFilterCondition)
     }
 
     pipeline.dataSource(processDataSource(dataSource))
@@ -174,4 +166,20 @@ export function filter(opts: FilterFeatureOptions = {}) {
   }
 }
 
+function layeredFilter<T extends AbstractTreeNode> (array: T[], matchFn: (x: T) => boolean): T[] {
+  return dfs(array)
 
+  function dfs (rows: T[], parentMatched = false): T[] {
+    return rows
+      .map(row => {
+        const currentMatched = matchFn(row)
+        if (isLeafNode(row)) {
+          return (parentMatched || currentMatched) && { ...row }
+        }
+        const { children } = row
+        const rowAfterFilterChildren = { ...row, children: dfs(children as T[], parentMatched || currentMatched) }
+        const matchedByChildren = !isLeafNode(rowAfterFilterChildren)
+        return (parentMatched || currentMatched || matchedByChildren) && rowAfterFilterChildren
+      }).filter(Boolean)
+  }
+}

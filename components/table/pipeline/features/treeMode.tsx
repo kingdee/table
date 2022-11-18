@@ -47,6 +47,9 @@ export interface TreeModeFeatureOptions {
 
   /** 指定表格每一行元信息的记录字段 */
   treeMetaKey?: string | symbol
+
+  /** 指定展开列 */
+  expandColCode?: string
 }
 
 export function treeMode (opts: TreeModeFeatureOptions = {}) {
@@ -54,10 +57,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
     const stateKey = 'treeMode'
     const ctx = pipeline.ctx
 
-    const primaryKey = pipeline.ensurePrimaryKey('treeMode') as string
-    if (typeof primaryKey !== 'string') {
-      throw new Error('treeMode 仅支持字符串作为 primaryKey')
-    }
+    const primaryKey = pipeline.ensurePrimaryKey('treeMode')
 
     const openKeys: string[] = opts.openKeys ?? pipeline.getStateAtKey(stateKey) ?? opts.defaultOpenKeys ?? []
     const openKeySet = new Set(openKeys)
@@ -102,7 +102,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
           return
         }
         for (const node of nodes) {
-          const rowKey = node[primaryKey]
+          const rowKey = internals.safeGetRowKey(primaryKey, node, -1)
           const expanded = openKeySet.has(rowKey)
 
           const isLeaf = isLeafNode(node, { depth, expanded, rowKey })
@@ -121,10 +121,13 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
       if (columns.length === 0) {
         return columns
       }
-      const [firstCol, ...others] = columns
+
+      let expandColIndex = columns.findIndex(({ code }) => code && opts.expandColCode === code)
+      expandColIndex = expandColIndex === -1 ? 0 : expandColIndex
+      const expandCol = columns[expandColIndex]
 
       const render = (value: any, record: any, recordIndex: number) => {
-        const content = internals.safeRender(firstCol, record, recordIndex)
+        const content = internals.safeRender(expandCol, record, recordIndex)
         if (record[treeMetaKey] == null) {
           // 没有 treeMeta 信息的话，就返回原先的渲染结果
           return content
@@ -184,7 +187,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
       }
 
       const getCellProps = (value: any, record: any, rowIndex: number) => {
-        const prevProps = internals.safeGetCellProps(firstCol, record, rowIndex)
+        const prevProps = internals.safeGetCellProps(expandCol, record, rowIndex)
         if (record[treeMetaKey] == null) {
           // 没有 treeMeta 信息的话，就返回原先的 cellProps
           return prevProps
@@ -206,17 +209,16 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
         })
       }
 
-      return [
-        {
-          ...firstCol,
-          title: (
-            <span style={{ marginLeft: iconIndent + iconWidth + iconGap }}>{internals.safeRenderHeader(firstCol)}</span>
-          ),
-          render,
-          getCellProps: clickArea === 'cell' ? getCellProps : firstCol.getCellProps
-        },
-        ...others
-      ]
+      columns[expandColIndex] = {
+        ...expandCol,
+        title: (
+          <span style={{ marginLeft: iconIndent + iconWidth + iconGap }}>{internals.safeRenderHeader(expandCol)}</span>
+        ),
+        render,
+        getCellProps: clickArea === 'cell' ? getCellProps : expandCol.getCellProps
+      }
+
+      return [...columns]
     }
   }
 }
