@@ -33,6 +33,10 @@ function () {
     {id:"5","No":5,"order":"AP-202009-00005","from":"陕西环宇科技","to":"深圳环球科技","amount":"236,800.00","balance":"1,500.00"}
   ]
 
+  const footerDataSource = [
+    {id: "5", "No":"合计","order":"AP-202009-00004","from":"陕西环宇科技","to":"深圳环球科技","amount":"964,000.00","balance":"18,900.00"}
+  ]
+
   const columns = [
     { code: 'No', name: '序号', width: 60, align: 'center' },
     { code: 'order', name: '单据号', width: 200 },
@@ -54,6 +58,8 @@ function () {
   })
     .input({ dataSource: dataSource, columns: columns })
     .primaryKey('id')
+
+   pipeline.use(features.footerDataSource({ dataSource: footerDataSource }))
 
   if(selectedType==='multi'){
     pipeline.use(

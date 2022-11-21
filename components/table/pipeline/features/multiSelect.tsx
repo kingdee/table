@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArtColumn, ArtColumnStaticPart, CellProps } from '../../interfaces'
+import { ArtColumn, CellProps } from '../../interfaces'
 import { internals } from '../../internals'
 import { always, arrayUtils } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
@@ -131,6 +131,9 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
           return mergeCellProps(preCellProps, checkboxCellProps)
         },
         render(_: any, row: any, rowIndex: number) {
+          if (row[pipeline.getFeatureOptions('footerRowMetaKey')]) {
+            return null
+          }
           const key = internals.safeGetRowKey(primaryKey, row, rowIndex)
           const checked = set.has(key)
           return (
