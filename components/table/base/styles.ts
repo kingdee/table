@@ -561,7 +561,7 @@ export const StyledArtTableWrapper = styled.div`
       filter: none;
       width: 100%;
       height: 100%;
-      overflow: auto;
+      overflow: hidden;//列全部固定时，存在双横向滚动条
       display: flex;
       position: relative;
       flex-direction: column;
