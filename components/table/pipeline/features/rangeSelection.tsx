@@ -19,47 +19,51 @@ interface DragCell {
     rowIndex : number,
     rowSpan: number,
     code: string,
-    column: ArtColumn
+    column: ArtColumn,
+    isInFooter:boolean
+}
+
+interface FooterRowRange{
+  startRow: number,
+  endRow: number,
 }
 
 interface RangeSelection {
     startRow: number,
     endRow: number,
     columns: ArtColumn[],
-    startColumn: ArtColumn
+    startColumn: ArtColumn,
+    footerRowRange: FooterRowRange | null
 }
 export const rangeSelectionKey = 'rangeSelection'
-export const lastClickCell = 'lastClickCell'
+export const lastClickCellKey = 'lastClickCell'
 
 export function rangeSelection (opts:RangeSelectionFeatureOptions) {
   return function step (pipeline:TablePipeline) {
     const SCROLL_SIZE = 30
     const tableBody = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.tableBody
+    const tableFooter = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.tableFooter
     if (!tableBody) {
       return pipeline
     }
 
     const columns = pipeline.getColumns()
+    const dataSource = pipeline.getDataSource()
     const rangeSelectedChange = (rangeSelection: RangeSelection) => {
       pipeline.setStateAtKey(rangeSelectionKey, rangeSelection)
       opts?.rangeSelectedChange ?.(rangeSelection)
     }
-    // if (!pipeline.getFeatureOptions(rangeSelectionKey)) {
-    //   pipeline.setFeatureOptions(rangeSelectionKey, {
-    //     optionKey: rangeSelectionKey,
-    //     rangeSelectedChange: rangeSelectedChange
-    //   })
-    // }
 
     const setRangeSelection = (startDragCell:DragCell, draggingCell:DragCell) => {
-      if (!startDragCell || !draggingCell || isSameCell(startDragCell, draggingCell)) return
+      if (!startDragCell || !draggingCell) return
       const rangeColumns = getRangeColumns(startDragCell, draggingCell, columns)
-      const isTopToBottom = startDragCell.rowIndex <= draggingCell.rowIndex
+      const { startRow, endRow, footerRowRange } = getRangeSelectionRowInfo(startDragCell, draggingCell, dataSource)
       const rangeSelection = {
-        startRow: isTopToBottom ? startDragCell.rowIndex : startDragCell.rowIndex + startDragCell.rowSpan - 1,
-        endRow: isTopToBottom ? draggingCell.rowIndex + draggingCell.rowSpan - 1 : draggingCell.rowIndex,
+        startRow,
+        endRow,
         columns: rangeColumns,
-        startColumn: startDragCell.column
+        startColumn: startDragCell.column,
+        footerRowRange
       }
       rangeSelectedChange(rangeSelection)
     }
@@ -68,22 +72,22 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
       const clickCell = getTargetCell(target, columns)
       if (clickCell) {
         if (event.shiftKey) {
-          const _lastClickCell = pipeline.getStateAtKey(lastClickCell)
+          const _lastClickCell = pipeline.getStateAtKey(lastClickCellKey)
           if (_lastClickCell) {
             setRangeSelection(_lastClickCell, clickCell)
           } else {
             // 第一次进来就按住shift键，这时候要记住点击的单元格
-            pipeline.setStateAtKey(lastClickCell, clickCell)
+            pipeline.setStateAtKey(lastClickCellKey, clickCell)
           }
         } else {
-          pipeline.setStateAtKey(lastClickCell, clickCell)
-          rangeSelectedChange(null)
+          pipeline.setStateAtKey(lastClickCellKey, clickCell)
+          setRangeSelection(clickCell, clickCell)
         }
       }
     }
 
     const onMouseDown = (mouseDownEvent: React.MouseEvent<HTMLTableElement, MouseEvent>) => {
-      if (mouseDownEvent.button !== 0 || !isElementInEventPath(tableBody, mouseDownEvent.nativeEvent)) return
+      if (mouseDownEvent.button !== 0 || !(isElementInEventPath(tableBody, mouseDownEvent.nativeEvent) || isElementInEventPath(tableFooter, mouseDownEvent.nativeEvent))) return
       // mouseDownEvent.preventDefault()
       // shift + 点击选中
       shiftKeySelect(mouseDownEvent)
@@ -137,23 +141,25 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
     }
 
     const onKeyDown = (e: React.KeyboardEvent<HTMLTableElement>) => {
-      if (!isElementInEventPath(tableBody, e.nativeEvent)) return
-      
+      if (!(isElementInEventPath(tableBody, e.nativeEvent) || isElementInEventPath(tableFooter, e.nativeEvent))) return
+
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         const rowLen = pipeline.getDataSource().length
+        const footerDataSource = pipeline.getFooterDataSource() || []
         if (columns.length && rowLen) {
           opts.preventkDefaultOfKeyDownEvent !== false && e.preventDefault()
           rangeSelectedChange({
             startRow: 0,
             endRow: rowLen - 1,
             columns,
-            startColumn: columns[0]
+            startColumn: columns[0],
+            footerRowRange: footerDataSource.length > 0 ? { startRow: 0, endRow: footerDataSource.length - 1 } : null
           })
         }
       }
     }
 
-    pipeline.addTableProps({ onMouseDown, onKeyDown, tabIndex: -1 }) // todo: 后面可以把mousedown放到一个流里面
+    pipeline.addTableProps({ onMouseDown, onKeyDown, tabIndex: -1, className: cx([Classes.rangeSelection]) }) // todo: 后面可以把mousedown放到一个流里面
 
     return pipeline.mapColumns(makeRecursiveMapper((col) => {
       const rangeSelection = pipeline.getStateAtKey(rangeSelectionKey)
@@ -164,21 +170,28 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
         ...col,
         getCellProps (value: any, record: any, rowIndex: number): CellProps {
           const prevCellProps = prevGetCellProps?.(value, record, rowIndex)
-          const { startRow, endRow, columns } = rangeSelection
+          const isInFooter = record[pipeline.getFeatureOptions('footerRowMetaKey')]
+          const { startRow, endRow, columns, footerRowRange } = rangeSelection
 
-          const startIndex = startRow < endRow ? startRow : endRow
-          const endIndex = startRow < endRow ? endRow : startRow
+          const { startRowIndex, endRowIndex } = getRowIndex(startRow, endRow)
+          const { startRowIndex: footerStartRowIndex, endRowIndex: footerEndRowIndex } = getFooterRowIndex(footerRowRange)
           const startCol = columns[0]
           const endCol = columns[columns.length - 1]
 
-          const match = rowIndex >= startIndex && rowIndex <= endIndex
+          const bodyMatch = !isInFooter && rowIndex >= startRowIndex && rowIndex <= endRowIndex
+          const footerMatch = isInFooter && footerRowRange && rowIndex >= footerStartRowIndex && rowIndex <= footerEndRowIndex
+          const match = footerMatch || bodyMatch
+          const matchSingleCell = match && isCellRangeSingleCell(rangeSelection)
+          // 单个范围选中单元格不显示样式
+          const showCellRangeStyle = match && !matchSingleCell
           const className = cx(
             {
-              [Classes.tableCellRangeSelected]: match,
-              [Classes.tableCellRangeTop]: rowIndex === startIndex,
-              [Classes.tableCellRangeLeft]: col.code === startCol.code && match,
-              [Classes.tableCellRangeBottom]: rowIndex === endIndex,
-              [Classes.tableCellRangeRight]: col.code === endCol.code && match
+              [Classes.tableCellRangeSingleCell]: matchSingleCell,
+              [Classes.tableCellRangeSelected]: showCellRangeStyle,
+              [Classes.tableCellRangeTop]: showCellRangeStyle && (isInFooter ? (startRowIndex !== -1 ? false : rowIndex === footerStartRowIndex) : rowIndex === startRowIndex),
+              [Classes.tableCellRangeLeft]: showCellRangeStyle && col.code === startCol.code,
+              [Classes.tableCellRangeBottom]: showCellRangeStyle && (isInFooter ? rowIndex === footerEndRowIndex : (footerRowRange ? false : rowIndex === endRowIndex)),
+              [Classes.tableCellRangeRight]: showCellRangeStyle && col.code === endCol.code
             }
           )
           return mergeCellProps(prevCellProps, {
@@ -200,7 +213,8 @@ function getTargetCell (target, columns:ArtColumn[]) :DragCell {
         rowIndex: parseInt(target.getAttribute('data-rowindex')),
         rowSpan: parseInt(target.getAttribute('rowspan') || 1),
         code: columnCode,
-        column: column
+        column: column,
+        isInFooter: isEleInFooter(target)
       }
     }
     target = target.parentElement
@@ -208,8 +222,18 @@ function getTargetCell (target, columns:ArtColumn[]) :DragCell {
   return null
 }
 
-function isSameCell (cell1, cell2) {
-  return cell1.rowIndex === cell2.rowIndex && cell1.code === cell2.code
+function isSameCell (cell1:DragCell, cell2:DragCell) {
+  return cell1.rowIndex === cell2.rowIndex && cell1.code === cell2.code && cell1.isInFooter === cell2.isInFooter
+}
+
+function isEleInFooter (target) {
+  while (target && !target.classList.contains(Classes.artTable)) {
+    if (target.classList.contains(Classes.tableFooter)) {
+      return true
+    }
+    target = target.parentElement
+  }
+  return false
 }
 
 function getRangeColumns (startCell:DragCell, endCell:DragCell, columns:ArtColumn[]) {
@@ -221,4 +245,76 @@ function getRangeColumns (startCell:DragCell, endCell:DragCell, columns:ArtColum
   } else {
     return flatColumns.slice(endIndex, startIndex + 1)
   }
+}
+
+function getRangeSelectionRowInfo (startCell:DragCell, endCell:DragCell, dataSource:any[]) {
+  let footerRowRange = null
+  let startRow = -1
+  let endRow = -1
+  const { startRow: _startRow, endRow: _endRow } = getCellRangeRow(startCell, endCell)
+  // 两个单元格都在表体
+  if (!startCell.isInFooter && !endCell.isInFooter) {
+    startRow = _startRow
+    endRow = _endRow
+  } else if (startCell.isInFooter && endCell.isInFooter) { // 两个单元格都在表底
+    footerRowRange = {
+      startRow: _startRow,
+      endRow: _endRow
+    }
+  } else {
+    // 一个单元格在表体，一个在表底
+    if (startCell.isInFooter) {
+      startRow = dataSource.length - 1
+      endRow = endCell.rowIndex
+      footerRowRange = {
+        startRow: startCell.rowIndex,
+        endRow: 0
+      }
+    } else {
+      startRow = startCell.rowIndex
+      endRow = dataSource.length - 1
+      footerRowRange = {
+        startRow: 0,
+        endRow: endCell.rowIndex
+      }
+    }
+  }
+
+  return {
+    startRow,
+    endRow,
+    footerRowRange
+  }
+}
+
+function getCellRangeRow (startCell:DragCell, endCell:DragCell) {
+  if (isSameCell(startCell, endCell)) {
+    return { startRow: startCell.rowIndex, endRow: startCell.rowIndex }
+  }
+  const isTopToBottom = startCell.rowIndex <= endCell.rowIndex
+  const startRow = isTopToBottom ? startCell.rowIndex : startCell.rowIndex + startCell.rowSpan - 1
+  const endRow = isTopToBottom ? endCell.rowIndex + endCell.rowSpan - 1 : endCell.rowIndex
+  return { startRow, endRow }
+}
+
+function isCellRangeSingleCell (rangeSelection:RangeSelection) {
+  const { startRow, endRow, columns, footerRowRange } = rangeSelection
+  const isBodySingleCell = !footerRowRange && startRow === endRow && columns.length === 1
+  const isFooterSingleCell = startRow === -1 && footerRowRange.startRow === footerRowRange.endRow && columns.length === 1
+
+  return isBodySingleCell || isFooterSingleCell
+}
+
+function getRowIndex (startRow:number, endRow:number) {
+  const isReverse = startRow > endRow
+  const startRowIndex = isReverse ? endRow : startRow
+  const endRowIndex = isReverse ? startRow : endRow
+  return { startRowIndex, endRowIndex }
+}
+
+function getFooterRowIndex (footerRowRange:FooterRowRange) {
+  if (footerRowRange) {
+    return getRowIndex(footerRowRange.startRow, footerRowRange.endRow)
+  }
+  return { startRowIndex: -1, endRowIndex: -1 }
 }

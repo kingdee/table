@@ -48,18 +48,20 @@ export const Classes = {
 
   tableHeaderCellLine: `${prefix}table-header-cell-line`,
 
-  tableFilterTrigger:`${prefix}filter-trigger`,
-  tableSortIcon:`${prefix}sort-icon`,
+  tableFilterTrigger: `${prefix}filter-trigger`,
+  tableSortIcon: `${prefix}sort-icon`,
 
   button: `${prefix}btn`,
   buttonPrimary: `${prefix}btn-primary`,
   filterIcon: `${prefix}filter-icon`,
 
-  tableCellRangeSelected:`${prefix}table-cell-range-selected`,
-  tableCellRangeTop:`${prefix}table-cell-range-top`,
-  tableCellRangeLeft:`${prefix}table-cell-range-left`,
-  tableCellRangeBottom:`${prefix}table-cell-range-bottom`,
-  tableCellRangeRight:`${prefix}table-cell-range-right`,
+  rangeSelection: `${prefix}range-selection`,
+  tableCellRangeSingleCell: `${prefix}table-cell-range-single-cell`,
+  tableCellRangeSelected: `${prefix}table-cell-range-selected`,
+  tableCellRangeTop: `${prefix}table-cell-range-top`,
+  tableCellRangeLeft: `${prefix}table-cell-range-left`,
+  tableCellRangeBottom: `${prefix}table-cell-range-bottom`,
+  tableCellRangeRight: `${prefix}table-cell-range-right`,
 
   fixedLeft: `${prefix}fixed-left`,
   fixedRight: `${prefix}fixed-right`,
@@ -263,7 +265,6 @@ export const StyledArtTableWrapper = styled.div`
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    user-select:none;
   }
 
   .${Classes.tableHeader} {
@@ -311,7 +312,7 @@ export const StyledArtTableWrapper = styled.div`
   .${Classes.tableRow} {
     position: relative;
   }
-  .${Classes.tableBody} {
+  .${Classes.tableBody}, .${Classes.tableFooter}  {
     .${Classes.tableCellRangeSelected}{
       background-color: #e6effb !important;
     }
@@ -327,6 +328,10 @@ export const StyledArtTableWrapper = styled.div`
     .${Classes.tableCellRangeRight}{
       border-right: 1px solid #0E5FD8 !important;
     }
+  }
+  
+  .${Classes.rangeSelection} {
+    user-select:none;
   }
 
 
