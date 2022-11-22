@@ -25,5 +25,7 @@ export function footerDataSource (opts: FooterDataSourceFeatureOptions = {}) {
         '调用 pipeline.use(features.footerDataSource()) 前请先设置页脚数据源，设置方法有：pipeline.use(features.footerDataSource({dataSource:any[]})) 或者 pipeline.footerDataSource(any[])'
       )
     }
+
+    return pipeline
   }
 }
