@@ -54,7 +54,7 @@ export class TablePipeline {
 
   private _columns: any[]
 
-  private _footerDataSource: any[]
+  private _footerDataSource?: any[]
 
   static defaultIndents: TablePipelineIndentsConfig = {
     iconIndent: -8,
