@@ -568,6 +568,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       [STYLED_REF_PROP]: this.artTableWrapperRef
     }
 
+    const tableProps = getTableProps() || {}
     return (
       <StyledArtTableWrapper {...artTableWrapperProps}>
         <Loading
@@ -575,7 +576,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
           LoadingIcon={components.LoadingIcon}
           LoadingContentWrapper={components.LoadingContentWrapper}
         >
-          <div className={Classes.artTable} {...(getTableProps())}>
+          <div {...tableProps} className={cx(Classes.artTable, tableProps.className)}>
             {this.renderTableHeader(info)}
             {this.renderTableBody(info)}
             {this.renderTableFooter(info)}
