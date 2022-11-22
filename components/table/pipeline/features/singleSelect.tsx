@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArtColumn, ArtColumnStaticPart, CellProps } from '../../interfaces'
+import { ArtColumn, CellProps } from '../../interfaces'
 import { internals } from '../../internals'
 import { always } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
@@ -76,6 +76,9 @@ export function singleSelect (opts: SingleSelectFeatureOptions = {}) {
         return preCellProps
       },
       render: (_: any, row: any, rowIndex: number) => {
+        if (row[pipeline.getFeatureOptions('footerRowMetaKey')]) {
+          return null
+        }
         const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
         return (
           <Radio
