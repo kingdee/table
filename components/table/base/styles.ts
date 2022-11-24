@@ -7,6 +7,7 @@ const prefix = 'kd-'
 export const Classes = {
   /** BaseTable 表格组件的外层包裹 div */
   artTableWrapper: `${prefix}table-wrapper`,
+  artTableBordered: `${prefix}table-bordered`,
 
   artTable: `${prefix}table`,
   tableHeaderMain: `${prefix}table-header-main`,
@@ -153,13 +154,13 @@ export type BaseTableCSSVariables = Partial<{
   '--border-color': string
   /** 单元格边框，默认为 1px solid #dfe3e8 */
   '--cell-border': string
-  /** 单元格上下边框，默认为 #dfe3e8 */
+  /** 单元格上下边框，默认为 none ，默认值为 1px solid #dfe3e8 */
   '--cell-border-horizontal': string
   /** 单元格左右边框，默认为 #dfe3e8 */
   '--cell-border-vertical': string
   /** 表头单元格边框，默认为 1px solid #dfe3e8 */
   '--header-cell-border': string
-  /** 表头单元格上下边框，默认为 1px solid #dfe3e8 */
+  /** 表头单元格上下边框，默认为 none ，默认值为 1px solid #dfe3e8 */
   '--header-cell-border-horizontal': string
   /** 表头单元格左右边框，默认为 1px solid #dfe3e8 */
   '--header-cell-border-vertical': string
@@ -177,7 +178,7 @@ const outerBorderStyleMixin = css`
   }
   td.${Classes.last},
   th.${Classes.last} {
-    --border-right: none;
+    border-right: none;
   }
 
   thead tr.${Classes.first} th,
@@ -230,7 +231,32 @@ export const defaultCSSVariables = {
   '--header-cell-border-horizontal': '1px solid #dfe3e8',
 }
 
+export const defaultConditionCSSVariables = {
+  '--header-cell-border-vertical': '1px solid #dfe3e8',
+  '--cell-border-vertical': '1px solid #dfe3e8'
+}
+
 export const variableConst = getCssVariableText(defaultCSSVariables)
+
+const borderedStyleMixin = css`
+  //添加竖直边框线var变量
+  --cell-border-vertical: ${defaultConditionCSSVariables['--cell-border-vertical']};
+  --header-cell-border-vertical: ${defaultConditionCSSVariables['--header-cell-border-vertical']};
+
+  //兼容拖拽列宽、分组列下隐藏th的border-right: none情况
+  //todo: 应去掉以上强制隐藏右边框的代码！，默认就使用--header-cell-border-vertical的颜色
+  th.resizeable{
+    border-right: var(--header-cell-border-vertical)
+  }
+  th.${Classes.leaf} {
+    border-right: var(--header-cell-border-vertical);
+  }
+
+  //th隐藏列宽拖拽的背景色，使用th的右边框代替
+  .${Classes.tableHeaderCellResize}::after{
+    background-color: inherit;
+  }
+`
 
 export const StyledArtTableWrapper = styled.div`
   :root {
@@ -251,6 +277,11 @@ export const StyledArtTableWrapper = styled.div`
   // 表格外边框由 art-table-wrapper 提供，而不是由单元格提供
   &.use-outer-border {
     ${outerBorderStyleMixin};
+  }
+
+  // 表格开启边框线，处理th、td的单元格左右边框线（默认无该边框线）
+  &.${Classes.artTableBordered} {
+    ${borderedStyleMixin}
   }
 
   .no-scrollbar {
