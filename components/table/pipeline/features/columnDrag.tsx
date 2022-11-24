@@ -84,6 +84,8 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
               let currentTarget = e.currentTarget as HTMLElement
               const rect = (e.currentTarget as HTMLElement).parentElement.getClientRects()[0]
               const startX = rect.left
+              const mouseDownClientX = e.clientX
+              const mouseDownClientY = e.clientY
               let moveData = []
 
               const allColumns = collectNodes(columns)
@@ -99,7 +101,6 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                   pipeline.ref.current.domHelper.virtual.scrollLeft -= SCROLL_SIZE
                 }
               }
-              let stopClickPropagationFlag = false
 
               function handleMouseMove (e) {
                 const client = {
@@ -112,11 +113,6 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                 if (e.clientX - leftPosition < 20) {
                   return
                 } else {
-                  // 阻止列头点击事件，防止拖动后触发列头过滤事件
-                  if (stopClickPropagationFlag === false) {
-                    stopClickPropagationFlag = true
-                    currentTarget.addEventListener('click', stopClickPropagation)
-                  }
                   e.stopPropagation()
                 }
                 document.body.style.userSelect = 'none'
@@ -214,10 +210,13 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                 document.body.removeEventListener('mousemove', handleMouseMove)
                 document.body.removeEventListener('mouseup', handleMouseUp)
                 window.removeEventListener('selectstart', disableSelect)
+                // 阻止列头点击事件，防止拖动后触发列头过滤事件
+                if (_isMoveWhenClicking(mouseDownClientX, mouseDownClientY, e.clientX, e.clientY)) {
+                  currentTarget.addEventListener('click', stopClickPropagation)
+                }
                 window.requestAnimationFrame(() => {
                   // 取消阻止列头点击事件
                   currentTarget.removeEventListener('click', stopClickPropagation)
-                  stopClickPropagationFlag = false
                   currentTarget = null
 
                   const [startIndex, replaceIndex] = moveData
@@ -300,4 +299,14 @@ function moveAllChildren (cols:ArtColumn[], cloumnsTranslateData, width: number,
       moveAllChildren(children, cloumnsTranslateData, width)
     }
   })
+}
+
+function _isMoveWhenClicking (mouseDownClientX: number, mouseDownClientY: number, mouseUpClientX: number, mouseUpClientY: number): boolean {
+  const xDiff = mouseUpClientX - mouseDownClientX
+  const yDiff = mouseUpClientY - mouseDownClientY
+  // 鼠标点按和松开的偏移量大于5px，认为存在移动
+  if (Math.sqrt(xDiff * xDiff + yDiff * yDiff) > 5) {
+    return true
+  }
+  return false
 }
