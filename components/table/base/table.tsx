@@ -18,7 +18,6 @@ import {
   Classes,
   LOCK_SHADOW_PADDING,
   StyledArtTableWrapper,
-  defaultCSSVariables
 } from './styles'
 import {
   addResizeObserver,
@@ -29,36 +28,13 @@ import {
   sum,
   syncScrollLeft,
   throttledWindowResize$,
-  composeRowPropsGetter,
   getTableScrollFooterDOM,
-  getTableScrollHeaderDOM
+  getTableScrollHeaderDOM,
+  cssPolifill
 } from './utils'
-import cssVars from 'css-vars-ponyfill'
+
 import { console, browserType } from '../utils'
 import getTableRenderTemplate from './renderTemplates'
-
-const cssPolifill = ({ variables, enableCSSVariables }) => {
-  // const style = document.createElement('style')
-  // style.type = 'text/css'
-  // style.innerHTML = '.aaa{ --color: red; }'
-  // document.getElementsByTagName('head').item(0).appendChild(style)
-
-  // const variableNames = variableConst.match(/--.*?(?=:)/g)
-  // variables = variableNames.map((name) => rootElement.style[name])
-  if (enableCSSVariables === false) {
-    return
-  }
-
-  cssVars({
-    // exclude: 'link[href*="semantic-ui"]',
-    // onlyLegacy: false,
-    // rootElement: rootElement,
-    include: 'style[data-styled]',
-    variables: Object.assign({}, defaultCSSVariables, variables),
-    watch: true,
-    silent: true
-  })
-}
 
 let propsDotEmptyContentDeprecatedWarned = false
 function warnPropsDotEmptyContentIsDeprecated () {
@@ -110,6 +86,8 @@ export interface BaseTableProps {
   scrollbarWidth?: number
   /** 使用来自外层 div 的边框代替单元格的外边框 */
   useOuterBorder?: boolean
+  /** 显示表格单元格边框线 */
+  bordered?: boolean
 
   /** 表格是否在加载中 */
   isLoading?: boolean
@@ -544,7 +522,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       isLoading,
       getTableProps,
       footerDataSource,
-      components
+      components,
+      bordered
     } = this.props
 
     const artTableWrapperClassName = cx(
@@ -557,6 +536,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         'sticky-header': isStickyHeader ?? isStickyHead,
         'has-footer': footerDataSource.length > 0,
         'sticky-footer': isStickyFooter,
+        [Classes.artTableBordered]: bordered,
         'ie-polyfill-wrapper': browserType.isIE
       },
       className
@@ -597,8 +577,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     this.initSubscriptions()
     this.didMountOrUpdate()
     // console.log('did mount end')
-    const { cssVariables, enableCSSVariables } = this.props
-    cssPolifill({ variables: cssVariables || {}, enableCSSVariables })
+    const { cssVariables, enableCSSVariables, bordered } = this.props
+    cssPolifill({ variables: cssVariables || {}, enableCSSVariables, bordered })
     this.props.setTableWidth?.(this.domHelper.tableBody.clientWidth)
     this.props.setTableDomHelper?.(this.domHelper)
   }
