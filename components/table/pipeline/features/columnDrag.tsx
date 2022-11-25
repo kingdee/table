@@ -61,7 +61,7 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
           },
           headerCellProps: mergeCellProps(col.headerCellProps, {
             onMouseDown: !isLeaf || path.length > 1 ? undefined : (e) => {
-              if (e.button !== 0) {
+              if (e.button !== 0 || !e.currentTarget.contains(e.target as HTMLElement)) {
                 return
               }
               window.addEventListener('selectstart', disableSelect)
