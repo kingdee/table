@@ -1,4 +1,4 @@
-import React, { CSSProperties, ReactNode, useEffect, useState } from 'react'
+import React, { CSSProperties, ReactNode, useEffect, useState, useRef } from 'react'
 import styled from 'styled-components'
 import { isElementInEventPath, keepWithinBounds } from '../../../utils/'
 
@@ -36,8 +36,8 @@ const FilterPanelStyle = styled.div`
 
 const useWindowEvents = (func, evens) => {
   React.useEffect(() => {
-    evens.forEach(event => window.addEventListener(event, func, true))
-    return () => evens.forEach(event => window.removeEventListener(event, func, true))
+    evens.forEach(event => window.addEventListener(event, func))
+    return () => evens.forEach(event => window.removeEventListener(event, func))
   }, [evens, func])
 }
 
@@ -64,7 +64,24 @@ function FilterPanel ({ style, children, position, filterIcon, onClose }) {
     setPerfectPosition(keepWithinBounds(document.body, ref.current, position.x, position.y, true))
     setVisible(true)
   }, [position])
-  useWindowEvents((e) => !isContainPanel(e) && onClose(), ['mousedown'])
+
+  const hasPopupMouseDown = useRef(false)
+  const mouseDownTimeout = useRef<undefined|number>()
+  const handleMouseDown = (e) => {
+    // 当弹出的过滤面板内部发生鼠标按下事件时，标记当前事件，并在下个周期清除标记，用来确定鼠标按下发生在过滤面板内部
+    // 利用了React.createPortal冒泡是根据React Tree的特性：
+    // https://jwwnz.medium.com/react-portals-and-event-bubbling-8df3e35ca3f1
+    hasPopupMouseDown.current = true
+    clearTimeout(mouseDownTimeout.current)
+    mouseDownTimeout.current = window.setTimeout(() => {
+      hasPopupMouseDown.current = false
+    }, 0)
+  }
+
+  useWindowEvents((e) => {
+    !isContainPanel(e) && !hasPopupMouseDown.current && onClose()
+  }, ['mousedown'])
+
   return (
     <FilterPanelStyle
       style={{
@@ -73,6 +90,7 @@ function FilterPanel ({ style, children, position, filterIcon, onClose }) {
         top: visible ? perfectPosition.y : 0,
         opacity: visible ? 1 : 0
       }}
+      onMouseDown={handleMouseDown}
       ref={ref}
     >
       <div className={'popup-header'}>
