@@ -76,10 +76,6 @@ function Filter ({ size = 12, style, className, FilterPanelContent, filterIcon, 
 
   const hidePanel = () => setShowPanel(false)
 
-  const handleMouseDown = (e) => {
-    e.stopPropagation()// 阻止触发拖拽
-  }
-
   const renderPanelContent = () => {
     if (FilterPanelContent) {
       return <FilterPanelContent
@@ -115,7 +111,7 @@ function Filter ({ size = 12, style, className, FilterPanelContent, filterIcon, 
       className={iconClassName}
       ref={iconRef}
     >
-      <span className={Classes.filterIcon} onClick={handleIconClick} onMouseDown={handleMouseDown}>
+      <span className={Classes.filterIcon} onClick={handleIconClick}>
         {
           filterIcon || <svg
             width={size}
