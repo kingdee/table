@@ -113,10 +113,9 @@ function Filter ({ size = 12, style, className, FilterPanelContent, filterIcon, 
     <FilterIconSpanStyle
       style={style}
       className={iconClassName}
-      onMouseDown={handleMouseDown}
       ref={iconRef}
     >
-      <span className={Classes.filterIcon} onClick={handleIconClick}>
+      <span className={Classes.filterIcon} onClick={handleIconClick} onMouseDown={handleMouseDown}>
         {
           filterIcon || <svg
             width={size}
