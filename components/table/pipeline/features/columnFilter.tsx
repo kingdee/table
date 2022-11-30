@@ -24,7 +24,7 @@ export interface FilterFeatureOptions {
   mode?: 'single' | 'multiple'
 
   /** 过滤图标 */
-  filterIcon?:ReactNode
+  filterIcon?: ReactNode | ((filtered: boolean) => ReactNode)
 
   /** 是否对触发弹出过滤面板 的 click 事件调用 event.stopPropagation() */
   stopClickEventPropagation?: boolean
