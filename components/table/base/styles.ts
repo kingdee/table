@@ -208,7 +208,7 @@ export const defaultCSSVariables = {
   '--primary-color': '#5582F3',
   '--primary-color-level1': 'rgb(242, 248, 255)',
   '--primary-color-level2': 'rgb(135, 173, 255)',
-  '--icon-color': '#bfbfbf',
+  '--icon-color': '#666666',
   '--strong-border-color': '#d9d9d9',
 
   '--header-row-height': '32px',
@@ -595,6 +595,13 @@ export const StyledArtTableWrapper = styled.div`
     &.active{
       color:var(--primary-color);
     }
+    padding: 6px 4px;
+    &:hover{
+      background-color: #e5e5e5;
+    }
+  }
+  .${Classes.filterIcon} {
+    display: flex
   }
   //#endregion
 
