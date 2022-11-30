@@ -21,12 +21,19 @@ interface FilterProps{
   size?: number
   isFilterActive:boolean,
   FilterPanelContent?: FilterPanelType
-  filterIcon?:ReactNode
+  filterIcon?:ReactNode | ((filtered: boolean) => ReactNode)
   setFilterModel: DefaultFilterPanelProps['setFilterModel']
   filterModel: DefaultFilterPanelProps['filterModel']
   setFilter: CustomeFilterPanelProps['setFilter']
   onClick?: (e: React.MouseEvent) => any
   stopClickEventPropagation?: boolean
+}
+
+interface FilterPanelProps {
+  ele: HTMLElement
+  filterIcon: ReactNode
+  hidePanel: () => void
+  renderPanelContent: () => JSX.Element
 }
 
 const FilterIconSpanStyle = styled.span`
@@ -38,7 +45,7 @@ const FilterIconSpanStyle = styled.span`
   // height: 12px; 
 `
 
-function Panel ({ ele, filterIcon, hidePanel, renderPanelContent }) {
+function Panel ({ ele, filterIcon, hidePanel, renderPanelContent }: FilterPanelProps) {
   const filterPanelRef = React.useRef(null)
   const [position, setPosition] = React.useState(calculatePopupRelative(ele, document.body, { x: HEADER_ICON_OFFSET_X, y: HEADER_ICON_OFFSET_Y }))
   const style = {
@@ -111,6 +118,8 @@ function Filter ({ size = 12, style, className, FilterPanelContent, filterIcon, 
     'filter-panel-open': showPanel
   })
 
+  const displayFilterIcon: ReactNode = typeof filterIcon === 'function' ? filterIcon(isFilterActive) : filterIcon
+
   return (
     <FilterIconSpanStyle
       style={style}
@@ -119,17 +128,16 @@ function Filter ({ size = 12, style, className, FilterPanelContent, filterIcon, 
     >
       <span ref={iconRef} className={Classes.filterIcon}>
         {
-          filterIcon || <DefaultFilterIcon width={size} height={size} />
+          displayFilterIcon || <DefaultFilterIcon width={size} height={size} />
         }
       </span>
       {showPanel &&
       createPortal(
         <Panel
-          ele ={iconRef.current}
-          filterIcon ={filterIcon}
-          hidePanel = {hidePanel}
-          renderPanelContent ={renderPanelContent}
-
+          ele={iconRef.current}
+          filterIcon={displayFilterIcon}
+          hidePanel={hidePanel}
+          renderPanelContent={renderPanelContent}
         />,
         document.body)}
     </FilterIconSpanStyle>
