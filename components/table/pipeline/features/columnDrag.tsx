@@ -206,13 +206,12 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                 })
               }
               function handleMouseUp (e) {
-                e.stopPropagation()
                 document.body.removeEventListener('mousemove', handleMouseMove)
                 document.body.removeEventListener('mouseup', handleMouseUp)
                 window.removeEventListener('selectstart', disableSelect)
-                // 阻止列头点击事件，防止拖动后触发列头过滤事件
                 if (_isMoveWhenClicking(mouseDownClientX, mouseDownClientY, e.clientX, e.clientY)) {
-                  currentTarget.addEventListener('click', stopClickPropagation)
+                  e.stopPropagation() // 存在移动就阻止冒泡
+                  currentTarget.addEventListener('click', stopClickPropagation) // 阻止列头点击事件，防止拖动后触发列头过滤事件
                 }
                 window.requestAnimationFrame(() => {
                   // 取消阻止列头点击事件
