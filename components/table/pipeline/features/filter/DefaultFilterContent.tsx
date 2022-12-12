@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import cx from 'classnames'
 
 import { DefaultFilterPanelProps } from '../../../interfaces'
 import { DEFAULT_FILTER_OPTIONS } from './util'
 import { Classes, ButtonCSS } from '../../../base/styles'
+import KeyCode from '../../../utils/keyCode'
 
 const DefaultFilterContentStyle = styled.div`
   display: flex;
@@ -87,6 +88,7 @@ const DefaultFilterContentStyle = styled.div`
 function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: DefaultFilterPanelProps) {
   const [selectedValue, setSelectedValue] = React.useState(filterModel?.filterCondition || 'contain')
   const [innerValue, setInnerValue] = React.useState(filterModel?.filter || '')
+  const inputRef = useRef<HTMLInputElement>()
   const handleClick = React.useCallback((option) => {
     setSelectedValue(option.key)
   }, [])
@@ -102,10 +104,23 @@ function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: Defau
     })
   }
 
+  const handleKeyDown = (e) => {
+    if (e.keyCode === KeyCode.ENTER) {
+      confirm()
+    }
+  }
+
   useEffect(() => {
     setSelectedValue(filterModel?.filterCondition || 'contain')
     setInnerValue(filterModel?.filter || '')
   }, [filterModel])
+
+  useEffect(() => {
+    // 兼容设置焦点后发生滚动
+    setTimeout(() => {
+      inputRef.current?.focus({ preventScroll: true })
+    })
+  }, [])
 
   return (
     <DefaultFilterContentStyle>
@@ -132,6 +147,8 @@ function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: Defau
               className='filter-search-inner'
               value={innerValue}
               onChange={(e) => { setInnerValue(e.target.value) }}
+              onKeyDown={handleKeyDown}
+              ref={inputRef}
             />
           </div>
         )
