@@ -8,7 +8,7 @@ import cssVars from 'css-vars-ponyfill'
 import mergeCellProps from '../utils/mergeCellProps'
 import { TableDOMHelper } from './helpers/TableDOMUtils'
 import { browserType } from '../utils'
-import { defaultCSSVariables, defaultConditionCSSVariables } from './styles'
+import { defaultCSSVariables } from './styles'
 
 /** styled-components 类库的版本，ali-react-table 同时支持 v3 和 v5 */
 export const STYLED_VERSION = (styledComponents as any).createGlobalStyle != null ? 'v5' : 'v3'
@@ -191,12 +191,12 @@ export const cssPolifill = (
     return
   }
 
-  const conditionVariables = {}
+  const conditionCSSVariables = {}
 
-  // 默认情况下td、th无左右边框，开启`bordered`属性后才开启
-  if (bordered) {
-    conditionVariables['--cell-border-vertical'] = defaultConditionCSSVariables['--cell-border-vertical']
-    conditionVariables['--header-cell-border-vertical'] = defaultConditionCSSVariables['--header-cell-border-vertical']
+  // 默认情况下存在td、th无左右边框，开启`bordered`属性后才开启，否则隐藏这两种属性
+  if (!bordered) {
+    conditionCSSVariables['--cell-border-vertical'] = 'none'
+    conditionCSSVariables['--header-cell-border-vertical'] = 'none'
   }
 
   cssVars({
@@ -204,7 +204,7 @@ export const cssPolifill = (
     // onlyLegacy: false,
     // rootElement: rootElement,
     include: 'style[data-styled]',
-    variables: Object.assign(conditionVariables, defaultCSSVariables, variables),
+    variables: Object.assign({}, defaultCSSVariables, variables, conditionCSSVariables),
     watch: true,
     silent: true
   })
