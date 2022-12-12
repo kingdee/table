@@ -28,7 +28,6 @@ const TableHeaderCellResize = styled.div`
     width: 1px;
     height: calc(100% - 14px);
     top: 7px;
-    background-color: var(--border-color);
   }
 `
 

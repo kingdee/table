@@ -228,30 +228,18 @@ export const defaultCSSVariables = {
   '--cell-border-horizontal': '1px solid #dfe3e8',
   '---cell-border-vertical': '1px solid #dfe3e8',
   '--header-cell-border': '1px solid #dfe3e8',
+  '--cell-border-vertical': '1px solid #dfe3e8',
   '--header-cell-border-horizontal': '1px solid #dfe3e8',
-}
-
-export const defaultConditionCSSVariables = {
-  '--header-cell-border-vertical': '1px solid #dfe3e8',
-  '--cell-border-vertical': '1px solid #dfe3e8'
+  '--header-cell-border-vertical': '1px solid #dfe3e8'
 }
 
 export const variableConst = getCssVariableText(defaultCSSVariables)
 
+const notBorderedStyleMixin = css`
+  --cell-border-vertical: none;
+  --header-cell-border-vertical: none;
+`
 const borderedStyleMixin = css`
-  //添加竖直边框线var变量
-  --cell-border-vertical: ${defaultConditionCSSVariables['--cell-border-vertical']};
-  --header-cell-border-vertical: ${defaultConditionCSSVariables['--header-cell-border-vertical']};
-
-  //兼容拖拽列宽、分组列下隐藏th的border-right: none情况
-  //todo: 应去掉以上强制隐藏右边框的代码！，默认就使用--header-cell-border-vertical的颜色
-  th.resizeable{
-    border-right: var(--header-cell-border-vertical)
-  }
-  th.${Classes.leaf} {
-    border-right: var(--header-cell-border-vertical);
-  }
-
   //th隐藏列宽拖拽的背景色，使用th的右边框代替
   .${Classes.tableHeaderCellResize}::after{
     background-color: inherit;
@@ -279,8 +267,11 @@ export const StyledArtTableWrapper = styled.div`
     ${outerBorderStyleMixin};
   }
 
-  // 表格开启边框线，处理th、td的单元格左右边框线（默认无该边框线）
-  &.${Classes.artTableBordered} {
+  // 表格不启用边框线，隐藏th、td的单元格左右边框线
+  &:not(.${Classes.artTableBordered}) {
+    ${notBorderedStyleMixin}
+  }
+  &.${Classes.artTableBordered}{
     ${borderedStyleMixin}
   }
 
@@ -419,11 +410,11 @@ export const StyledArtTableWrapper = styled.div`
   }
 
   th.resizeable{
-    border-right:none
+    border-right: var(--header-cell-border-vertical)
   }
 
   th.${Classes.leaf} {
-    border-right: none;
+    border-right: var(--header-cell-border-vertical);
     border-bottom: none;
   }
 
@@ -654,6 +645,13 @@ export const StyledArtTableWrapper = styled.div`
     border-top: var(--cell-border-horizontal);
   }
   //#endregion
+  
+  //#region 拖拽列宽大小
+  .${Classes.tableHeaderCellResize}::after{
+    background-color: var(--border-color);
+  }
+  //#endregion
+
   `
 export const ButtonCSS = css`
   ${variableConst}
