@@ -37,8 +37,8 @@ const FilterPanelStyle = styled.div`
 
 const useWindowEvents = (func, evens) => {
   React.useEffect(() => {
-    evens.forEach(event => window.addEventListener(event, func))
-    return () => evens.forEach(event => window.removeEventListener(event, func))
+    evens.forEach(event => window.addEventListener(event, func, true))
+    return () => evens.forEach(event => window.removeEventListener(event, func, true))
   }, [evens, func])
 }
 
@@ -66,22 +66,18 @@ function FilterPanel ({ style, children, position, filterIcon, onClose }) {
     setVisible(true)
   }, [position])
 
-  const hasPopupMouseDown = useRef(false)
-  const mouseDownTimeout = useRef<undefined|number>()
-  const handleMouseDown = (e) => {
-    // 当弹出的过滤面板内部发生鼠标按下事件时，标记当前事件，并在下个周期清除标记，用来确定鼠标按下发生在过滤面板内部
+  const hasPopupMouseEvent = useRef(false)
+  const handleMouseEvent = () => {
+    // 当弹出的过滤面板内部发生鼠标按下、抬起事件时，标记当前事件，并在click捕获期清除标记，用来确定鼠标按下、抬起发生在过滤面板内部
     // 利用了React.createPortal冒泡是根据React Tree的特性：
     // https://jwwnz.medium.com/react-portals-and-event-bubbling-8df3e35ca3f1
-    hasPopupMouseDown.current = true
-    clearTimeout(mouseDownTimeout.current)
-    mouseDownTimeout.current = window.setTimeout(() => {
-      hasPopupMouseDown.current = false
-    }, 0)
+    hasPopupMouseEvent.current = true
   }
 
   useWindowEvents((e) => {
-    !isContainPanel(e) && !hasPopupMouseDown.current && onClose()
-  }, ['mousedown'])
+    !isContainPanel(e) && !hasPopupMouseEvent.current && onClose()
+    hasPopupMouseEvent.current = false
+  }, ['click'])
 
   return (
     <FilterPanelStyle
@@ -91,7 +87,8 @@ function FilterPanel ({ style, children, position, filterIcon, onClose }) {
         top: visible ? perfectPosition.y : 0,
         opacity: visible ? 1 : 0
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={handleMouseEvent}
+      onMouseUp={handleMouseEvent}
       ref={ref}
     >
       <div className={'popup-header'}>
