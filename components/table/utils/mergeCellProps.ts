@@ -4,8 +4,8 @@ import { CellProps } from '../interfaces'
 function composeEventHandler(handler1: Function, handler2: Function) {
   return (...args: any) => {
     // 先执行原有的事件回调函数
-    handler1(args)
-    handler2(args)
+    handler1(...args)
+    handler2(...args)
     // 事件回调函数没有返回值，故这里不进行 return
   }
 }
