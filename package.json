@@ -54,7 +54,7 @@
     "test:update": "jest --config .jest.js --cache=false -u",
     "test:ci": "jest --config .jest.js  --coverage --ci --update-snapshot",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --skip-unstable",
-    "pub": "npm run test:all && npm run build && cross-env PUB_ENV=pub np --no-cleanup --no-tests",
+    "pub": "npm run build && cross-env PUB_ENV=pub np --no-cleanup --no-tests",
     "pub:beta": "npm run test:all && npm run build && cross-env PUB_ENV=pub np --no-cleanup --anyBranch --no-tests --tag=beta",
     "new": "node scripts/create-component.js",
     "kd-ui": "npm install @kingdee-ui/kui --registry http://npm.kingdee.com/"
