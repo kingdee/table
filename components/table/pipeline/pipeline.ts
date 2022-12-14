@@ -253,7 +253,7 @@ export class TablePipeline {
     result.setTableWidth = (tableWidth: number) => {
       const preTableWidth = this.getStateAtKey(tableWidthKey)
       if (preTableWidth !== tableWidth) {
-        this.setStateAtKey(tableWidthKey, tableWidth)
+        tableWidth && this.setStateAtKey(tableWidthKey, tableWidth)
       }
     }
     result.setTableDomHelper = (domHelper) => {
