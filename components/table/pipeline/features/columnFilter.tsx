@@ -28,6 +28,9 @@ export interface FilterFeatureOptions {
 
   /** 是否对触发弹出过滤面板 的 click 事件调用 event.stopPropagation() */
   stopClickEventPropagation?: boolean
+
+  /** 是否隐藏过滤弹出菜单header区域 */
+  hideFilterPopupHeader?: boolean
 }
 
 const stateKey = 'filter'
@@ -44,7 +47,8 @@ export function filter (opts: FilterFeatureOptions = {}) {
       keepDataSource,
       mode,
       filterIcon,
-      stopClickEventPropagation
+      stopClickEventPropagation,
+      hideFilterPopupHeader
     } = opts
 
     let inputFilters = filters ?? pipeline.getStateAtKey(stateKey) ?? defaultFilters ?? []
@@ -101,6 +105,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
                   active: filterActive
                 })}
                 stopClickEventPropagation={stopClickEventPropagation}
+                hideFilterPopupHeader={hideFilterPopupHeader}
               />
             )
           ]
