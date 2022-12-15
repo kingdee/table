@@ -2,6 +2,7 @@ import React, { CSSProperties, ReactNode, useEffect, useState, useRef } from 're
 import styled from 'styled-components'
 import { isElementInEventPath, keepWithinBounds } from '../../../utils/'
 import DefaultFilterIcon from './DefaultFilterIcon'
+import { Classes } from '../../../base/styles'
 
 const FilterPanelStyle = styled.div`
   display: flex;
@@ -13,11 +14,11 @@ const FilterPanelStyle = styled.div`
   box-shadow: 0 0 5px 0 rgba(154,154,154,.5);
   cursor: default;
 
-  .popup-header {
+  .${Classes.popupHeader} {
     display: flex;
     background-color: #ebedf1;
 
-    .popup-header-icon {
+    .${Classes.filterIcon} {
       display: flex;
       color:#666;
       background-color: #fff;
@@ -30,7 +31,7 @@ const FilterPanelStyle = styled.div`
     }
   }
 
-  .popup-body {
+  .${Classes.popupBody} {
     display: flex;
   }
 `
@@ -81,6 +82,7 @@ function FilterPanel ({ style, children, position, filterIcon, onClose, hideFilt
 
   return (
     <FilterPanelStyle
+      className={Classes.popup}
       style={{
         ...style,
         left: visible ? perfectPosition.x : 0,
@@ -92,15 +94,15 @@ function FilterPanel ({ style, children, position, filterIcon, onClose, hideFilt
       ref={ref}
     >
       {
-        !hideFilterPopupHeader ? <div className={'popup-header'}>
-          <span className={'popup-header-icon'}>
+        !hideFilterPopupHeader ? <div className={Classes.popupHeader}>
+          <span className={Classes.filterIcon}>
             {
               filterIcon || <DefaultFilterIcon width={12} height={12} />
             }
           </span>
         </div> : null
       }
-      <div className="popup-body">
+      <div className={Classes.popupBody}>
         {children}
       </div>
     </FilterPanelStyle>
