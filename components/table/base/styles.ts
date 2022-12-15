@@ -83,7 +83,11 @@ export const Classes = {
   leaf: `${prefix}leaf`,
 
   expanded: `${prefix}expanded`,
-  collapsed: `${prefix}collapsed`
+  collapsed: `${prefix}collapsed`,
+
+  popup: `${prefix}popup`,
+  popupHeader: `${prefix}popup-header`,
+  popupBody: `${prefix}popup-body`
 
 } as const
 
@@ -621,9 +625,6 @@ export const StyledArtTableWrapper = styled.div`
     &:hover{
       background-color: #e5e5e5;
     }
-  }
-  .${Classes.filterIcon} {
-    display: flex
   }
   //#endregion
 
