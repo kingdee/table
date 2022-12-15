@@ -45,6 +45,9 @@ const FilterIconSpanStyle = styled.span`
   // transform: translateY(-50%);
   // top: 50%;
   // height: 12px; 
+  > .${Classes.filterIcon} {
+    display: flex
+  }
 `
 
 function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopupHeader }: FilterPanelProps) {
