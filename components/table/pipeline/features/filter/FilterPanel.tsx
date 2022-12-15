@@ -54,7 +54,7 @@ export interface FilterPanel {
   children?: ReactNode
 }
 
-function FilterPanel ({ style, children, position, filterIcon, onClose }) {
+function FilterPanel ({ style, children, position, filterIcon, onClose, hideFilterPopupHeader }) {
   const [perfectPosition, setPerfectPosition] = useState(position)
   const [visible, setVisible] = useState(false)
   const ref = React.useRef<HTMLDivElement>(null)
@@ -91,13 +91,15 @@ function FilterPanel ({ style, children, position, filterIcon, onClose }) {
       onMouseUp={handleMouseEvent}
       ref={ref}
     >
-      <div className={'popup-header'}>
-        <span className={'popup-header-icon'}>
-          {
-            filterIcon || <DefaultFilterIcon width={12} height={12} />
-          }
-        </span>
-      </div>
+      {
+        !hideFilterPopupHeader ? <div className={'popup-header'}>
+          <span className={'popup-header-icon'}>
+            {
+              filterIcon || <DefaultFilterIcon width={12} height={12} />
+            }
+          </span>
+        </div> : null
+      }
       <div className="popup-body">
         {children}
       </div>
