@@ -27,6 +27,7 @@ interface FilterProps{
   setFilter: CustomeFilterPanelProps['setFilter']
   onClick?: (e: React.MouseEvent) => any
   stopClickEventPropagation?: boolean
+  hideFilterPopupHeader?: boolean
 }
 
 interface FilterPanelProps {
@@ -34,6 +35,7 @@ interface FilterPanelProps {
   filterIcon: ReactNode
   hidePanel: () => void
   renderPanelContent: () => JSX.Element
+  hideFilterPopupHeader?: boolean
 }
 
 const FilterIconSpanStyle = styled.span`
@@ -45,16 +47,16 @@ const FilterIconSpanStyle = styled.span`
   // height: 12px; 
 `
 
-function Panel ({ ele, filterIcon, hidePanel, renderPanelContent }: FilterPanelProps) {
+function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopupHeader }: FilterPanelProps) {
   const filterPanelRef = React.useRef(null)
-  const [position, setPosition] = React.useState(calculatePopupRelative(ele, document.body, { x: HEADER_ICON_OFFSET_X, y: HEADER_ICON_OFFSET_Y }))
+  const [position, setPosition] = React.useState(calculatePopupRelative(ele, document.body, _getPanelOffset(ele, hideFilterPopupHeader)))
   const style = {
     position: 'absolute',
     zIndex: 1050
   }
 
   const handleFilterPanelResize = (resize) => {
-    setPosition(calculatePopupRelative(ele, document.body, { x: HEADER_ICON_OFFSET_X, y: HEADER_ICON_OFFSET_Y }))
+    setPosition(calculatePopupRelative(ele, document.body, _getPanelOffset(ele, hideFilterPopupHeader)))
   }
 
   useEffect(() => {
@@ -65,12 +67,13 @@ function Panel ({ ele, filterIcon, hidePanel, renderPanelContent }: FilterPanelP
   }, [])
 
   return (
-    <div ref = {filterPanelRef}>
+    <div ref={filterPanelRef}>
       <FilterPanel
         style={style}
         onClose={hidePanel}
         position={position}
         filterIcon={filterIcon}
+        hideFilterPopupHeader={hideFilterPopupHeader}
       >
         {renderPanelContent()}
       </FilterPanel>
@@ -78,9 +81,13 @@ function Panel ({ ele, filterIcon, hidePanel, renderPanelContent }: FilterPanelP
   )
 }
 
-function Filter ({ size = 12, style, className, FilterPanelContent, filterIcon, setFilter, setFilterModel, filterModel, isFilterActive, stopClickEventPropagation }: FilterProps) {
+function Filter ({
+  size = 12, style, className, FilterPanelContent, filterIcon, setFilter, setFilterModel, filterModel, isFilterActive,
+  stopClickEventPropagation, hideFilterPopupHeader
+}: FilterProps) {
   const [showPanel, setShowPanel] = React.useState(false)
   const iconRef = React.useRef(null)
+  const iconWrapRef = React.useRef<HTMLElement>()
 
   const hidePanel = () => setShowPanel(false)
 
@@ -125,6 +132,7 @@ function Filter ({ size = 12, style, className, FilterPanelContent, filterIcon, 
       style={style}
       className={iconClassName}
       onClick={handleIconClick}
+      ref={iconWrapRef}
     >
       <span ref={iconRef} className={Classes.filterIcon}>
         {
@@ -134,14 +142,25 @@ function Filter ({ size = 12, style, className, FilterPanelContent, filterIcon, 
       {showPanel &&
       createPortal(
         <Panel
-          ele={iconRef.current}
+          ele={hideFilterPopupHeader ? iconWrapRef.current : iconRef.current}
           filterIcon={displayFilterIcon}
           hidePanel={hidePanel}
           renderPanelContent={renderPanelContent}
+          hideFilterPopupHeader={hideFilterPopupHeader}
         />,
         document.body)}
     </FilterIconSpanStyle>
   )
+}
+
+function _getPanelOffset (ele: HTMLElement, hideFilterPopupHeader?: boolean) : {
+  x: number
+  y: number
+} {
+  if (hideFilterPopupHeader) {
+    return { x: 0, y: 0 - ele.offsetHeight }
+  }
+  return { x: HEADER_ICON_OFFSET_X, y: HEADER_ICON_OFFSET_Y }
 }
 
 export default Filter
