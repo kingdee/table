@@ -146,7 +146,8 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         const rowLen = pipeline.getDataSource().length
         const footerDataSource = pipeline.getFooterDataSource() || []
-        if (columns.length && rowLen) {
+        // 焦点位于可编辑的单元格内不做全选
+        if (columns.length && rowLen && !getElementEditable(e.target)) {
           opts.preventkDefaultOfKeyDownEvent !== false && e.preventDefault()
           rangeSelectedChange({
             startRow: 0,
@@ -317,4 +318,12 @@ function getFooterRowIndex (footerRowRange:FooterRowRange) {
     return getRowIndex(footerRowRange.startRow, footerRowRange.endRow)
   }
   return { startRowIndex: -1, endRowIndex: -1 }
+}
+
+function getElementEditable (target) {
+  if (!target) return
+  if (['input', 'textarea'].includes(target.tagName.toLowerCase())) {
+    if (target.type === 'checkbox') return
+    return !target.disabled && !target.readOnly
+  }
 }
