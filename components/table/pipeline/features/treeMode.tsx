@@ -212,7 +212,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
       columns[expandColIndex] = {
         ...expandCol,
         title: (
-          <span style={{ marginLeft: iconIndent + iconWidth + iconGap }}>{internals.safeRenderHeader(expandCol)}</span>
+          <span style={{ marginLeft: iconIndent + iconWidth + iconGap, display: 'flex' }}>{internals.safeRenderHeader(expandCol)}</span>
         ),
         render,
         getCellProps: clickArea === 'cell' ? getCellProps : expandCol.getCellProps
