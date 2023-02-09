@@ -152,7 +152,7 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
           rangeSelectedChange({
             startRow: 0,
             endRow: rowLen - 1,
-            columns,
+            columns: collectNodes(columns, 'leaf-only'),
             startColumn: columns[0],
             footerRowRange: footerDataSource.length > 0 ? { startRow: 0, endRow: footerDataSource.length - 1 } : null
           })
