@@ -613,7 +613,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       const prevHasFooter = prevProps.footerDataSource.length > 0
       const currentHasFooter = this.props.footerDataSource.length > 0
       if (!prevHasFooter && currentHasFooter) {
-        getTableScrollFooterDOM(this.domHelper).scrollLeft = this.domHelper.tableBody.scrollLeft
+        getTableScrollFooterDOM(this.domHelper).scrollLeft = this.domHelper.virtual.scrollLeft
       }
     }
   }

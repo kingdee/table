@@ -9,6 +9,7 @@ import mergeCellProps from '../utils/mergeCellProps'
 import { TableDOMHelper } from './helpers/TableDOMUtils'
 import { browserType } from '../utils'
 import { defaultCSSVariables } from './styles'
+import { hasScroll } from '../utils/element'
 
 /** styled-components 类库的版本，ali-react-table 同时支持 v3 和 v5 */
 export const STYLED_VERSION = (styledComponents as any).createGlobalStyle != null ? 'v5' : 'v3'
@@ -114,6 +115,10 @@ export function syncScrollLeft(elements: HTMLElement[], callback: (scrollLeft: n
         return
       }
       const scrollLeft = ele.scrollLeft
+      // 某一元素当滚动条消失时会触发scroll事件（scrolLeft重置为0），不同步其他其他元素的scrollLeft
+      if (scrollLeft === 0 && !hasScroll(ele)) {
+        return
+      }
       publishScrollLeft(ele, scrollLeft)
       callback(scrollLeft)
     }
