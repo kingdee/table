@@ -213,3 +213,8 @@ export function keepWithinBounds(popupParent: HTMLElement, popup: HTMLElement, x
   }
   return {x, y}
 }
+
+export function hasScroll (ele: HTMLElement, isHorizontal = true) : boolean {
+  return isHorizontal ? ele.scrollWidth > ele.clientWidth : ele.scrollHeight > ele.clientHeight
+}
+
