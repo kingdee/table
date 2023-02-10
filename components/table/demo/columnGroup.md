@@ -31,6 +31,7 @@ order: 401
     {
       name: '人数',
       code: 'personTotal',
+      extendable:{ isExpand:true},
       children: col([
         { code: 'hc_2014', name: '2014年' },
         { code: 'hc_2015', name: '2015年' },
@@ -67,6 +68,7 @@ order: 401
     .input({ dataSource: dataSource, columns: columns })
     // .use(features.columnRangeHover())
     .use(features.columnResize())
+    .use(features.colGroupExtentable())
 
   return <Table className="bordered" {...pipeline.getProps()} />
 }

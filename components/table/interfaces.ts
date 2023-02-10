@@ -41,7 +41,10 @@ export interface ArtColumnStaticPart {
   headerCellProps?: CellProps
 
   /** 功能开关 */
-  features?: { [key: string]: any }
+  features?: { [key: string]: any },
+
+  /** 组合列是否可伸展 */
+  extendable?: { isExpand: boolean }
 }
 
 export interface Features {
@@ -54,7 +57,7 @@ export interface Features {
 
   /** */
 
-  
+
 }
 
 export interface ArtColumnDynamicPart {
