@@ -1,6 +1,7 @@
 import React, { CSSProperties, ReactNode, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import styled from 'styled-components'
+import cx from 'classnames'
 import { Classes } from '../../../base/styles'
 
 import { FilterPanel as FilterPanelType, DefaultFilterPanelProps, CustomeFilterPanelProps } from '../../../interfaces'
@@ -10,7 +11,7 @@ import DefaultFilterIcon from './DefaultFilterIcon'
 
 import { calculatePopupRelative } from '../../../utils'
 import { addResizeObserver } from '../../../base/utils'
-import cx from 'classnames'
+import KeyCode from '../../../utils/keyCode'
 
 const HEADER_ICON_OFFSET_Y = 8 + 1 // padding-top + border
 const HEADER_ICON_OFFSET_X = 16 + 1 // padding-left+ border
@@ -123,6 +124,11 @@ function Filter ({
     }
     setShowPanel(true)
   }
+  const handleKeyDown = (e) => {
+    if (e.currentTarget.contains(e.target as HTMLElement) && e.keyCode === KeyCode.ESC) {
+      setShowPanel(false)
+    }
+  }
   const iconClassName = cx({
     [className]: true,
     'filter-panel-open': showPanel
@@ -135,7 +141,9 @@ function Filter ({
       style={style}
       className={iconClassName}
       onClick={handleIconClick}
+      onKeyDown={handleKeyDown}
       ref={iconWrapRef}
+      tabIndex={-1}
     >
       <span ref={iconRef} className={Classes.filterIcon}>
         {
