@@ -49,8 +49,9 @@ export const Classes = {
 
   tableHeaderCellLine: `${prefix}table-header-cell-line`,
 
-  tableFilterTrigger: `${prefix}filter-trigger`,
-  tableSortIcon: `${prefix}sort-icon`,
+  tableFilterTrigger:`${prefix}filter-trigger`,
+  tableSortIcon:`${prefix}sort-icon`,
+  tableExtendIcon:`${prefix}extend-icon`,
 
   button: `${prefix}btn`,
   buttonPrimary: `${prefix}btn-primary`,
@@ -355,7 +356,7 @@ export const StyledArtTableWrapper = styled.div`
       border-right: 1px solid #0E5FD8 !important;
     }
   }
-  
+
   .${Classes.rangeSelection} {
     user-select:none;
   }
@@ -638,6 +639,12 @@ export const StyledArtTableWrapper = styled.div`
       color:var(--primary-color);
     }
   }
+  .${Classes.tableExtendIcon} {
+    color:var(--icon-color);
+    &.active{
+      color:var(--primary-color);
+    }
+  }
   //#endregion
 
   //#region 滚动条占位
@@ -649,7 +656,7 @@ export const StyledArtTableWrapper = styled.div`
     border-top: var(--cell-border-horizontal);
   }
   //#endregion
-  
+
   //#region 拖拽列宽大小
   .${Classes.tableHeaderCellResize}::after{
     background-color: var(--border-color);
