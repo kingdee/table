@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import { isElementInEventPath, keepWithinBounds } from '../../../utils/'
 import DefaultFilterIcon from './DefaultFilterIcon'
 import { Classes } from '../../../base/styles'
+import KeyCode from '../../../utils/keyCode'
 
 const FilterPanelStyle = styled.div`
   display: flex;
@@ -80,6 +81,12 @@ function FilterPanel ({ style, children, position, filterIcon, onClose, hideFilt
     hasPopupMouseEvent.current = false
   }, ['click'])
 
+  const handleKeyDown = (e) => {
+    if (e.currentTarget.contains(e.target as HTMLElement) && e.keyCode === KeyCode.ESC) {
+      onClose()
+    }
+  }
+
   return (
     <FilterPanelStyle
       className={Classes.popup}
@@ -91,7 +98,9 @@ function FilterPanel ({ style, children, position, filterIcon, onClose, hideFilt
       }}
       onMouseDown={handleMouseEvent}
       onMouseUp={handleMouseEvent}
+      onKeyDown={handleKeyDown}
       ref={ref}
+      tabIndex={-1}
     >
       {
         !hideFilterPopupHeader ? <div className={Classes.popupHeader}>
