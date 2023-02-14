@@ -625,6 +625,9 @@ export const StyledArtTableWrapper = styled.div`
     &:hover{
       background-color: #e5e5e5;
     }
+    &:focus {
+      outline: none
+    }
   }
   //#endregion
 
