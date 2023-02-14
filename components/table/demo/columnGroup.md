@@ -21,6 +21,7 @@ order: 401
     rate2_2014: 0.33,
     rate2_2015: 0.48,
   }))
+  const [ expandStatus, setExpandStatus ] = React.useState({personTotal:true})
   const col = proto.array({
     align: 'center',
     width: 80,
@@ -31,11 +32,13 @@ order: 401
     {
       name: '人数',
       code: 'personTotal',
+      features:{
+         showExtendIcon:true,
+      },
       children: col([
         { code: 'hc_2014', name: '2014年' },
         { code: 'hc_2015', name: '2015年' },
-        { code: 'hc_lfl', name: '同比增长', children: col([{code:'test', name: 'test'}]) },
-      ]),
+        { code: 'hc_lfl', name: '同比增长'}])
     },
     {
       name: '年龄',
@@ -63,11 +66,19 @@ order: 401
       ])
     }
   ])
+  const onChangeExtendStatus = (curStatus,changeValue) => {
+      setExpandStatus(curStatus)
+  }
   const pipeline = useTablePipeline({})
     .input({ dataSource: dataSource, columns: columns })
     // .use(features.columnRangeHover())
     .use(features.columnResize())
-
+    .use(features.colGroupExtendable(
+      {
+       extendStatus:expandStatus,
+       onChangeExtendStatus:onChangeExtendStatus
+      }
+   ))
   return <Table className="bordered" {...pipeline.getProps()} />
 }
 ```
