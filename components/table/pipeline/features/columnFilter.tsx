@@ -90,7 +90,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
           const colFilterIcon: React.ReactNode = col.features?.filterIcon ?? filterIcon
 
           result.title = [
-            ...([].concat(result.title ?? [internals.safeRenderHeader({ ...col, title: null })])),
+            ...([].concat(result.title ?? [internals.safeRenderHeader({ ...col})])),
             (
               <Filter
                 key="filter"

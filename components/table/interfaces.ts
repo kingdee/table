@@ -41,7 +41,7 @@ export interface ArtColumnStaticPart {
   headerCellProps?: CellProps
 
   /** 功能开关 */
-  features?: { [key: string]: any }
+  features?: { [key: string]: any },
 }
 
 export interface Features {
@@ -54,7 +54,7 @@ export interface Features {
 
   /** */
 
-  
+
 }
 
 export interface ArtColumnDynamicPart {
