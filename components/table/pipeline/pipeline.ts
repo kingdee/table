@@ -3,7 +3,6 @@ import { TableProps, PrimaryKey } from '../base'
 import { ArtColumn, TableTransform, Transform } from '../interfaces'
 import { mergeCellProps } from '../utils'
 import { autoFillTableWidth, tableWidthKey } from './features/autoFill'
-import { rangeSelectionKey } from './features/rangeSelection'
 
 type RowPropsGetter = TableProps['getRowProps']
 
@@ -260,14 +259,11 @@ export class TablePipeline {
       this.ref.current.domHelper = domHelper
     }
 
-    return result
-  }
+    result.setRowHeightManager = (rowHeightManager) => {
+      this.ref.current.rowHeightManager = rowHeightManager
+    }
 
-  /**
-   * 清除范围选中内容
-   */
-  clearRangeSelection () {
-    this.setStateAtKey(rangeSelectionKey, null)
+    return result
   }
 }
 
