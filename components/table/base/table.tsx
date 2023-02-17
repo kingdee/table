@@ -17,7 +17,7 @@ import {
   BaseTableCSSVariables,
   Classes,
   LOCK_SHADOW_PADDING,
-  StyledArtTableWrapper,
+  StyledArtTableWrapper
 } from './styles'
 import {
   addResizeObserver,
@@ -125,7 +125,7 @@ export interface BaseTableProps {
   setTableWidth?(tableWidth: number): void
 
   setTableDomHelper?(domHelper: TableDOMHelper):void
-  clearRangeSelectionStatus?():void
+  setRowHeightManager?(rowHeightManager):void
   // css变量兼容
   cssVariables?: { [key:string] : any}
   enableCSSVariables ?: boolean
@@ -349,6 +349,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       return getFullRenderRange(rowCount)
     }
   }
+
   private handleRowMouseEnter = (e: React.MouseEvent<HTMLTableRowElement, MouseEvent>) => {
     const nodeList = this.domHelper.getRowNodeListByEvent(e)
     nodeList && nodeList.forEach(node => {
@@ -581,6 +582,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     cssPolifill({ variables: cssVariables || {}, enableCSSVariables, bordered })
     this.props.setTableWidth?.(this.domHelper.tableBody.clientWidth)
     this.props.setTableDomHelper?.(this.domHelper)
+    this.props.setRowHeightManager?.(this.rowHeightManager)
   }
 
   componentDidUpdate (prevProps: Readonly<BaseTableProps>, prevState: Readonly<BaseTableState>) {
