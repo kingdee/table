@@ -1,5 +1,5 @@
 import { TablePipeline } from "../pipeline";
-import React, { CSSProperties, useEffect } from 'react'
+import React, { CSSProperties, ReactNode, useEffect } from 'react'
 import { ArtColumn } from '../../interfaces'
 import styled from 'styled-components'
 import { internals } from '../../internals'
@@ -8,7 +8,8 @@ import cx from 'classnames'
 import { Classes } from '../../base/styles'
 export interface colGroupExtendOption {
   onChangeExtendStatus?({ }: any, { }: any): void,
-  extendStatus?: {}
+  extendStatus?: {},
+  extendIcon?: ReactNode | ((extendStatus: boolean) => ReactNode)
 }
 
 interface ExpandProps {
@@ -40,27 +41,31 @@ export const colGroupExtendable = (opts: colGroupExtendOption = {}) => (pipeline
     // 当组合列可伸缩，且处于收缩状态时，只渲染一个子列，其他不渲染
     const toggle = (col) => {
       // 对应的 col 进行状态切换
-      const changedValue = {[col.code]:!curState[col.code]}
+      const changedValue = { [col.code]: !curState[col.code] }
       curState[col.code] = !curState[col.code]
       pipeline.setStateAtKey(stateKey, { ...curState })
       opts?.onChangeExtendStatus && opts.onChangeExtendStatus(curState, changedValue)
     }
     const addIcon = (col: ArtColumn) => {
       const result = { ...col }
+      const curColState = curState[col.code]
+      const displaycolExtendIcon: ReactNode = typeof opts.extendIcon === 'function' ? opts.extendIcon(curColState) : opts.extendIcon
       const addIconNode = (
         <>
           {internals.safeRenderHeader({ ...col })}
           <ExtendIconStyle
             onClick={() => { toggle(col) }}
           >
-            <ExpandIcon
-              style={{ userSelect: 'none', marginLeft: 2, flexShrink: 0, cursor: "pointer", verticalAlign: 'middle' }}
-              className={cx({
-                [Classes.tableExtendIcon]: true,
-              })}
-              size={16}
-              isExtend={curState[col.code]}
-            />
+            {
+              displaycolExtendIcon || <ExpandIcon
+                style={{ userSelect: 'none', marginLeft: 2, flexShrink: 0, cursor: "pointer", verticalAlign: 'middle' }}
+                className={cx({
+                  [Classes.tableExtendIcon]: true,
+                })}
+                size={14}
+                isExtend={curColState}
+              />
+            }
           </ExtendIconStyle>
         </>
       )
