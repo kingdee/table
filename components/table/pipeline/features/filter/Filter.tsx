@@ -117,13 +117,12 @@ function Filter ({
   const handleIconClick = (e) => {
     // 只有当icon区域点击会触发面板展开
     // 防止 createPortal 区域的点击触发该事件
-    if (!e.currentTarget.contains(e.target as HTMLElement)) {
-      return
+    if (e.currentTarget.contains(e.target as HTMLElement)) {
+      setShowPanel(true)
     }
     if (stopClickEventPropagation) {
       e.stopPropagation()
     }
-    setShowPanel(true)
   }
   const handleKeyDown = (e) => {
     if (e.keyCode === KeyCode.ESC) {
