@@ -29,6 +29,9 @@ export interface FilterFeatureOptions {
   /** 是否对触发弹出过滤面板 的 click 事件调用 event.stopPropagation() */
   stopClickEventPropagation?: boolean
 
+  /** 是否对按ESC键时关闭面板的 keydown 事件调用 event.stopPropagation() */
+  stopESCKeyDownEventPropagation?: boolean
+
   /** 是否隐藏过滤弹出菜单header区域 */
   hideFilterPopupHeader?: boolean
 }
@@ -48,6 +51,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
       mode,
       filterIcon,
       stopClickEventPropagation,
+      stopESCKeyDownEventPropagation,
       hideFilterPopupHeader
     } = opts
 
@@ -105,6 +109,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
                   active: filterActive
                 })}
                 stopClickEventPropagation={stopClickEventPropagation}
+                stopESCKeyDownEventPropagation={stopESCKeyDownEventPropagation}
                 hideFilterPopupHeader={hideFilterPopupHeader}
               />
             )
