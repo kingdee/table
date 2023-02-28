@@ -28,6 +28,7 @@ interface FilterProps{
   setFilter: CustomeFilterPanelProps['setFilter']
   onClick?: (e: React.MouseEvent) => any
   stopClickEventPropagation?: boolean
+  stopESCKeyDownEventPropagation?: boolean
   hideFilterPopupHeader?: boolean
 }
 
@@ -87,7 +88,7 @@ function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopu
 
 function Filter ({
   size = 12, style, className, FilterPanelContent, filterIcon, setFilter, setFilterModel, filterModel, isFilterActive,
-  stopClickEventPropagation, hideFilterPopupHeader
+  stopClickEventPropagation, stopESCKeyDownEventPropagation, hideFilterPopupHeader
 }: FilterProps) {
   const [showPanel, setShowPanel] = React.useState(false)
   const iconRef = React.useRef(null)
@@ -125,8 +126,13 @@ function Filter ({
     setShowPanel(true)
   }
   const handleKeyDown = (e) => {
-    if (e.currentTarget.contains(e.target as HTMLElement) && e.keyCode === KeyCode.ESC) {
-      setShowPanel(false)
+    if (e.keyCode === KeyCode.ESC) {
+      if (e.currentTarget.contains(e.target as HTMLElement)) {
+        setShowPanel(false)
+      }
+      if (stopESCKeyDownEventPropagation) {
+        e.stopPropagation()
+      }
     }
   }
   const iconClassName = cx({
