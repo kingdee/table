@@ -30,6 +30,7 @@ interface FilterProps{
   stopClickEventPropagation?: boolean
   stopESCKeyDownEventPropagation?: boolean
   hideFilterPopupHeader?: boolean
+  getPopupParent? : (triggerElement: HTMLElement) => HTMLElement
 }
 
 interface FilterPanelProps {
@@ -38,6 +39,7 @@ interface FilterPanelProps {
   hidePanel: () => void
   renderPanelContent: () => JSX.Element
   hideFilterPopupHeader?: boolean
+  popupParent? : HTMLElement
 }
 
 const FilterIconSpanStyle = styled.span`
@@ -52,16 +54,16 @@ const FilterIconSpanStyle = styled.span`
   }
 `
 
-function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopupHeader }: FilterPanelProps) {
+function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopupHeader, popupParent }: FilterPanelProps) {
   const filterPanelRef = React.useRef(null)
-  const [position, setPosition] = React.useState(calculatePopupRelative(ele, document.body, _getPanelOffset(ele, hideFilterPopupHeader)))
+  const [position, setPosition] = React.useState(calculatePopupRelative(ele, popupParent, _getPanelOffset(ele, hideFilterPopupHeader)))
   const style = {
     position: 'absolute',
     zIndex: 1050
   }
 
   const handleFilterPanelResize = (resize) => {
-    setPosition(calculatePopupRelative(ele, document.body, _getPanelOffset(ele, hideFilterPopupHeader)))
+    setPosition(calculatePopupRelative(ele, popupParent, _getPanelOffset(ele, hideFilterPopupHeader)))
   }
 
   useEffect(() => {
@@ -88,7 +90,7 @@ function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopu
 
 function Filter ({
   size = 12, style, className, FilterPanelContent, filterIcon, setFilter, setFilterModel, filterModel, isFilterActive,
-  stopClickEventPropagation, stopESCKeyDownEventPropagation, hideFilterPopupHeader
+  stopClickEventPropagation, stopESCKeyDownEventPropagation, hideFilterPopupHeader, getPopupParent
 }: FilterProps) {
   const [showPanel, setShowPanel] = React.useState(false)
   const iconRef = React.useRef(null)
@@ -140,7 +142,7 @@ function Filter ({
   })
 
   const displayFilterIcon: ReactNode = typeof filterIcon === 'function' ? filterIcon(isFilterActive) : filterIcon
-
+  const popupParent:HTMLElement = getPopupParent?.(iconWrapRef.current) || document.body
   return (
     <FilterIconSpanStyle
       style={style}
@@ -163,8 +165,8 @@ function Filter ({
           hidePanel={hidePanel}
           renderPanelContent={renderPanelContent}
           hideFilterPopupHeader={hideFilterPopupHeader}
-        />,
-        document.body)}
+          popupParent={popupParent}
+        />, popupParent)}
     </FilterIconSpanStyle>
   )
 }
