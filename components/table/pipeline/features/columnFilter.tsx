@@ -32,8 +32,11 @@ export interface FilterFeatureOptions {
   /** 是否对按ESC键时关闭面板的 keydown 事件调用 event.stopPropagation() */
   stopESCKeyDownEventPropagation?: boolean
 
-  /** 是否隐藏过滤弹出菜单header区域 */
+  /** 是否隐藏过滤面板的header区域 */
   hideFilterPopupHeader?: boolean
+
+  /** 指定过滤面板渲染的父节点 */
+  getPopupParent? : (triggerElement: HTMLElement) => HTMLElement
 }
 
 const stateKey = 'filter'
@@ -52,7 +55,8 @@ export function filter (opts: FilterFeatureOptions = {}) {
       filterIcon,
       stopClickEventPropagation,
       stopESCKeyDownEventPropagation,
-      hideFilterPopupHeader
+      hideFilterPopupHeader,
+      getPopupParent
     } = opts
 
     let inputFilters = filters ?? pipeline.getStateAtKey(stateKey) ?? defaultFilters ?? []
@@ -111,6 +115,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
                 stopClickEventPropagation={stopClickEventPropagation}
                 stopESCKeyDownEventPropagation={stopESCKeyDownEventPropagation}
                 hideFilterPopupHeader={hideFilterPopupHeader}
+                getPopupParent={getPopupParent}
               />
             )
           ]
