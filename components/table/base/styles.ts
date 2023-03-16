@@ -661,6 +661,14 @@ export const StyledArtTableWrapper = styled.div`
   .${Classes.tableHeaderCellResize}::after{
     background-color: var(--border-color);
   }
+  //解决部分浏览器(chrome109)最后一个单元格的列宽拖拽区域绝对定位超出表格，导致表格竖分割线无法对齐
+  .${Classes.tableHeaderRow} th.${Classes.last} .${Classes.tableHeaderCellResize}{
+    right: 0;
+    width: 5px;
+    &::after{
+      left: 5px;
+    }
+  }
   //#endregion
 
   `
