@@ -43,6 +43,7 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
     const SCROLL_SIZE = 30
     const tableBody = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.tableBody
     const tableFooter = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.tableFooter
+    const artTable = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.artTable
     if (!tableBody) {
       return pipeline
     }
@@ -64,6 +65,11 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
         columns: rangeColumns,
         startColumn: startDragCell.column,
         footerRowRange
+      }
+      if (isCellRangeSingleCell(rangeSelection)) {
+        artTable.classList.remove(cx(Classes.rangeSelection))
+      } else {
+        artTable.classList.add(cx(Classes.rangeSelection))
       }
       rangeSelectedChange(rangeSelection)
     }
@@ -91,6 +97,7 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
       // mouseDownEvent.preventDefault()
       // shift + 点击选中
       shiftKeySelect(mouseDownEvent)
+      if (mouseDownEvent.shiftKey) return
 
       const target = mouseDownEvent.target
       const startDragCell = getTargetCell(target, columns)
@@ -149,6 +156,7 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
         // 焦点位于可编辑的单元格内不做全选
         if (columns.length && rowLen && !getElementEditable(e.target)) {
           opts.preventkDefaultOfKeyDownEvent !== false && e.preventDefault()
+          artTable.classList.add(cx(Classes.rangeSelection))
           rangeSelectedChange({
             startRow: 0,
             endRow: rowLen - 1,

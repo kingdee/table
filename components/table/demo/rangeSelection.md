@@ -2,7 +2,11 @@
 title: 范围选中
 order: 302
 ---
-长按单元格，然后拖动会有一个范围选中的效果。当dataSource更新时，选中效果会重置
+长按单元格，然后拖动会有一个范围选中的效果，可以通过rangeSelectedChange回调拿到范围选中的结果。
+
+支持单个单元格光标框选文字，框选范围超过单个单元格则显示范围选中效果。
+
+支持shift + 鼠标点击 框选范围，shift + 鼠标拖动可以实现浏览器原生选中。
 
 用法:
 pipeline.use(features.rangeSelection())
@@ -36,7 +40,6 @@ pipeline.use(features.rangeSelection())
     .input({ dataSource: dataSource, columns: columns })
     .primaryKey('id')
     .use(features.rangeSelection({
-      rangeSelectedColor:'#eee', // 设置范围选中背景色
       rangeSelectedChange:function(cellRanges){
         console.log('cellRanges',cellRanges)
       } // 范围选中回调
@@ -44,10 +47,8 @@ pipeline.use(features.rangeSelection())
     
 
   return (
-    <div>
-      <Table {...pipeline.getProps()} className="aaa" style={{ height: 200 }} />
-      <button onClick = {handleClick}>更新数据</button>
-      </div>
+    <Table {...pipeline.getProps()} />
+     
   )
 }
 ```
