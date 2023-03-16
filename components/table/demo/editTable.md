@@ -29,8 +29,11 @@ const [activeCell, setActiveCell] = useState({ row: -1, col: -1 });
     return {
       style: {
       },
-      onClick(event) {
-        setActiveCell({ row: rowIndex, col });
+      onClick (event) {
+        const { row: preRow, col: preCol } = activeCell
+        if (preRow !== rowIndex || preCol !== col) {
+          setActiveCell({ row: rowIndex, col })
+        }
       }
     };
   };
