@@ -666,7 +666,7 @@ export const StyledArtTableWrapper = styled.div`
     right: 0;
     width: 5px;
     &::after{
-      left: 5px;
+      left: 4px;
     }
   }
   //#endregion
