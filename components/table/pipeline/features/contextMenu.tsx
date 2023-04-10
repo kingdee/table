@@ -11,9 +11,11 @@ import { Classes, MenuClasses } from '../../base/styles'
 const stateKey = 'contextMenu'
 
 interface ContextMenuItem {
+  key?: string
   name: string
-  action: () => {}
+  action: () => void
   disabled?: boolean
+  className?: string
 }
 
 interface positionForMenuParams {
@@ -26,11 +28,14 @@ export interface ContextMenuFeatureOptions {
   getContextMenuItems?: (params: any) => ContextMenuItem[],
   /** 弹出框的父容器 */
   popupParent?: HTMLElement
+  /** 右键菜单className */
+  menuClassName?: string
 }
 
 export function contextMenu (opts: ContextMenuFeatureOptions = {}) {
   return function step (pipeline: TablePipeline) {
     const popupParent = opts.popupParent || document.body
+    const menuClassName = opts.menuClassName
     const menuHelper = new MenuHelper()
 
     const addPopup = (menu) => {
@@ -127,7 +132,7 @@ export function contextMenu (opts: ContextMenuFeatureOptions = {}) {
         return
       }
       const position = positionForMenu(e, popupParent)
-      const menu = <Menu options={options} hideContextMenu={hideContextMenu} position={position} getPopupParent={getPopupParent} />
+      const menu = <Menu options={options} hideContextMenu={hideContextMenu} position={position} getPopupParent={getPopupParent} className={menuClassName}/>
       const _hidePopup = addPopup(menu)
       menuHelper.init(_hidePopup)
     }
@@ -150,7 +155,13 @@ function getMenuItemKey ({ name, index }) {
 }
 
 function Menu (props) {
-  const { options = [], hideContextMenu, position, getPopupParent } = props
+  const { className, options = [], hideContextMenu, position, getPopupParent } : {
+    className?: string
+    options: ContextMenuItem[]
+    hideContextMenu: () => void
+    position: {x:number, y:number}
+    getPopupParent: () => HTMLElement
+  } = props
   const menuRef = useRef<HTMLElement>()
 
   useEffect(() => {
@@ -164,15 +175,24 @@ function Menu (props) {
     }
   }, [position])
 
-  return <ContextMenuStyleWrap className={MenuClasses.menu} ref={menuRef} style={{ left: position.x, top: position.y }}>
+  return <ContextMenuStyleWrap className={cx(MenuClasses.menu, className)} ref={menuRef} style={{ left: position.x, top: position.y }}>
     <div className={MenuClasses.menuList}>
-      {options.map((item, index) => <MenuItem key={item.key ? item.key : getMenuItemKey({ name: item.name, index })} name={item.name} action={item.action} disabled={item.disabled} hideContextMenu={hideContextMenu} />)}
+      {
+        options.map((item, index) => <MenuItem
+          key={item.key ? item.key : getMenuItemKey({ name: item.name, index })}
+          name={item.name}
+          action={item.action}
+          className={item.className}
+          disabled={item.disabled}
+          hideContextMenu={hideContextMenu} />
+        )
+      }
     </div>
   </ContextMenuStyleWrap>
 }
 
 function MenuItem (props) {
-  const { name, action, disabled, hideContextMenu } = props
+  const { name, action, className, disabled, hideContextMenu } = props
 
   const itemRef = useRef()
 
@@ -206,7 +226,7 @@ function MenuItem (props) {
     }
   }
 
-  return <div className={cx(MenuClasses.menuOption, { [MenuClasses.menuOptionDisable]: disabled })} ref={itemRef} onClick={handleClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+  return <div className={cx(MenuClasses.menuOption, className, { [MenuClasses.menuOptionDisable]: disabled })} ref={itemRef} onClick={handleClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
     <span className={MenuClasses.menuOptionText}>{name}</span>
   </div>
 }
