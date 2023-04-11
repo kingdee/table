@@ -87,7 +87,7 @@ const DefaultFilterContentStyle = styled.div`
 
 function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: DefaultFilterPanelProps) {
   const [selectedValue, setSelectedValue] = React.useState(filterModel?.filterCondition || 'contain')
-  const [innerValue, setInnerValue] = React.useState(filterModel?.filter || '')
+  const [innerValue, setInnerValue] = React.useState(filterModel?.filter || [])
   const inputRef = useRef<HTMLInputElement>()
   const handleClick = React.useCallback((option) => {
     setSelectedValue(option.key)
@@ -99,7 +99,7 @@ function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: Defau
   const confirm = () => {
     hidePanel()
     setFilterModel({
-      filter: [innerValue],
+      filter: innerValue,
       filterCondition: selectedValue
     })
   }
@@ -112,7 +112,7 @@ function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: Defau
 
   useEffect(() => {
     setSelectedValue(filterModel?.filterCondition || 'contain')
-    setInnerValue(filterModel?.filter || '')
+    setInnerValue(filterModel?.filter || [])
   }, [filterModel])
 
   useEffect(() => {
@@ -145,8 +145,8 @@ function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: Defau
           <div className='filter-search'>
             <input
               className='filter-search-inner'
-              value={innerValue}
-              onChange={(e) => { setInnerValue(e.target.value) }}
+              value={innerValue[0]}
+              onChange={(e) => { setInnerValue([e.target.value]) }}
               onKeyDown={handleKeyDown}
               ref={inputRef}
             />
