@@ -203,6 +203,10 @@ export function sort (opts: SortFeatureOptions = {}) {
         return dataSource
       }
 
+      if (sortMap.size === 0) {
+        return dataSource
+      }
+
       const sortColumnsMap = new Map(
         collectNodes(columns, 'leaf-only')
           .filter((col) => col.features?.sortable !== false && col.features?.sortable != null)
