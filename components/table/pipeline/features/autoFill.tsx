@@ -2,6 +2,7 @@ import { getLeftNestedLockCount } from '../../base/calculations'
 import { isLeafNode, makeRecursiveMapper } from '../../utils'
 import { TablePipeline } from '../pipeline'
 import { Classes } from '../../base/styles'
+import { COLUMN_RESIZE_KEY } from './columnResizeWidth'
 
 export const FILL_COLUMN_CODE = '$_fill_column_&'
 
@@ -45,7 +46,7 @@ const setAutoFillWidth = (pipeline: TablePipeline) => {
   pipeline.mapColumns(makeRecursiveMapper((col) => {
     const { width, code } = col
     if (isLeafNode(col) && code !== FILL_COLUMN_CODE) {
-      const resizeColumn = pipeline.getStateAtKey('columnResize')
+      const resizeColumn = pipeline.getFeatureOptions(COLUMN_RESIZE_KEY)
       columnWidthSum += (resizeColumn && resizeColumn[code]) || width
     }
     return col

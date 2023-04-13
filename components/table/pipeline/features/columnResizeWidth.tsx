@@ -69,8 +69,10 @@ function disableSelect (event) {
   event.preventDefault()
 }
 
+const stateKey = 'columnResize'
+export const COLUMN_RESIZE_KEY = 'columnResize'
+
 export function columnResize (opts: ColumnResizeOptions = {}) {
-  const stateKey = 'columnResize'
   const minSize = opts.minSize ?? 60
   const fallbackSize = opts.fallbackSize ?? 150
   const maxSize = opts.maxSize ?? 1000
@@ -87,24 +89,14 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
       }
     })
 
-    // 初始化 || opts.columnSize发生变化（为了autofill时能取到最新值）
-    if (!pipeline.getStateAtKey(stateKey) || pipeline.ref?.current.lastOptColumnSize !== opts.columnSize) {
-      pipeline.setStateAtKey(stateKey, columnSize)
-    }
-
-    if (pipeline.ref) {
-      pipeline.ref.current.lastOptColumnSize = opts.columnSize
-    }
+    // 为了autofill时能取到最新值，实时存储一份最新的columnSize
+    // 存在state里可能存到取不到最新的
+    pipeline.setFeatureOptions(COLUMN_RESIZE_KEY, columnSize)
 
     const onChangeSize = (nextColumnSize: ColumnSize) => {
       window.requestAnimationFrame(() => {
         pipeline.setStateAtKey(stateKey, nextColumnSize)
         opts?.onChangeSize?.(nextColumnSize)
-        if (opts.columnSize) {
-          if (pipeline.ref) {
-            pipeline.ref.current.lastOptColumnSize = nextColumnSize // 这里记录由列宽拖拽导致的opts.columnSize变化,避免重复渲染
-          }
-        }
       })
     }
 
