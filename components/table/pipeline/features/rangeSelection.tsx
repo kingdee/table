@@ -78,15 +78,15 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
       const clickCell = getTargetCell(target, columns)
       if (clickCell) {
         if (event.shiftKey) {
-          const _lastClickCell = pipeline.getStateAtKey(lastClickCellKey)
+          const _lastClickCell = pipeline.getFeatureOptions(lastClickCellKey)
           if (_lastClickCell) {
             setRangeSelection(_lastClickCell, clickCell)
           } else {
             // 第一次进来就按住shift键，这时候要记住点击的单元格
-            pipeline.setStateAtKey(lastClickCellKey, clickCell)
+            pipeline.setFeatureOptions(lastClickCellKey, clickCell)
           }
         } else {
-          pipeline.setStateAtKey(lastClickCellKey, clickCell)
+          pipeline.setFeatureOptions(lastClickCellKey, clickCell)
           setRangeSelection(clickCell, clickCell)
         }
       }
