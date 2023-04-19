@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import cx from 'classnames'
 import { ContextMenuStyleWrap } from '../../common-views'
@@ -6,9 +6,7 @@ import { copyDataToClipboard, executeOnTempElement, console, getEventPath, isEle
 import { findByTree } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
 import { internals } from '../../internals'
-import { Classes, MenuClasses } from '../../base/styles'
-
-const stateKey = 'contextMenu'
+import { MenuClasses } from '../../base/styles'
 
 interface ContextMenuItem {
   key?: string
@@ -72,12 +70,11 @@ export function contextMenu (opts: ContextMenuFeatureOptions = {}) {
     }
 
     const onContextMenu = (e: React.MouseEvent<HTMLTableElement, MouseEvent>) => {
-      if (suppressShowContextMenu(e)) {
-        return
+      if (canShowContextMenu(e, pipeline)) {
+        e.preventDefault()
+        e.stopPropagation()
+        showContextMenu(e)
       }
-      e.preventDefault()
-      e.stopPropagation()
-      showContextMenu(e)
     }
 
     pipeline.addTableProps({ onContextMenu })
@@ -345,18 +342,9 @@ function isElementInsideTheFooter (ele: HTMLElement): boolean {
   return false
 }
 
-// 禁止弹出右键菜单
-function suppressShowContextMenu (e: React.MouseEvent<HTMLTableElement, MouseEvent>) {
-  const path = getEventPath(e.nativeEvent)
-  let pointIndex = 0
-  while (pointIndex < path.length) {
-    const ele = path[pointIndex]
-    if (ele.classList.contains(Classes.tableBody) || ele.classList.contains(Classes.tableFooter)) {
-      return false
-    }
-    pointIndex++
-  }
-  return true
+function canShowContextMenu (e: React.MouseEvent<HTMLTableElement, MouseEvent>, pipeline: TablePipeline) {
+  return pipeline.ref.current.domHelper?.tableBody.contains(e.target) ||
+         pipeline.ref.current.domHelper?.tableFooter.contains(e.target)
 }
 
 // 默认选项
