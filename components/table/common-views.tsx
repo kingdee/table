@@ -107,10 +107,11 @@ export const ContextMenuStyleWrap = styled.div`
     background-color: #Fff;
     box-shadow: 0px 0px 5px 0px rgb(154 154 154 / 50%);
     cursor: default;
-    font-size: 13px;
+    font-size: 12px;
     position:absolute;
     z-index: 1050;
-    width:120px;
+    max-width: 600px;
+    padding: 8px 0;
   }
 
   .${MenuClasses.menuList}{
@@ -120,16 +121,21 @@ export const ContextMenuStyleWrap = styled.div`
 
   .${MenuClasses.menuList} .${MenuClasses.menuOption}{
     display: table-row;
-    color: #666666;
+    color: #212121;
   }
 
   .${MenuClasses.menuList} .${MenuClasses.menuOptionActive}{
-    background-color: #f5f5f5;
+    background-color: var(--hover-bgcolor);
   }
 
   .${MenuClasses.menuList} .${MenuClasses.menuOption} .${MenuClasses.menuOptionText}{
     display: table-cell;
-    padding: 5px 8px;
+    padding: 8px 12px;
+    max-width: 576px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 16px;
   }
   .${MenuClasses.menuList} .${MenuClasses.menuOption}.${MenuClasses.menuOptionDisable}{
     opacity: .5;
