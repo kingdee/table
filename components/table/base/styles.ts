@@ -209,7 +209,7 @@ export const defaultCSSVariables = {
   '--row-height': '48px',
   '--color': '#333',
   '--bgcolor': 'white',
-  '--hover-bgcolor': 'var(--hover-color, #F2F6FF)',
+  '--hover-bgcolor': 'var(--hover-color, #f5f5f5)',
   '--highlight-bgcolor': '#eee',
   '--primary-color': '#5582F3',
   '--primary-color-level1': 'rgb(242, 248, 255)',
