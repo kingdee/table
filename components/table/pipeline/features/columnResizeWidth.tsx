@@ -70,7 +70,8 @@ function disableSelect (event) {
 }
 
 const stateKey = 'columnResize'
-export const COLUMN_RESIZE_KEY = 'columnResize'
+export const COLUMN_SIZE_KEY = 'columnResize'
+export const RESIZED_COLUMN_KEY = 'resizedColumn'
 
 export function columnResize (opts: ColumnResizeOptions = {}) {
   const minSize = opts.minSize ?? 60
@@ -89,9 +90,9 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
       }
     })
 
-    // 为了autofill时能取到最新值，实时存储一份最新的columnSize
+    // 实时存储一份最新的columnSize，与autoFill共用一份数据
     // 存在state里可能存到取不到最新的
-    pipeline.setFeatureOptions(COLUMN_RESIZE_KEY, columnSize)
+    pipeline.setFeatureOptions(COLUMN_SIZE_KEY, columnSize)
 
     const onChangeSize = (nextColumnSize: ColumnSize) => {
       window.requestAnimationFrame(() => {
@@ -101,14 +102,18 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
     }
 
     const handleDoubleClick = (e: React.MouseEvent<HTMLSpanElement>, col: ArtColumn) => {
-      opts?.doubleClickCallback(e, col)
+      opts.doubleClickCallback?.(e, col)
     }
 
     const handleMouseDown = (e: React.MouseEvent<HTMLSpanElement>, col: ArtColumn) => {
       window.addEventListener('selectstart', disableSelect)
       const changedColumnSize = {}
       const startX = e.clientX
-      const { children, code } = col
+      const { children, code, features = {} } = col
+      const { minWidth, maxWidth } = features
+      const realMinSize = typeof minWidth === 'number' ? minWidth : minSize
+      const realMaxSize = typeof maxWidth === 'number' ? maxWidth : maxSize
+      const columnSize = pipeline.getFeatureOptions(COLUMN_SIZE_KEY)
       let recordColumnSize = columnSize
       e.stopPropagation()
       const nextSize$ = fromEvent<MouseEvent>(window, 'mousemove').pipe(
@@ -125,17 +130,17 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
               const startSize = columnSize[code]
               const currentDeltaWidth = Math.round(deltaSum * startSize / childrenWidthSum)
               if (index < leafChildColumns.length - 1) {
-                nextColumnSize[code] = clamp(minSize, startSize + currentDeltaWidth, maxSize)
+                nextColumnSize[code] = clamp(realMinSize, startSize + currentDeltaWidth, realMaxSize)
                 changedColumnSize[code] = nextColumnSize[code]
                 deltaRemaining -= currentDeltaWidth
               } else {
-                nextColumnSize[code] = clamp(minSize, startSize + deltaRemaining, maxSize)
+                nextColumnSize[code] = clamp(realMinSize, startSize + deltaRemaining, realMaxSize)
                 changedColumnSize[code] = nextColumnSize[code]
               }
             })
           } else {
             const startSize = columnSize[code]
-            nextColumnSize[code] = clamp(minSize, startSize + deltaSum, maxSize)
+            nextColumnSize[code] = clamp(realMinSize, startSize + deltaSum, realMaxSize)
             changedColumnSize[code] = nextColumnSize[code]
           }
           recordColumnSize = nextColumnSize
@@ -144,7 +149,15 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
       )
 
       nextSize$.subscribe({
-        next: onChangeSize,
+        next: nextColumnSize => {
+          onChangeSize(nextColumnSize)
+          // 由于COLUMN_RESIZE_KEY记录的是全量的列宽，此处记录被改变过的列宽
+          const resizedColumnSet = pipeline.getFeatureOptions(RESIZED_COLUMN_KEY) || new Set()
+          Object.keys(changedColumnSize).forEach(code =>{
+            resizedColumnSet.add(code, changedColumnSize[code])
+          })
+          pipeline.setFeatureOptions(RESIZED_COLUMN_KEY, resizedColumnSet)
+        },
         complete () {
           const changedColumnSizes = Object.keys(changedColumnSize).map(code => {
             return { code, width: changedColumnSize[code] }
