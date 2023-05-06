@@ -269,7 +269,6 @@ export class TablePipeline {
 
 export function useTablePipeline (ctx?: Partial<TablePipelineCtx>) {
   const [state, setState] = useState<any>({})
-  const ref = useRef<any>({})
-  ref.current.featureOptions = {}
+  const ref = useRef<any>({ featureOptions: {} })
   return new TablePipeline({ state, setState, ctx, ref })
 }
