@@ -95,7 +95,7 @@ function getColumnWidthSum (pipeline: TablePipeline) {
       const { width, code } = col
       if (isLeafNode(col) && code !== FILL_COLUMN_CODE) {
         const resizeColumn = pipeline.getFeatureOptions(COLUMN_SIZE_KEY)
-        return acc + (resizeColumn && resizeColumn[code]) || width
+        return acc + ((resizeColumn && resizeColumn[code]) || width)
       } else {
         return acc + dfs(col.children)
       }
