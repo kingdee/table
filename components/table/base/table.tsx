@@ -457,10 +457,14 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
             limit: Infinity
           }}
         />
-        <div
-          className={Classes.verticalScrollPlaceholder}
-          style={this.hasScrollY ? { width: this.getScrollBarWidth(), visibility: 'initial' } : undefined}>
-        </div>
+        {
+          footerDataSource.length > 0
+            ? <div
+              className={Classes.verticalScrollPlaceholder}
+              style={this.hasScrollY ? { width: this.getScrollBarWidth(), visibility: 'initial' } : undefined}>
+            </div>
+            : null
+        }
       </div>
     )
   }
