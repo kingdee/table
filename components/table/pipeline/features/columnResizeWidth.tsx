@@ -72,6 +72,7 @@ function disableSelect (event) {
 const stateKey = 'columnResize'
 export const COLUMN_SIZE_KEY = 'columnResize'
 export const RESIZED_COLUMN_KEY = 'resizedColumn'
+export const LAST_RESIZED_COLUMN_KEY = 'lastResizedColumn'
 
 export function columnResize (opts: ColumnResizeOptions = {}) {
   const minSize = opts.minSize ?? 60
@@ -157,6 +158,7 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
             resizedColumnSet.add(code, changedColumnSize[code])
           })
           pipeline.setFeatureOptions(RESIZED_COLUMN_KEY, resizedColumnSet)
+          pipeline.setFeatureOptions(LAST_RESIZED_COLUMN_KEY, code)
         },
         complete () {
           const changedColumnSizes = Object.keys(changedColumnSize).map(code => {
