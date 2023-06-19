@@ -2,7 +2,7 @@ import { getLeftNestedLockCount } from '../../base/calculations'
 import { isLeafNode, makeRecursiveMapper } from '../../utils'
 import { TablePipeline } from '../pipeline'
 import { Classes } from '../../base/styles'
-import { COLUMN_SIZE_KEY, RESIZED_COLUMN_KEY } from './columnResizeWidth'
+import { COLUMN_SIZE_KEY, LAST_RESIZED_COLUMN_KEY, RESIZED_COLUMN_KEY } from './columnResizeWidth'
 import { ArtColumn } from '../../interfaces'
 
 export const FILL_COLUMN_CODE = '$_fill_column_&'
@@ -110,6 +110,14 @@ function getTableRemainingWidth (pipeline: TablePipeline) {
   return remainingWidth > 0 ? remainingWidth : 0
 }
 
+function isAfterLastResizeCol (column: ArtColumn, pipeline: TablePipeline) {
+  const lastResizedColumnCode = pipeline.getFeatureOptions(LAST_RESIZED_COLUMN_KEY)
+  if (lastResizedColumnCode === undefined) return true
+  const lastResizedColumnIndex = pipeline.getColumns().findIndex(col => col.code === lastResizedColumnCode)
+  const colIndex = pipeline.getColumns().findIndex(col => col.code === column.code)
+  return colIndex > lastResizedColumnIndex
+}
+
 function isValidFlexColumn (col: ArtColumn, pipeline: TablePipeline) {
   const resizeColumn = pipeline.getFeatureOptions(RESIZED_COLUMN_KEY)
   // 拖拽列自动禁止flex
@@ -117,7 +125,7 @@ function isValidFlexColumn (col: ArtColumn, pipeline: TablePipeline) {
     return false
   }
   const flex = col.features?.flex
-  return typeof flex === 'number' && flex > 0
+  return typeof flex === 'number' && flex > 0 && isAfterLastResizeCol(col, pipeline)
 }
 
 function clamp (min: number, x: number, max: number) {
