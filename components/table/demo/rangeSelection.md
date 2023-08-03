@@ -2,11 +2,15 @@
 title: 范围选中
 order: 302
 ---
-长按单元格，然后拖动会有一个范围选中的效果，可以通过rangeSelectedChange回调拿到范围选中的结果。
+长按单元格，然后拖动会有一个范围选中的效果，可以通过rangeSelectedChange回调拿到范围选中的结果
 
-支持单个单元格光标框选文字，框选范围超过单个单元格则显示范围选中效果。
+支持单个单元格光标框选文字，框选范围超过单个单元格则显示范围选中效果
 
-支持shift + 鼠标点击 框选范围，shift + 鼠标拖动可以实现浏览器原生选中。
+支持shift + 鼠标点击 框选范围
+
+支持多范围框选， 按住control键进行框选时不会清掉之前的框选结果
+
+[参数传送门](#rangeSelection)
 
 用法:
 pipeline.use(features.rangeSelection())
@@ -31,24 +35,19 @@ pipeline.use(features.rangeSelection())
   ]
 
 
-  const [dataSource,setDataSource] = React.useState(defaultDataSource)
+  const [dataSource, setDataSource] = React.useState(defaultDataSource)
   
-  const handleClick = ()=>{
-    setDataSource(dataSource.slice(0,dataSource.length-1))
-  }
-    const pipeline = useTablePipeline()
-    .input({ dataSource: dataSource, columns: columns })
-    .primaryKey('id')
-    .use(features.rangeSelection({
-      rangeSelectedChange:function(cellRanges){
-        console.log('cellRanges',cellRanges)
-      } // 范围选中回调
-    }))
-    
-
+  const pipeline = useTablePipeline()
+  .input({ dataSource: dataSource, columns: columns })
+  .primaryKey('id')
+  .use(features.rangeSelection({
+    rangeSelectedChange: function(cellRanges) {
+      console.log('cellRanges', cellRanges)
+    } // 范围选中回调
+  }))
+  
   return (
     <Table {...pipeline.getProps()} />
-     
   )
 }
 ```
