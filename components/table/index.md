@@ -232,6 +232,16 @@ SortHeaderCellProps {
 | expandColumnCode | 指定在哪一列设置展开按钮 | string | `-` | `-` | 0.0.1-beta.1 |
 <br/>
 
+#### rangeSelection
+范围框选配置项
+
+| 属性 | 说明 | 类型 | 默认值 | 可选值 | 版本 |
+| --- | --- | --- | --- | --- | --- |
+| rangeSelectedChange | 范围框选回调函数 | (cellRanges: CellRange[], isFinished:boolean):void | `-` | `-` | 0.0.1-beta.1 |
+| preventkDefaultOfKeyDownEvent | 是否阻止keydown的默认行为  | boolean | `false` | `true` &#124; `false` | 0.0.1-beta.1 |
+| suppressMultiRangeSelection | 是否禁止多范围框选 | boolean | `false` | `true` &#124; `false` | 0.0.1-beta.1 |
+<br/>
+
 #### treeMode
 树形数据展示配置项
 
