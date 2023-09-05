@@ -31,7 +31,7 @@ const TableHeaderCellResize = styled.div`
   }
 `
 
-const TableHeaderGroupCellResize = styled(TableHeaderCellResize)`
+const TableHeaderGroupCellResize = styled(props => <TableHeaderCellResize {...props}/>)`
   &:after {
     height: 100%;
     top: 0;

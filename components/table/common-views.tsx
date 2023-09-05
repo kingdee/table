@@ -8,7 +8,7 @@ export const InlineFlexCell = styled.div`
   align-items: center;
 `
 
-export const ExpansionCell = styled(InlineFlexCell)`
+export const ExpansionCell = styled(props => <InlineFlexCell {...props}/>)`
   &.${Classes.leaf} {
     cursor: default;
   }
