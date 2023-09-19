@@ -591,6 +591,10 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
   componentDidUpdate (prevProps: Readonly<BaseTableProps>, prevState: Readonly<BaseTableState>) {
     // console.log('did update start')
+    const { cssVariables, enableCSSVariables, bordered } = this.props
+    if(!shallowEqual(prevProps?.cssVariables,this.props?.cssVariables)){
+      cssPolifill({ variables: cssVariables || {}, enableCSSVariables, bordered })
+    }
     this.updateDOMHelper()
     this.props$.next(this.props)
     this.didMountOrUpdate(prevProps, prevState)
