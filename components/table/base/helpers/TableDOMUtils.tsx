@@ -92,12 +92,14 @@ export class TableDOMHelper {
 
   getLeftLockShadow (): HTMLDivElement {
     const selector = `.${Classes.lockShadowMask} .${Classes.leftLockShadow}`
-    return this.artTable.querySelector<HTMLDivElement>(selector)
+    const allLeftLockShadow = this.artTable.querySelectorAll<HTMLDivElement>(selector)
+    return allLeftLockShadow[allLeftLockShadow.length - 1] // 当table-body、table-footer嵌套多层表格时，需要查找最后一个，否则会查找到嵌套表格的
   }
 
   getRightLockShadow (): HTMLDivElement {
     const selector = `.${Classes.lockShadowMask} .${Classes.rightLockShadow}`
-    return this.artTable.querySelector<HTMLDivElement>(selector)
+    const allRightLockShadow = this.artTable.querySelectorAll<HTMLDivElement>(selector)
+    return allRightLockShadow[allRightLockShadow.length - 1] // 当table-body、table-footer嵌套多层表格时，需要查找最后一个，否则会查找到嵌套表格的
   }
 
   getLoadingIndicator (): HTMLDivElement {
