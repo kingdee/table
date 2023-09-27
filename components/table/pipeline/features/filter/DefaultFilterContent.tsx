@@ -85,7 +85,7 @@ const DefaultFilterContentStyle = styled.div`
   }
 `
 
-function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: DefaultFilterPanelProps) {
+function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel, localeText={} }: DefaultFilterPanelProps) {
   const [selectedValue, setSelectedValue] = React.useState(filterModel?.filterCondition || 'contain')
   const [innerValue, setInnerValue] = React.useState(filterModel?.filter || [])
   const inputRef = useRef<HTMLInputElement>()
@@ -130,11 +130,11 @@ function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: Defau
             DEFAULT_FILTER_OPTIONS.map((option, index) => (
               // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
               <li
-                key={index}
+                key={option.key}
                 className={option.key === selectedValue ? 'active' : ''}
                 onClick={() => handleClick(option)}
               >
-                {option.title}
+                {localeText[option.key] ?? option.title}
               </li>
             ))
           }
@@ -161,7 +161,7 @@ function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: Defau
           })}
           onClick={reset}
         >
-          重置
+          {localeText.resetFilter ?? '重置'}
         </button>
         <button
           className={cx({
@@ -171,7 +171,7 @@ function DefaultFilterContent ({ setFilterModel, filterModel, hidePanel }: Defau
           })}
           onClick={confirm}
         >
-          确定
+          {localeText.confirmFilter ?? '确定'}
         </button>
       </div>
     </DefaultFilterContentStyle>
