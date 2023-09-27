@@ -31,6 +31,7 @@ interface FilterProps{
   stopESCKeyDownEventPropagation?: boolean
   hideFilterPopupHeader?: boolean
   getPopupParent? : (triggerElement: HTMLElement) => HTMLElement
+  localeText?: {[key: string]: string}
 }
 
 interface FilterPanelProps {
@@ -90,7 +91,7 @@ function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopu
 
 function Filter ({
   size = 12, style, className, FilterPanelContent, filterIcon, setFilter, setFilterModel, filterModel, isFilterActive,
-  stopClickEventPropagation, stopESCKeyDownEventPropagation, hideFilterPopupHeader, getPopupParent
+  stopClickEventPropagation, stopESCKeyDownEventPropagation, hideFilterPopupHeader, getPopupParent, localeText
 }: FilterProps) {
   const [showPanel, setShowPanel] = React.useState(false)
   const iconRef = React.useRef(null)
@@ -112,6 +113,7 @@ function Filter ({
         filterModel={filterModel}
         isFilterActive={isFilterActive}
         hidePanel={hidePanel}
+        localeText={localeText}
       />
     }
   }
