@@ -126,6 +126,7 @@ export interface FilterPanelProps  {
 export interface DefaultFilterPanelProps extends FilterPanelProps{
   setFilterModel(filterItem?: Pick<FilterItem, 'filter'| 'filterCondition'>): void
   filterModel: FilterItem
+  localeText: {[key:string]: string}
 }
 
 export interface CustomeFilterPanelProps extends FilterPanelProps{

@@ -62,6 +62,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
     let inputFilters = filters ?? pipeline.getStateAtKey(stateKey) ?? defaultFilters ?? []
     inputFilters = mode === 'single' ? inputFilters.slice(0, 1) : inputFilters
     const inputFiltersMap = new Map(inputFilters.map((filterItem) => [filterItem.code, { ...filterItem }]))
+    const localeText: {[key: string]: string} | undefined = pipeline.ctx.localeText
 
     function processColumns (columns: ArtColumn[]) {
       return columns.map(dfs)
@@ -116,6 +117,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
                 stopESCKeyDownEventPropagation={stopESCKeyDownEventPropagation}
                 hideFilterPopupHeader={hideFilterPopupHeader}
                 getPopupParent={getPopupParent}
+                localeText={localeText}
               />
             )
           ]
