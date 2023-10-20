@@ -275,8 +275,11 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       this.props.setTableWidth?.(this.domHelper.tableBody.clientWidth)
     }
 
+    const { leftLockTotalWidth, rightLockTotalWidth } = this.lastInfo
+    const lockTotalWidth = leftLockTotalWidth + rightLockTotalWidth
+
     // 设置子节点宽度
-    stickyScrollItem.style.width = `${innerTableWidth}px`
+    stickyScrollItem.style.width = `${innerTableWidth - lockTotalWidth}px`
   }
 
   private renderTableHeader (info: RenderInfo) {
@@ -494,14 +497,18 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const { hasStickyScroll, stickyBottom } = this.props
     const { hasScroll } = this.state
     return (
-      <div
-        className={cx(Classes.stickyScroll, Classes.horizontalScrollContainer)}
-        style={{
-          display: hasStickyScroll && hasScroll ? 'block' : 'none',
-          bottom: stickyBottom
-        }}
-      >
-        <div className={Classes.stickyScrollItem} />
+      <div className={cx(Classes.horizontalScrollContainer, Classes.horizontalStickyScrollContainer)}>
+        <div className={cx(Classes.horizontalScrollLeftSpacer)} style={{ width: info.leftLockTotalWidth }} />
+        <div
+          className={cx(Classes.stickyScroll)}
+          style={{
+            display: hasStickyScroll && hasScroll ? 'block' : 'none',
+            bottom: stickyBottom
+          }}
+        >
+          <div className={Classes.stickyScrollItem}/>
+        </div>
+        <div className={cx(Classes.horizontalScrollRightSpacer)} style={{ width: info.rightLockTotalWidth }}/>
       </div>
     )
   }
