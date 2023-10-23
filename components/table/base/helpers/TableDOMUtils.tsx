@@ -72,7 +72,7 @@ export class TableDOMHelper {
     this.tableFooter = this.artTable.querySelector(`.${Classes.tableFooter}`)
     this.tableFooterMain = this.artTable.querySelector(`.${Classes.tableFooterMain}`)
 
-    const stickyScrollSelector = `.${Classes.artTable} + .${Classes.stickyScroll}`
+    const stickyScrollSelector = `.${Classes.artTable} + .${Classes.horizontalStickyScrollContainer} .${Classes.stickyScroll}`
     this.stickyScroll = artTableWrapper.querySelector<HTMLDivElement>(stickyScrollSelector)
     this.stickyScrollItem = this.stickyScroll.querySelector(`.${Classes.stickyScrollItem}`)
   }
