@@ -21,7 +21,8 @@ export const autoFillTableWidth = () => (pipeline: TablePipeline) => {
       // 保存剩余的flex总和和剩余宽度总和宽度
       let residualFlexCount = flexCount
       let residualFlexWidth = remainingWidth
-      const columnSize = pipeline.getFeatureOptions(COLUMN_SIZE_KEY) || {}
+      const columnSize = pipeline.getFeatureOptions(COLUMN_SIZE_KEY)
+      const enableColumnResizeWidthFeature = !!columnSize
       pipeline.mapColumns(
         makeRecursiveMapper((col, recursiveFlatMapInfo) => {
           const { isLeaf } = recursiveFlatMapInfo
@@ -34,12 +35,14 @@ export const autoFillTableWidth = () => (pipeline: TablePipeline) => {
             col.width = clamp(minWidth, preColWidth + (residualFlexCount === flex ? residualFlexWidth : usedRemainingWidth), maxWidth)
             residualFlexCount -= flex
             residualFlexWidth -= (col.width - preColWidth)
-            columnSize[code] = col.width
+            if (enableColumnResizeWidthFeature) {
+              columnSize[code] = col.width
+            }
           }
           return col
         })
       )
-      pipeline.setFeatureOptions(COLUMN_SIZE_KEY, columnSize)
+      enableColumnResizeWidthFeature && pipeline.setFeatureOptions(COLUMN_SIZE_KEY, columnSize)
     }
   } else { // 未设置了flex宽度，创建占位列
     const columns = pipeline.getColumns()
