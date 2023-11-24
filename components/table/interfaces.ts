@@ -42,6 +42,9 @@ export interface ArtColumnStaticPart {
 
   /** 功能开关 */
   features?: { [key: string]: any },
+
+  /** 表头是否支持换行*/
+  titleAutoHeight?:boolean
 }
 
 export interface Features {

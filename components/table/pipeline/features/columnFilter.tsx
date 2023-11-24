@@ -7,6 +7,7 @@ import { isLeafNode, collectNodes } from '../../utils'
 import { TablePipeline } from '../pipeline'
 import { Filter, DEFAULT_FILTER_OPTIONS } from './filter'
 import { Classes } from '../../base/styles'
+import {getTitleWithOprCon} from './headOprCon'
 
 export interface FilterFeatureOptions {
   /** (非受控用法) 默认的过滤字段列表 */
@@ -64,10 +65,10 @@ export function filter (opts: FilterFeatureOptions = {}) {
     const inputFiltersMap = new Map(inputFilters.map((filterItem) => [filterItem.code, { ...filterItem }]))
     const localeText: {[key: string]: string} | undefined = pipeline.ctx.localeText
 
-    function processColumns (columns: ArtColumn[]) {
+    function processColumns(columns: ArtColumn[]) {
       return columns.map(dfs)
 
-      function dfs (col: ArtColumn): ArtColumn {
+      function dfs(col: ArtColumn): ArtColumn {
         const result = { ...col }
 
         const filterable = col.code && col.features?.filterable
@@ -90,37 +91,40 @@ export function filter (opts: FilterFeatureOptions = {}) {
             pipeline.setStateAtKey(stateKey, nextFilters)
           }
 
-          const setFilter = (filter?: any[], filterCondition?:string) => {
+          const setFilter = (filter?: any[], filterCondition?: string) => {
             handleFilterChanged(!filter ? undefined : { code: col.code, filter, filterCondition })
           }
 
           const filterPanel: FilterPanel = col.features?.filterPanel
 
           const colFilterIcon: React.ReactNode = col.features?.filterIcon ?? filterIcon
+          const _Filter = (<Filter
+            key="filter"
+            FilterPanelContent={filterPanel}
+            filterIcon={colFilterIcon}
+            filterModel={inputFiltersMap.get(col.code)}
+            setFilterModel={handleFilterChanged}
+            setFilter={setFilter}
+            isFilterActive={filterActive}
+            className={cx({
+              [Classes.tableFilterTrigger]: true,
+              active: filterActive
+            })}
+            stopClickEventPropagation={stopClickEventPropagation}
+            stopESCKeyDownEventPropagation={stopESCKeyDownEventPropagation}
+            hideFilterPopupHeader={hideFilterPopupHeader}
+            getPopupParent={getPopupParent}
+            localeText={localeText}
+          />)
+          if (col?.titleAutoHeight) {
+            result.title = getTitleWithOprCon(result.title, _Filter)
+          } else {
+            result.title = [
+              ...([].concat(result.title ?? [internals.safeRenderHeader({ ...col })])),
+              _Filter
+            ]
+          }
 
-          result.title = [
-            ...([].concat(result.title ?? [internals.safeRenderHeader({ ...col})])),
-            (
-              <Filter
-                key="filter"
-                FilterPanelContent={filterPanel}
-                filterIcon={colFilterIcon}
-                filterModel={inputFiltersMap.get(col.code)}
-                setFilterModel={handleFilterChanged}
-                setFilter={setFilter}
-                isFilterActive={filterActive}
-                className={cx({
-                  [Classes.tableFilterTrigger]: true,
-                  active: filterActive
-                })}
-                stopClickEventPropagation={stopClickEventPropagation}
-                stopESCKeyDownEventPropagation={stopESCKeyDownEventPropagation}
-                hideFilterPopupHeader={hideFilterPopupHeader}
-                getPopupParent={getPopupParent}
-                localeText={localeText}
-              />
-            )
-          ]
           // result.headerCellProps = mergeCellProps(col.headerCellProps, {
           //   style: {
           //     paddingRight: '18px'
