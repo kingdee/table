@@ -6,6 +6,7 @@ import { internals } from '../../internals'
 import { collectNodes, isLeafNode, layeredSort, mergeCellProps, smartCompare, console } from '../../utils'
 import { TablePipeline } from '../pipeline'
 import { Classes } from '../../base/styles'
+import {getCustomHeader} from './headOprCon'
 
 interface SortIconProps {
   style?: CSSProperties
@@ -44,14 +45,14 @@ function DefaultSortHeaderCell ({ children, column, onToggle, sortOrder, sortInd
   return (
     <TableHeaderCell onClick={onToggle} style={{ justifyContent }}>
       {children}
-      <SortIcon 
-        style={{ userSelect: 'none', marginLeft: 2, flexShrink: 0 }} 
+      <SortIcon
+        style={{ userSelect: 'none', marginLeft: 2, flexShrink: 0 }}
         className={cx({
           [Classes.tableSortIcon]: true,
           active:sortOrder === 'desc' || sortOrder === 'asc'
-        })} 
-        size={16} 
-        order={sortOrder} 
+        })}
+        size={16}
+        order={sortOrder}
       />
       {sortOptions.mode === 'multiple' && sortIndex !== -1 && (
         <div
@@ -301,10 +302,30 @@ export function sort (opts: SortFeatureOptions = {}) {
               {internals.safeRenderHeader({ ...col, title: col.title && col.title[0] ? col.title[0] : col.title })}
             </SortHeaderCell>
           )
-          if (result.title && result.title[0]) {
-            result.title[0] = sortNode
-          } else {
-            result.title = sortNode
+          const _sortNodeWithoutTitle = (
+            <SortHeaderCell
+              onToggle={(e) => {
+                if (stopClickEventPropagation) {
+                  e.stopPropagation()
+                }
+                toggle(col.code)
+              }}
+              sortOrder={sortOrder}
+              column={col}
+              sortIndex={sortIndex}
+              sortOptions={sortOptions}
+            >
+            </SortHeaderCell>
+          )
+          // 开启标题行高自适应后，修改表头的渲染结构
+          if(col.renderHeader){
+            result.title = col.renderHeader(result.title,_sortNodeWithoutTitle )
+          } else{
+            if (result.title && result.title[0]) {
+              result.title[0] = sortNode
+            } else {
+              result.title = sortNode
+            }
           }
         }
 
