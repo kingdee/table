@@ -42,6 +42,9 @@ export interface ArtColumnStaticPart {
 
   /** 功能开关 */
   features?: { [key: string]: any },
+
+  /** 表头设置操作项到自定义操作区 */
+  renderHeader?:(title:ReactNode,opr:ReactNode) => ReactNode
 }
 
 export interface Features {
