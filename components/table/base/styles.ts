@@ -91,7 +91,16 @@ export const Classes = {
 
   popup: `${prefix}popup`,
   popupHeader: `${prefix}popup-header`,
-  popupBody: `${prefix}popup-body`
+  popupBody: `${prefix}popup-body`,
+
+  rowDragging: `${prefix}row-dragging`,
+
+  rowDragStart: `${prefix}row-drag-start`,
+  rowDragEnd: `${prefix}row-drag-end`,
+  rowDragEndToTop: `${prefix}row-drag-end-to-top`,
+  rowDragEndToBottom: `${prefix}row-drag-end-to-bottom`,
+  rowDragElement: `${prefix}row-drag-element`,
+  rowDragCell: `${prefix}row-drag-cell`
 
 } as const
 
@@ -362,6 +371,51 @@ export const StyledArtTableWrapper = styled.div`
 
   .${Classes.rangeSelection} {
     user-select:none;
+  }
+
+  .${Classes.rowDragging} {
+    user-select:none;
+    .${Classes.tableBody} .${Classes.tableRow} >td{
+        cursor:move;
+    }
+
+    .${Classes.tableFooter} .${Classes.tableRow} >td{
+        cursor:no-drop;
+    }
+    
+  }
+
+  .${Classes.rowDragStart}{
+    opacity: 0.5;
+  }
+
+
+  .${Classes.rowDragEndToTop}::after{
+    content: "";
+    position: absolute;
+    display: block;
+    left: 0px;
+    width: 100%;
+    height: 1px;
+    top:0px;
+    z-index:20;
+    background-color:var(--primary-color);
+  }
+
+  .${Classes.rowDragEndToBottom}::after{
+    content: "";
+    position: absolute;
+    display: block;
+    left: 0px;
+    width: 100%;
+    height: 1px;
+    bottom:0px;
+    z-index:20;
+    background-color:var(--primary-color);
+  }
+
+  .${Classes.rowDragCell} {
+    cursor:pointer;
   }
 
 
