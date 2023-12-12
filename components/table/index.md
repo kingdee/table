@@ -259,6 +259,19 @@ SortHeaderCellProps {
 | treeMetaKey | 指定表格每一行元信息的记录字段 | string &#124; symbol | `Symbol('treeMetaSymbol')` | `-` | 0.0.1-beta.1 |
 <br/>
 
+#### rowDrag
+行拖拽配置项
+
+| 属性 | 说明 | 类型 | 默认值 | 可选值 | 版本 |
+| --- | --- | --- | --- | --- | --- |
+| onDragStart | 拖拽开始回调函数 | (event:RowDragEvent):void | `-` | `-` | 0.0.1-beta.1 |
+| onDragMove | 拖拽过程回调函数  | (event:RowDragEvent):void | `-` | `-` | 0.0.1-beta.1 |
+| onDragEnd | 拖拽结束回调函数 | (event:RowDragEvent):void | `-` | `-` | 0.0.1-beta.1 |
+| isDisabled | 判断某行拖拽是否禁用 | (row: any, rowIndex: number): boolean | `-` | `-` | 0.0.1-beta.1 |
+| rowDragColumn | 拖拽列定义  | ArtColumn | `-` | `-` | 0.0.1-beta.1 |
+| rowHeight | 行高 | number | `48` | `-` | 0.0.1-beta.1 |
+<br/>
+
 #### contextMenu(beta)
 右键菜单 
 
@@ -310,3 +323,4 @@ SortHeaderCellProps {
 在元素被渲染在页面之前，组件是无法获取该元素的尺寸的。为了展示尽量真实的滚动条，表格组件内部需要算出所有行的高度之和。在一行没有被渲染之前，表格内部会使用 props.estimatedRowHeight (默认值为 48）来作为该行的高度，从而计算所有行的高度和。
 
 在实际使用时，实际行高可能与预估行高有较大出入，此时可以设置 estimatedRowHeight 来提升预估高度的准确性。
+
