@@ -36,7 +36,10 @@ export interface RowDragFeatureOptions {
   rowDragColumn?: ArtColumn,
 
   /** 行高 */
-  rowHeight?: number
+  rowHeight?: number,
+
+  /** 拖拽过程中是否禁止滚动条滚动 */
+  suppressScrollMove?:boolean
 
 }
 
@@ -115,6 +118,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
     }
 
     const updateScrollPosition = (mouseMoveEvent:MouseEvent) => {
+      if (opt?.suppressScrollMove) return
       const clientY = mouseMoveEvent.clientY
       const tableBodyClientRect = tableBody.getBoundingClientRect()
 
