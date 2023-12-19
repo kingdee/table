@@ -107,7 +107,7 @@ function getColumnWidthSum (pipeline: TablePipeline) {
 }
 
 function getTableRemainingWidth (pipeline: TablePipeline) {
-  const tableWidth = pipeline.getStateAtKey(tableWidthKey)
+  const tableWidth = pipeline.ref.current.domHelper?.tableBody?.clientWidth || pipeline.getStateAtKey(tableWidthKey)
   if (!tableWidth) return
   const remainingWidth = Math.floor(tableWidth - getColumnWidthSum(pipeline))
   return remainingWidth > 0 ? remainingWidth : 0
