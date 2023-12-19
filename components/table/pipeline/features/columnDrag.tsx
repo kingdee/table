@@ -253,7 +253,8 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                   const { onColumnDragStopped } = opts
                   // 拖拽结束返回列顺序
                   if (onColumnDragStopped) {
-                    const newColumns = sortColumns(columns, cloumnsSortData).filter(({ code }) => code !== FILL_COLUMN_CODE)
+                    const specailColumnsSet = pipeline.getFeatureOptions('specialColumns') || new Set()
+                    const newColumns = sortColumns(columns, cloumnsSortData).filter(({ code }) => !specailColumnsSet.has(code))
                     // TODO drag需要在resize之后use,否则这里返回的列对应的宽度不是拖拽后的
                     onColumnDragStopped(columnMoved, newColumns)
                   }
