@@ -15,10 +15,6 @@ export const autoFillTableWidth = () => (pipeline: TablePipeline) => {
   const flexColumnResult = findFlexColumns(pipeline)
   const flexCount = flexColumnResult.get(FLEX_COLUMN_COUNT)
 
-  const specailColumnsSet = pipeline.getFeatureOptions('specialColumns') || new Set()
-  specailColumnsSet.add(FILL_COLUMN_CODE)
-  pipeline.setFeatureOptions('specialColumns', specailColumnsSet)
-
   if (flexCount) { // 设置了flex宽度，flex列平分剩余宽度
     const remainingWidth = getTableRemainingWidth(pipeline) || 0
     if (remainingWidth > 0) {

@@ -198,9 +198,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
     }
 
     const rowDragColumn = opt?.rowDragColumn || defaultRowDragColumn
-    const specailColumnsSet = pipeline.getFeatureOptions('specialColumns') || new Set()
-    specailColumnsSet.add(rowDragColumn.code)
-    pipeline.setFeatureOptions('specialColumns', specailColumnsSet)
+    pipeline.setFeatureOptions('rowDragColumnKey', rowDragColumn.code)
 
     const nextColumns = pipeline.getColumns().slice()
     nextColumns.unshift(rowDragColumn)
