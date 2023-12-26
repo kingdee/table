@@ -3,7 +3,7 @@ import { ArtColumn, CellProps } from '../../interfaces'
 import { internals } from '../../internals'
 import { always } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
-import { mergeCellProps } from '../../utils'
+import { mergeCellProps, SINGLE_SELECT_MARK_PROPNAME } from '../../utils'
 export interface SingleSelectFeatureOptions {
   /** 是否高亮被选中的行 */
   highlightRowWhenSelected?: boolean
@@ -97,8 +97,14 @@ export function singleSelect (opts: SingleSelectFeatureOptions = {}) {
             }
           />
         )
+      },
+      features: {
+        ...opts.radioColumn?.features,
+        [SINGLE_SELECT_MARK_PROPNAME]: true
       }
     }
+
+    console.log('radio', radioColumn.features)
 
     const nextColumns = pipeline.getColumns().slice()
 
