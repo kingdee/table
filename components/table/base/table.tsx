@@ -191,7 +191,9 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
   private domHelper: TableDOMHelper
 
-  private rootSubscription = new Subscription()
+  private rootSubscription: Subscription
+
+  private resizeSubject: Subject<unknown>
 
   // 最近一次渲染的计算结果缓存
   private lastInfo: RenderInfo
@@ -201,8 +203,6 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   private hasScrollY = false
 
   private resizeObserver?: ResizeObserver
-
-  private resizeSubject = new Subject()
 
   private offsetY = 0
 
@@ -581,10 +581,10 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   }
 
   componentDidMount () {
-    // console.log('did mount start')
-    // console.log('update dom helper start')
+    this.rootSubscription = new Subscription()
+    this.resizeSubject = new Subject()
     this.updateDOMHelper()
-    // console.log('update dom helper end')
+
     this.props$ = new BehaviorSubject(this.props)
     this.initSubscriptions()
     this.didMountOrUpdate()
