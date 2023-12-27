@@ -1,5 +1,5 @@
 import { TablePipeline } from '../pipeline'
-import { makeRecursiveMapper, mergeCellProps, collectNodes, isLeafNode } from '../../utils'
+import { makeRecursiveMapper, mergeCellProps, collectNodes, isLeafNode, isSelectColumn } from '../../utils'
 import { ArtColumn, CellProps } from '../../interfaces'
 import { FILL_COLUMN_CODE } from './autoFill'
 
@@ -257,7 +257,7 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                       const rowDragColumnKey = pipeline.getFeatureOptions('rowDragColumnKey')
                       return code === rowDragColumnKey
                     }
-                    const newColumns = sortColumns(columns, cloumnsSortData).filter(({ code }) => code !== FILL_COLUMN_CODE && !isRowDragColumn(code))
+                    const newColumns = sortColumns(columns, cloumnsSortData).filter((column) => column.code !== FILL_COLUMN_CODE && !isRowDragColumn(column.code) && !isSelectColumn(column))
                     // TODO drag需要在resize之后use,否则这里返回的列对应的宽度不是拖拽后的
                     onColumnDragStopped(columnMoved, newColumns)
                   }
