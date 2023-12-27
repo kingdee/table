@@ -3,7 +3,7 @@ import { ArtColumn, CellProps } from '../../interfaces'
 import { internals } from '../../internals'
 import { always, arrayUtils } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
-import { collectNodes, mergeCellProps } from '../../utils'
+import { collectNodes, mergeCellProps, MULTI_SELECT_MARK_PROPNAME } from '../../utils'
 
 export interface MultiSelectFeatureOptions {
   /** 非受控用法：默认选中的值 */
@@ -169,6 +169,10 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
             />
           )
         },
+        features: {
+          ...opts.checkboxColumn?.features,
+          [MULTI_SELECT_MARK_PROPNAME]: true
+        }
       }
 
       const nextColumns = pipeline.getColumns().slice()
