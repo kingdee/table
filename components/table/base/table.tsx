@@ -498,7 +498,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const { hasScroll } = this.state
     return (
       <div className={cx(Classes.horizontalScrollContainer, Classes.horizontalStickyScrollContainer)}>
-        <div className={cx(Classes.horizontalScrollLeftSpacer)} style={{ width: info.leftLockTotalWidth }} />
+        <div className={cx(Classes.horizontalScrollLeftSpacer)} style={{ width: info.leftLockTotalWidth, display: hasStickyScroll && hasScroll ? 'block' : 'none' }} />
         <div
           className={cx(Classes.stickyScroll)}
           style={{
@@ -508,7 +508,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         >
           <div className={Classes.stickyScrollItem}/>
         </div>
-        <div className={cx(Classes.horizontalScrollRightSpacer)} style={{ width: info.rightLockTotalWidth }}/>
+        <div className={cx(Classes.horizontalScrollRightSpacer)} style={{ width: info.rightLockTotalWidth, display: hasStickyScroll && hasScroll ? 'block' : 'none' }}/>
       </div>
     )
   }
