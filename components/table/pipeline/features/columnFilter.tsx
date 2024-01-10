@@ -98,7 +98,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
 
           const colFilterIcon: React.ReactNode = col.features?.filterIcon ?? filterIcon
           const _Filter = (<Filter
-            key="filter"
+            key={`${col.code}_filter`}
             FilterPanelContent={filterPanel}
             filterIcon={colFilterIcon}
             filterModel={inputFiltersMap.get(col.code)}
