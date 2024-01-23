@@ -94,6 +94,10 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
     return pipeline.mapDataSource(processDataSource).mapColumns(processColumns)
 
     function processDataSource (input: any[]) {
+      if(pipeline.isSameInputDataSource() && openKeys === pipeline.getFeatureOptions('lastOpenKeys')){
+        return pipeline.getFeatureOptions('lastTreeMode');
+      }
+      pipeline.setFeatureOptions('lastOpenKeys', pipeline.getStateAtKey(stateKey))
       const result: any[] = []
       dfs(input, 0)
 
@@ -114,6 +118,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
           }
         }
       }
+      pipeline.setFeatureOptions('lastTreeMode', result);
       return result
     }
 

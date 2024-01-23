@@ -51,6 +51,8 @@ export class TablePipeline {
 
   private _dataSource: any[]
 
+  private _isSameInputDataSource: boolean
+
   private _columns: any[]
 
   private _footerDataSource?: any[]
@@ -113,6 +115,10 @@ export class TablePipeline {
     }
   }
 
+  isSameInputDataSource () {
+    return this._isSameInputDataSource
+  }
+
   getColumns (name?: string) {
     if (name == null) {
       return this._columns
@@ -147,8 +153,12 @@ export class TablePipeline {
     if (this._dataSource != null || this._columns != null) {
       throw new Error('input 不能调用两次')
     }
+    // 在 pipeline 中识别本次更新是否有数据变化
+    this._isSameInputDataSource = input.dataSource === this.ref.current._lastInputDataSource
 
     this._dataSource = input.dataSource
+
+    this.ref.current._lastInputDataSource = input.dataSource
 
     this._columns = input.columns.map(col => ({ ...col, key: this.guid() }))
 
