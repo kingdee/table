@@ -496,25 +496,44 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     // console.log('render stickyscroll')
     const { hasStickyScroll, stickyBottom } = this.props
     const { hasScroll } = this.state
+
+    const isScroll = hasStickyScroll && hasScroll
+
+    const stickyScrollContainerStyle = this.getStickyScrollContainerStyle()
     return (
-      <div className={cx(Classes.horizontalScrollContainer, Classes.horizontalStickyScrollContainer)}>
-        <div className={cx(Classes.horizontalScrollLeftSpacer)} style={{ width: info.leftLockTotalWidth, display: hasStickyScroll && hasScroll ? 'block' : 'none' }} />
+      <div className={cx(Classes.horizontalScrollContainer, Classes.horizontalStickyScrollContainer)} style= {stickyScrollContainerStyle}>
+        <div className={cx(Classes.horizontalScrollLeftSpacer)} style={{ width: info.leftLockTotalWidth, display: isScroll ? 'block' : 'none' }} />
         <div
           className={cx(Classes.stickyScroll)}
           style={{
-            display: hasStickyScroll && hasScroll ? 'block' : 'none',
+            display: isScroll ? 'block' : 'none',
             bottom: stickyBottom
           }}
         >
           <div className={Classes.stickyScrollItem}/>
         </div>
-        <div className={cx(Classes.horizontalScrollRightSpacer)} style={{ width: info.rightLockTotalWidth, display: hasStickyScroll && hasScroll ? 'block' : 'none' }}/>
+        <div className={cx(Classes.horizontalScrollRightSpacer)} style={{ width: info.rightLockTotalWidth, display: isScroll ? 'block' : 'none' }}/>
       </div>
     )
   }
 
   private getScrollBarWidth () {
     return this.props.scrollbarWidth || getScrollbarSize().width
+  }
+
+  private getStickyScrollContainerStyle () {
+    const { hasStickyScroll, stickyScrollHeight } = this.props
+    const { hasScroll } = this.state
+
+    const isScroll = hasStickyScroll && hasScroll
+    const height = stickyScrollHeight === 'auto' ? this.getScrollBarWidth() : stickyScrollHeight
+
+    const stickyHeight = isScroll ? height : 0
+    return {
+      height: stickyHeight,
+      maxHeight: stickyHeight,
+      minHeight: stickyHeight
+    }
   }
 
   render () {
