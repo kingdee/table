@@ -97,7 +97,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
       if(pipeline.isSameInputDataSource() && openKeys === pipeline.getFeatureOptions('lastOpenKeys')){
         return pipeline.getFeatureOptions('lastTreeMode');
       }
-      pipeline.setFeatureOptions('lastOpenKeys', pipeline.getStateAtKey(stateKey))
+      pipeline.setFeatureOptions('lastOpenKeys', pipeline.getStateAtKey(stateKey) || openKeys)
       const result: any[] = []
       dfs(input, 0)
 
