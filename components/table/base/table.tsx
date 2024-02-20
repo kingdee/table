@@ -239,7 +239,9 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const tableBodyHtmlTable = this.domHelper.getTableBodyHtmlTable()
     const innerTableWidth = tableBodyHtmlTable.offsetWidth
     const artTableWidth = artTable.offsetWidth
-
+    const artTableHeight = artTable.offsetHeight
+    // 表格隐藏后，不需要对表格的滚动条做额外的逻辑处理
+    if(artTableWidth === 0  && artTableHeight === 0) return
     const stickyScrollHeightProp = this.props.stickyScrollHeight
     const stickyScrollHeight = stickyScrollHeightProp === 'auto' ? this.getScrollBarWidth() : stickyScrollHeightProp
 
