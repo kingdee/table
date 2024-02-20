@@ -390,28 +390,13 @@ export const StyledArtTableWrapper = styled.div`
   }
 
 
-  .${Classes.rowDragEndToTop}::after{
-    content: "";
-    position: absolute;
-    display: block;
-    left: 0px;
-    width: 100%;
-    height: 1px;
-    top:0px;
-    z-index:20;
-    background-color:var(--primary-color);
+  .${Classes.rowDragEndToTop} td{
+    border-top: 1px solid var(--primary-color) !important;
   }
 
-  .${Classes.rowDragEndToBottom}::after{
-    content: "";
-    position: absolute;
-    display: block;
-    left: 0px;
-    width: 100%;
-    height: 1px;
-    bottom:0px;
-    z-index:20;
-    background-color:var(--primary-color);
+  .${Classes.rowDragEndToBottom} td{
+    border-bottom: 1px solid var(--primary-color) !important;
+   
   }
 
   .${Classes.rowDragCell} {
