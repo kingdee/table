@@ -149,6 +149,10 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
       const isShiftKey = mouseDownEvent.shiftKey
       const target = mouseDownEvent.target
 
+      const startDragCell = getTargetCell(target, columns)
+
+      if(!startDragCell) return
+
       // 每次点击时先确认初始生效的框选范围
       setStartSelectedCellRanges(isCtrlKey, isShiftKey)
 
@@ -157,7 +161,7 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
         return
       }
 
-      const startDragCell = getTargetCell(target, columns)
+      
       pipeline.setFeatureOptions(lastClickCellKey, startDragCell)
       let draggingCell = startDragCell
 
