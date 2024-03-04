@@ -149,13 +149,25 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       const tableWidth = tableBody.clientWidth
       const startRowRects = startRowInfo.cell.getBoundingClientRect()
       // 光标位置距离初始拖拽行的偏移量
-      const startOffset = mouseDownEvent.clientY - startRowRects.y
+      const startOffset = mouseDownEvent.clientY - startRowRects.top
       const dragElement = createDragElement(startRowRects, tableWidth, rowHeight)
       // 可拖拽的范围
-      const dragRange = getDragRange(tableBody, { startOffset, rowHeight: startRowRects.height })
+      let dragRange = getDragRange(tableBody, { startOffset, rowHeight })
+      let mousePosition = { x: mouseDownEvent.clientX, y: mouseDownEvent.clientY }
 
       const mousemove$ = fromEvent<MouseEvent>(window, 'mousemove')
       const mouseup$ = fromEvent<MouseEvent>(window, 'mouseup')
+
+      const scrollCallback = (event) => {
+        // 在当前表格内滚动不处理
+        if (event.target === tableBody) return
+
+        dragRange = getDragRange(tableBody, { startOffset, rowHeight })
+
+        const isOutOfRange = isOutOfDragRange(mousePosition, dragRange)
+        updateCurSorStyle(isOutOfRange)
+      }
+      document.addEventListener('scroll', scrollCallback, true)
 
       const rowDrag$ = mousemove$.pipe(
         map((mouseMoveEvent: MouseEvent) => {
@@ -168,10 +180,11 @@ export function rowDrag (opt:RowDragFeatureOptions) {
           const targetRowRects = endRowInfo.cell.getBoundingClientRect()
 
           // 判断拖拽插入的位置，拖拽框上边框位于目标行之上则向上插入，否则向下插入
-          const isMoveToTop = (clientY - startOffset) < targetRowRects.y
+          const isMoveToTop = (clientY - startOffset) < targetRowRects.top
 
           dragPosition = isMoveToTop ? 'top' : 'bottom'
           isOutOfRange = isOutOfDragRange({ x: clientX, y: clientY }, dragRange)
+          mousePosition = { x: clientX, y: clientY }
 
           updateScrollPosition(mouseMoveEvent) // 拖拽到底时让滚动条可以滚动
           updateDragElementPosition(dragElement, dragRange, { x: clientX, y: clientY, startOffset })
@@ -193,6 +206,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
 
           removeDragElement(dragElement)
           removeCurSorStyle()
+          document.removeEventListener('scroll', scrollCallback, true)
         }
       })
     }
@@ -295,12 +309,12 @@ function removeCurSorStyle () {
 
 function getDragRange (tableBody, { startOffset, rowHeight }) {
   const tableBodyClientRect = tableBody.getBoundingClientRect()
-  const { height, width, x, y } = tableBodyClientRect
+  const { height, width, top, left } = tableBodyClientRect
   return {
-    minX: x,
-    maxX: x + width,
-    minY: y - rowHeight + startOffset,
-    maxY: y + height + startOffset
+    minX: left,
+    maxX: left + width,
+    minY: top - rowHeight + startOffset,
+    maxY: top + height + startOffset
   }
 }
 
