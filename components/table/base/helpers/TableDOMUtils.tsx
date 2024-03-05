@@ -73,7 +73,8 @@ export class TableDOMHelper {
     this.tableFooterMain = this.artTable.querySelector(`.${Classes.tableFooterMain}`)
 
     const stickyScrollSelector = `.${Classes.artTable} + .${Classes.horizontalStickyScrollContainer} .${Classes.stickyScroll}`
-    this.stickyScroll = artTableWrapper.querySelector<HTMLDivElement>(stickyScrollSelector)
+    const stickyScrolls = artTableWrapper.querySelectorAll<HTMLDivElement>(stickyScrollSelector)
+    this.stickyScroll = stickyScrolls[stickyScrolls.length - 1] // 当嵌套多层表格时，需要查找最后一个，否则会查找到父表格内嵌套的子表格的
     this.stickyScrollItem = this.stickyScroll.querySelector(`.${Classes.stickyScrollItem}`)
   }
 
