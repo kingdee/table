@@ -267,7 +267,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     //   }
       this.hasScrollY = true
     } else {
-      stickyScroll.style.paddingRight = `${stickyScrollHeight}px`
+      // stickyScroll.style.paddingRight = `${stickyScrollHeight}px`
       //   this.setState({
       //     hasScrollY: false
       //   })
