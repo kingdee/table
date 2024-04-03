@@ -148,7 +148,7 @@ export function HtmlTable ({
       positionStyle.left = hozInfo.stickyLeftMap.get(colIndex)
     } else if (colIndex >= fullFlatCount - rightFlatCount) {
       positionStyle.position = 'sticky'
-      positionStyle.right = hozInfo.stickyRightMap.get(colIndex) - (typeof stickyRightOffset === 'number' ? stickyRightOffset : 0)
+      positionStyle.right = hozInfo.stickyRightMap.get(colIndex) + (typeof stickyRightOffset === 'number' ? stickyRightOffset : 0)
     }
 
     return React.createElement(
