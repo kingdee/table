@@ -25,7 +25,7 @@ interface RowDetailOptions {
   domHelper:TableDOMHelper
 }
 
-function renderTableHeaderInIE (info: RenderInfo, props: BaseTableProps) {
+function renderTableHeaderInIE (info: RenderInfo, props: BaseTableProps, extra?: { stickyRightOffset?:number}) {
   const { stickyTop, hasHeader } = props
 
   const { flat, nested, visible, hasLockColumn } = info
@@ -33,6 +33,10 @@ function renderTableHeaderInIE (info: RenderInfo, props: BaseTableProps) {
   const { left: leftNested, right: rightNested, full } = nested
 
   const rowCount = getTreeDepth(full) + 1
+
+  const fixedRightTableStyle = {
+    right: extra?.stickyRightOffset || 0
+  }
 
   return (
     <div className={cx(Classes.tableHeader)}>
@@ -44,6 +48,7 @@ function renderTableHeaderInIE (info: RenderInfo, props: BaseTableProps) {
         }}
       >
         <TableHeader info={info} theaderPosition={hasLockColumn ? 'center' : undefined}/>
+        <div className={Classes.verticalScrollPlaceholder} style={ typeof extra?.stickyRightOffset === 'number' ? { width: extra?.stickyRightOffset} : undefined}></div>
       </div>
       {
         left.length > 0
@@ -84,7 +89,7 @@ function renderTableHeaderInIE (info: RenderInfo, props: BaseTableProps) {
       {
         right.length > 0
           ? (
-            <div className={Classes.fixedRight} >
+            <div className={Classes.fixedRight} style={fixedRightTableStyle}>
               <TableHeader
                 info={
                   {
@@ -122,7 +127,7 @@ function renderTableHeaderInIE (info: RenderInfo, props: BaseTableProps) {
   )
 }
 
-function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: { rowProps : React.HTMLAttributes<HTMLTableRowElement>, stickyRightOffset:number}) {
+function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: { rowProps : React.HTMLAttributes<HTMLTableRowElement>}) {
   const { dataSource, getRowProps, primaryKey } = props
 
   const { topIndex, bottomBlank, topBlank, bottomIndex } = info.verticalRenderRange
@@ -139,10 +144,6 @@ function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: {
     getRowProps: composeRowPropsGetter(getRowProps, extra.rowProps),
     primaryKey: primaryKey,
     data: dataSource.slice(topIndex, bottomIndex)
-  }
-
-  const fixedRightTableStyle = {
-    right: -extra.stickyRightOffset
   }
 
   return (
@@ -195,7 +196,7 @@ function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: {
       {
         right.length > 0
           ? (
-            <div className={Classes.fixedRight} style={fixedRightTableStyle}>
+            <div className={Classes.fixedRight}>
               {topBlank > 0 && (
                 <div key="top-blank" className={cx(Classes.virtualBlank, 'top')} style={{ height: topBlank }} />
               )}
@@ -203,7 +204,6 @@ function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: {
                 tbodyHtmlTag="tbody"
                 {...commonProps}
                 tbodyPosition="right"
-                stickyRightOffset ={extra.stickyRightOffset}
                 horizontalRenderInfo={{
                   ...info,
                   flat: {
@@ -228,7 +228,7 @@ function renderTableBodyInIE (info: RenderInfo, props: BaseTableProps, extra?: {
   )
 }
 
-function renderTableFooterInIE (info: RenderInfo, props: BaseTableProps, extra?: { rowProps : React.HTMLAttributes<HTMLTableRowElement>}) {
+function renderTableFooterInIE (info: RenderInfo, props: BaseTableProps, extra?: { rowProps : React.HTMLAttributes<HTMLTableRowElement>, stickyRightOffset?:number}) {
   const { footerDataSource = [], getRowProps, primaryKey, stickyBottom } = props
   const _getRowProps = composeRowPropsGetter(getRowProps, extra.rowProps)
 
@@ -247,6 +247,10 @@ function renderTableFooterInIE (info: RenderInfo, props: BaseTableProps, extra?:
     verticalRenderInfo: verticalRenderInfo
   }
 
+  const fixedRightTableStyle = {
+    right: extra?.stickyRightOffset || 0
+  }
+
   return (
     <div
       className={cx(Classes.tableFooter)}
@@ -259,6 +263,14 @@ function renderTableFooterInIE (info: RenderInfo, props: BaseTableProps, extra?:
           tbodyPosition={hasLockColumn ? 'center' : undefined }
           horizontalRenderInfo={info}
         />
+        {
+          footerDataSource.length > 0
+            ? <div
+              className={Classes.verticalScrollPlaceholder}
+              style={typeof extra?.stickyRightOffset === 'number' ? { width: extra?.stickyRightOffset, visibility: 'initial' } : undefined}>
+            </div>
+            : null
+        }
       </div>
       {
         left.length > 0
@@ -283,7 +295,7 @@ function renderTableFooterInIE (info: RenderInfo, props: BaseTableProps, extra?:
       }
       {
         right.length > 0
-          ? <div className={Classes.fixedRight}>
+          ? <div className={Classes.fixedRight} style={fixedRightTableStyle}>
             <HtmlTable
               tbodyHtmlTag="tfoot"
               {...commonProps}

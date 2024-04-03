@@ -173,10 +173,11 @@ function calculateHeaderRenderInfo (
 interface TableHeaderProps {
   info: RenderInfo
   theaderPosition ?: 'left' | 'center' | 'right',
-  rowCount?: number
+  rowCount?: number,
+  stickyRightOffset?:number
 }
 
-export default function TableHeader ({ info, theaderPosition, rowCount: _rowCount }: TableHeaderProps) {
+export default function TableHeader ({ info, theaderPosition, rowCount: _rowCount, stickyRightOffset }: TableHeaderProps) {
   const { nested, flat, stickyLeftMap, stickyRightMap } = info
   const rowCount = _rowCount ?? (getTreeDepth(nested.full) + 1)
   const headerRenderInfo = calculateHeaderRenderInfo(info, rowCount)
@@ -205,7 +206,7 @@ export default function TableHeader ({ info, theaderPosition, rowCount: _rowCoun
         } else if (colIndex >= fullFlatCount - rightFlatCount) {
           positionStyle.position = 'sticky'
           const stickyRightIndex = colSpan > 1 ? colIndex + colSpan -1 : colIndex
-          positionStyle.right = stickyRightMap.get(stickyRightIndex)
+          positionStyle.right = stickyRightMap.get(stickyRightIndex) + stickyRightOffset
         }
 
         const justifyContent = col.align === 'right'

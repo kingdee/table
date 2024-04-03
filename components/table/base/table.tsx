@@ -280,15 +280,19 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const { leftLockTotalWidth, rightLockTotalWidth } = this.lastInfo
     const lockTotalWidth = leftLockTotalWidth + rightLockTotalWidth
 
+    const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
+
+
     // 设置子节点宽度
-    stickyScrollItem.style.width = `${innerTableWidth - lockTotalWidth}px`
+    stickyScrollItem.style.width = `${innerTableWidth - lockTotalWidth + stickyRightOffset}px`
   }
 
   private renderTableHeader (info: RenderInfo) {
     const { stickyTop, hasHeader } = this.props
     const renderHeader = getTableRenderTemplate('header')
+    const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
     if (typeof renderHeader === 'function') {
-      return renderHeader(info, this.props)
+      return renderHeader(info, this.props, { stickyRightOffset })
     }
     return (
       <div
@@ -298,7 +302,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
           display: hasHeader ? undefined : 'none'
         }}
       >
-        <TableHeader info={info} />
+        <TableHeader info={info} stickyRightOffset={stickyRightOffset}/>
         <div className={Classes.verticalScrollPlaceholder} style={this.hasScrollY ? { width: this.getScrollBarWidth() } : undefined}></div>
       </div>
     )
@@ -400,11 +404,10 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     }
 
     const { topIndex, bottomBlank, topBlank, bottomIndex } = info.verticalRenderRange
-    const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
 
     const renderBody = getTableRenderTemplate('body')
     if (typeof renderBody === 'function') {
-      return renderBody(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave }, stickyRightOffset: stickyRightOffset })
+      return renderBody(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave } })
     }
 
     return (
@@ -418,7 +421,6 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
             getRowProps={getRowProps}
             primaryKey={primaryKey}
             data={dataSource.slice(topIndex, bottomIndex)}
-            stickyRightOffset={stickyRightOffset}
             horizontalRenderInfo={info}
             verticalRenderInfo={{
               first: 0,
@@ -438,10 +440,11 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   private renderTableFooter (info: RenderInfo) {
     // console.log('render footer')
     const { footerDataSource = [], getRowProps, primaryKey, stickyBottom } = this.props
+    const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
 
     const renderFooter = getTableRenderTemplate('footer')
     if (typeof renderFooter === 'function') {
-      return renderFooter(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave } })
+      return renderFooter(info, this.props, { rowProps: { onMouseEnter: this.handleRowMouseEnter, onMouseLeave: this.handleRowMouseLeave }, stickyRightOffset })
     }
 
     return (
@@ -454,6 +457,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
           data={footerDataSource}
           horizontalRenderInfo={info}
           getRowProps={getRowProps}
+          stickyRightOffset={stickyRightOffset}
           primaryKey={primaryKey}
           verticalRenderInfo={{
             offset: 0,
@@ -475,6 +479,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   }
 
   private renderLockShadows (info: RenderInfo) {
+    const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
     // console.log('render LockShadows')
     return (
       <>
@@ -486,7 +491,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         </div>
         <div
           className={Classes.lockShadowMask}
-          style={{ right: 0, width: info.rightLockTotalWidth + LOCK_SHADOW_PADDING }}
+          style={{ right: 0, width: info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset }}
         >
           <div className={cx(Classes.lockShadow, Classes.rightLockShadow)} />
         </div>

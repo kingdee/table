@@ -568,12 +568,14 @@ export const StyledArtTableWrapper = styled.div`
     }
     .${Classes.tableHeaderMain} {
       overflow: hidden;
+      display: flex;
     }
     .${Classes.tableHeader} {
       position: relative;
     }
 
     .${Classes.tableFooterMain} {
+      display: flex;
       overflow: auto;
       overflow-x: hidden;
       overflow-anchor: none;
