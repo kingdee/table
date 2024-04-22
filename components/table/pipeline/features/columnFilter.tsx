@@ -71,7 +71,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
         const result = { ...col }
 
         const filterable = col.code && col.features?.filterable
-        const filterActive = filterable && inputFiltersMap?.get(col.code)?.filter?.length > 0
+        const filterActive = !!(filterable && inputFiltersMap?.get(col.code))
 
         if (filterable) {
           const handleFilterChanged = function (filterItem?: FilterItem) {
