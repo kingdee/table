@@ -40,7 +40,7 @@ interface CellRange {
 export const rangeSelectionKey = 'rangeSelection'
 export const lastClickCellKey = 'lastClickCell'
 
-const startSelectedCellRangesKey = 'startSelectedCellRanges'
+export const startSelectedCellRangesKey = 'startSelectedCellRanges'
 const SCROLL_OFFSET = 30
 
 export function rangeSelection (opts:RangeSelectionFeatureOptions) {
