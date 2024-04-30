@@ -10,7 +10,8 @@ function disableSelect (event) {
   event.preventDefault()
 }
 export interface ColumnDragOptions {
-  onColumnDragStopped?: (columnMoved: boolean, columns: ArtColumn[]) => void
+  onColumnDragStopped?: (columnMoved: boolean, columns: ArtColumn[]) => void,
+  onColumnDragStart?:(startColumn: ArtColumn) => void
 }
 
 function sortColumns (columns: any[], sort: any) {
@@ -269,6 +270,10 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                 currentTarget.style.opacity = ''
                 currentTarget.style.cursor = ''
               }
+
+              const { onColumnDragStart } = opts
+              onColumnDragStart && onColumnDragStart(col)
+
               document.body.addEventListener('mousemove', handleMouseMove)
               document.body.addEventListener('mouseup', handleMouseUp)
             },
