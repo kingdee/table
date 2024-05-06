@@ -33,7 +33,7 @@ import {
   cssPolifill
 } from './utils'
 
-import { console, browserType } from '../utils'
+import { console, browserType, isStickyUIDegrade } from '../utils'
 import getTableRenderTemplate from './renderTemplates'
 
 let propsDotEmptyContentDeprecatedWarned = false
@@ -575,7 +575,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         'has-footer': footerDataSource.length > 0,
         'sticky-footer': isStickyFooter,
         [Classes.artTableBordered]: bordered,
-        'ie-polyfill-wrapper': browserType.isIE
+        'ie-polyfill-wrapper': browserType.isIE,
+        'sticky-polyfill-wrapper': isStickyUIDegrade()
       },
       className
     )

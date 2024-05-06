@@ -557,8 +557,8 @@ export const StyledArtTableWrapper = styled.div`
   }
   //#endregion
 
-  //#region IE兼容
-  &.ie-polyfill-wrapper {
+  //#region sticky兼容
+  &.sticky-polyfill-wrapper{
     //锁定列兼容 仅在锁定列的情况下生效
     .${Classes.virtual} {
       overflow-x: hidden;
@@ -606,7 +606,7 @@ export const StyledArtTableWrapper = styled.div`
       background: var(--hover-bgcolor);
     }
   }
-  //#endregion
+  //#endregion sticky兼容
 
   //#region 粘性滚动条
   .${Classes.horizontalStickyScrollContainer}{
