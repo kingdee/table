@@ -12,7 +12,7 @@ import { Classes } from './styles'
 import { composeRowPropsGetter, getScrollbarSize } from './utils'
 import { BaseTableProps } from './table'
 import { RenderInfo } from './interfaces'
-import { getTreeDepth, browserType } from '../utils'
+import { getTreeDepth, isStickyUIDegrade } from '../utils'
 import TableHeader from './header'
 import { TableDOMHelper } from './helpers/TableDOMUtils'
 
@@ -360,7 +360,7 @@ function RowDetail (props:RowDetailOptions) {
   )
 }
 
-if (browserType.isIE) {
+if (isStickyUIDegrade()) {
   TEMPLATES.set('header', renderTableHeaderInIE)
   TEMPLATES.set('body', renderTableBodyInIE)
   TEMPLATES.set('footer', renderTableFooterInIE)
