@@ -7,7 +7,7 @@ import cssVars from 'css-vars-ponyfill'
 
 import mergeCellProps from '../utils/mergeCellProps'
 import { TableDOMHelper } from './helpers/TableDOMUtils'
-import { browserType } from '../utils'
+import { isStickyUIDegrade } from '../utils'
 import { defaultCSSVariables } from './styles'
 import { hasScroll } from '../utils/element'
 
@@ -174,11 +174,11 @@ export function composeRowPropsGetter (getRowProps: (record: any, rowIndex: numb
 }
 
 export function getTableScrollHeaderDOM (domHelper: TableDOMHelper) : HTMLDivElement {
-  return browserType.isIE ? domHelper.tableHeaderMain : domHelper.tableHeader
+  return isStickyUIDegrade() ? domHelper.tableHeaderMain : domHelper.tableHeader
 }
 
 export function getTableScrollFooterDOM (domHelper: TableDOMHelper) : HTMLDivElement {
-  return browserType.isIE ? domHelper.tableFooterMain : domHelper.tableFooter
+  return isStickyUIDegrade() ? domHelper.tableFooterMain : domHelper.tableFooter
 }
 
 export const cssPolifill = (
