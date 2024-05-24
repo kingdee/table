@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { fromEvent } from 'rxjs'
-import { map, takeUntil } from 'rxjs/operators'
+import { map, takeUntil, filter } from 'rxjs/operators'
 
 import { TablePipeline } from '../pipeline'
 import { ArtColumn, CellProps } from '../../interfaces'
@@ -97,11 +97,11 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       pipeline.setStateAtKey(rowDragKey, event)
     }
 
-    const handleDragEnd = (event:RowDragEvent, isOutOfRange:boolean) => {
+    const handleDragEnd = (event:RowDragEvent, isValid:boolean) => {
       artTable.classList.remove(cx(Classes.rowDragging))
       pipeline.setStateAtKey(rowDragKey, event)
       // 超出拖拽范围不触发dragend事件
-      if (!isOutOfRange) {
+      if (isValid) {
         opt?.onDragEnd?.(event)
       }
     }
@@ -143,12 +143,14 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       // 默认拖拽插入的位置是向下
       let dragPosition = 'bottom'
       let isOutOfRange = false
+      let isValidDrag = false
 
       const dragStartEvent = getDragEvent(startRowInfo, endRowInfo, { isFinished: false, dragPosition: 'bottom' })
       handleDragStrat(dragStartEvent)
       const tableWidth = tableBody.clientWidth
       const startRowRects = startRowInfo.cell.getBoundingClientRect()
       // 光标位置距离初始拖拽行的偏移量
+      const mouseDownClientY = mouseDownEvent.clientY
       const startOffset = mouseDownEvent.clientY - startRowRects.top
       const dragElement = createDragElement(startRowRects, tableWidth, rowHeight)
       // 可拖拽的范围
@@ -170,6 +172,15 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       document.addEventListener('scroll', scrollCallback, true)
 
       const rowDrag$ = mousemove$.pipe(
+        filter((mouseMoveEvent: MouseEvent) => {
+          const mouseMoveClientY = mouseMoveEvent.clientY
+          // 上下移动偏移量大于5才是有效的拖拽
+          if (Math.abs(mouseMoveClientY - mouseDownClientY) > 5) {
+            isValidDrag = true
+          }
+
+          return isValidDrag
+        }),
         map((mouseMoveEvent: MouseEvent) => {
           const { clientX, clientY } = mouseMoveEvent
           const tagretRow = getTargetRowInfo(mouseMoveEvent.target, tableBody, dataSource)
@@ -202,7 +213,8 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         },
         complete () {
           const dragEndEvent = getDragEvent(startRowInfo, endRowInfo, { isFinished: true, dragPosition })
-          handleDragEnd(dragEndEvent, isOutOfRange)
+          const isValid = isValidDrag && !isOutOfRange
+          handleDragEnd(dragEndEvent, isValid)
 
           removeDragElement(dragElement)
           removeCurSorStyle()
