@@ -1,7 +1,7 @@
 /*
  * @Author: wqhui
  * @Date: 2022-05-13 17:06:51
- * @LastEditTime: 2024-05-06 16:18:12
+ * @LastEditTime: 2024-05-29 16:25:48
  * @Description:
  */
 type IBrowserData = {
@@ -66,7 +66,11 @@ function getBrowserData () {
 
   // 如果未找到Firefox版本，尝试IE
   if (!browser.name) {
-    if ((match = ua.match(/MSIE\s(.*?);/))) {
+    if (/Trident\/(\d+)/.test(ua)) {
+      browser.name = 'IE'
+      match = ua.match(/Trident.*rv:([\d.]+)/) || []
+      browser.version = match[1]
+    } else if ((match = ua.match(/MSIE\s(.*?);/))) {
       browser.name = 'IE'
       browser.version = match[1]
     }
