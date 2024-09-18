@@ -105,6 +105,7 @@
     "babel-eslint": "^10.0.1",
     "babel-loader": "^8.1.0",
     "babel-plugin-add-react-displayname": "^0.0.5",
+    "babel-plugin-styled-components": "^2.1.4",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "bisheng": "^1.5.3",
     "bisheng-plugin-description": "^0.1.4",
