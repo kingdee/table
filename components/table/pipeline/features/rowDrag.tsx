@@ -474,7 +474,7 @@ function positionDragLine ({ lineElement, dragZone, event }) {
   const { getDataSource, getTreeModeOptions, getRowDragOptions } = dragZone.tableParams
   const dataSource = getDataSource()
   const treeModeOptions = getTreeModeOptions()
-  const rowDragOptions = getRowDragOptions()
+  const rowDragOptions = getRowDragOptions() || {}
   const { allowDragIntoRow } = rowDragOptions
   // 鼠标悬停所在的拖拽行信息
   const dragItem = getDragRowItem(event.target, tableContainer, dataSource)
