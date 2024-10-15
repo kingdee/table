@@ -41,6 +41,11 @@ export interface RowDragFeatureOptions {
   /** 树型表格是否允许拖拽插入行 */
   allowDragIntoRow?: boolean,
 
+  /** 公共参数，作为拖拽回调参数，可在此提供业务层取数接口 */
+  commonParams?:any
+
+
+
 }
 
 export const ROW_DRAG_COLUMN_CODE = '$_row_drag_column_&'
@@ -88,8 +93,8 @@ export function rowDrag (opt:RowDragFeatureOptions) {
 
     const dataSource = pipeline.getDataSource()
 
-    const getRowDragEvent = (dropTargetEvent, isFinished, source = 'targetTable'): RowDragEvent => {
-      const { dragItem, x, y, dropZoneTarget, startDropZoneTagret, event, dropZoneTableParams } = dropTargetEvent
+    const getRowDragEvent = (dropTargetEvent, isFinished): RowDragEvent => {
+      const { dragItem, x, y, dropZoneTarget, startDropZoneTagret, commonParams, startCommonParams, event, dropZoneTableParams } = dropTargetEvent
       const { getDataSource, getTreeModeOptions, getRowDragOptions } = dropZoneTableParams
       const dataSource = getDataSource()
       const treeModeOptions = getTreeModeOptions()
@@ -119,24 +124,26 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         endRowIndex: overIndex,
         endRow: overRow,
         startDropZoneTagret,
+        startCommonParams,
+        commonParams, 
         dropZoneTarget,
         event,
         dragPosition: direction,
         isFinished,
-        source,
         x,
         y
       }
     }
 
     const onDragging = (event: DragEvent) => {
-      const rowDragEvent = getRowDragEvent(event, false, 'targetTable')
+      const rowDragEvent = getRowDragEvent(event, false)
       opt?.onDragMove?.(rowDragEvent)
       pipeline.setStateAtKey(rowDragKey, rowDragEvent)
     }
 
-    const onDragStop = (event: DragEvent, source?:string) => {
-      const rowDragEvent = getRowDragEvent(event, true, source)
+    const onDragStop = (event: DragEvent) => {
+      const rowDragEvent = getRowDragEvent(event, true)
+      
       pipeline.setStateAtKey(rowDragKey, rowDragEvent)
       opt?.onDragEnd?.(rowDragEvent)
     }
@@ -198,6 +205,8 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       let lastDropTarget = null
       let timeoutId = null
       let intervalId = null
+      let expandRowTimeoutId = null
+      let expandRowCallBackList = []
 
       const updateScrollPosition = (tableBody:Element, mouseMoveEvent: MouseEvent) => {
         if (opt?.suppressScrollMove) return
@@ -230,7 +239,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         artTable.classList.add(cx(Classes.rowDragging))
         rowDragApi.setDragStatus('start')
 
-        const dragEvent = createDropTargetEvent(currentDropZone, mouseDownEvent, startDataItem, tableBody)
+        const dragEvent = createDropTargetEvent(currentDropZone, mouseDownEvent, startDataItem, currentDropZone)
         onDragStart(dragEvent)
       }
 
@@ -249,7 +258,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
             if (lastDropTarget.onDragLeave) {
               setDragElementIcon(dragElement, 'notAllowed')
               hiddenDragLine(dragLine)
-              const dragEvent = createDropTargetEvent(lastDropTarget, mouseMoveEvent, startDataItem, tableBody)
+              const dragEvent = createDropTargetEvent(lastDropTarget, mouseMoveEvent, startDataItem, currentDropZone)
               lastDropTarget.onDragLeave(dragEvent)
             }
           }
@@ -261,7 +270,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
               if (dropTarget.isTable) {
                 showDragLine(dragLine)
               }
-              const dragEvent = createDropTargetEvent(dropTarget, mouseMoveEvent, startDataItem, tableBody)
+              const dragEvent = createDropTargetEvent(dropTarget, mouseMoveEvent, startDataItem, currentDropZone)
               dropTarget.onDragEnter(dragEvent)
             }
           }
@@ -279,8 +288,36 @@ export function rowDrag (opt:RowDragFeatureOptions) {
             updateScrollPosition(dropTarget.getContainer(), mouseMoveEvent) // 拖拽到底时让滚动条可以滚动
           }
 
+          // 树形表格悬停1s展开对应行节点
+          if(dropTarget?.tableParams?.getTreeModeOptions()){
+            if (expandRowTimeoutId) {
+              clearTimeout(expandRowTimeoutId)
+            }
+
+            expandRowTimeoutId = setTimeout(() => {
+              const treeModeOptions = dropTarget.tableParams.getTreeModeOptions()
+              const { treeMetaKey, onExpand, isExpanded, onCollapse } = treeModeOptions
+              // 鼠标悬停所在的拖拽行信息
+              const dataSource = dropTarget.tableParams.getDataSource()
+              const dragItem = getDragRowItem(mouseMoveEvent.target, dropTarget.getContainer(), dataSource)
+
+              if (!dragItem) return
+
+              const { row } = dragItem
+              const { rowKey } = row[treeMetaKey]
+
+              if(!isExpanded(rowKey)){
+                onExpand(rowKey)
+                expandRowCallBackList.push(()=>onCollapse(rowKey))
+              }
+              
+            }, 1000)
+            
+
+          }
+
           if (dropTarget.onDragging) {
-            const dragEvent = createDropTargetEvent(dropTarget, mouseMoveEvent, startDataItem, tableBody)
+            const dragEvent = createDropTargetEvent(dropTarget, mouseMoveEvent, startDataItem, currentDropZone)
             dropTarget.onDragging(dragEvent)
           }
         }
@@ -293,18 +330,19 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         rowDragApi.setDragStatus('finished')
         clearTimeout(timeoutId)
         clearInterval(intervalId)
+        clearTimeout(expandRowTimeoutId)
+        while(expandRowCallBackList.length > 0) {
+          const callback = expandRowCallBackList.pop()
+          callback()
+        }
 
         const rowDropZones = rowDragApi.getRowDropZone()
         const validDropZones = rowDropZones.concat(currentDropZone)
         const dropTarget = validDropZones.find(zone => isMouseOnDropTarget(mouseUpEvent, zone.getContainer()))
 
         if (dropTarget && dropTarget.onDragStop) {
-          const dragEvent = createDropTargetEvent(dropTarget, mouseUpEvent, startDataItem, tableBody)
+          const dragEvent = createDropTargetEvent(dropTarget, mouseUpEvent, startDataItem, currentDropZone)
           dropTarget.onDragStop(dragEvent)
-          // 原表也触发onDragStop, 方便上层调用
-          if (dropTarget !== currentDropZone) {
-            currentDropZone.onDragStop(dragEvent, 'startTable')
-          }
         }
       }
 
@@ -380,7 +418,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       const className = cx({
         [Classes.rowDragStart]: rowIndex === startRowIndex && dragStatus !== 'finished',
         [Classes.rowDragEnd]: rowIndex === endRowIndex,
-        [Classes.rowDragEndParent]: isTreeTable && rowIndex === parentRowKeyIndex,
+        [Classes.rowDragEndParent]: isTreeTable && rowIndex === parentRowKeyIndex && dragPosition !== 'into' ,
         [Classes.rowDragEndInto]: rowIndex === endRowIndex && dragPosition === 'into',
         [Classes.rowDragEndToTop]: rowIndex === endRowIndex && dragPosition === 'top',
         [Classes.rowDragEndToBottom]: rowIndex === endRowIndex && dragPosition === 'bottom'
@@ -665,21 +703,29 @@ function isMouseOnDropTarget (mouseEvent, target): boolean {
   return target.contains(mouseEvent.target)
 }
 
-function createDropTargetEvent (dropTarget, event, dragItem, startDropZoneTagret): DragEvent {
-  const dropZoneTarget = dropTarget.getContainer()
+function createDropTargetEvent (dropZone, event, dragItem, startDropZone): DragEvent {
+  const dropZoneTarget = dropZone.getContainer()
+  const startDropZoneTagret = startDropZone.getContainer()
   const rect = dropZoneTarget.getBoundingClientRect()
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
+  const startDropZoneOptions = startDropZone.tableParams.getRowDragOptions()
+  const startCommonParams = startDropZoneOptions?.commonParams
   const targetEvent:DragEvent = {
     dragItem,
     startDropZoneTagret,
+    startCommonParams,
     dropZoneTarget,
     event,
     x,
     y
   }
-  if(dropTarget.isTable){
-    targetEvent.dropZoneTableParams = dropTarget.tableParams
+  if(dropZone.isTable){
+    
+    const dropZoneOptions = dropZone.tableParams.getRowDragOptions()
+    const commonParams = dropZoneOptions?.commonParams
+    targetEvent.dropZoneTableParams = dropZone.tableParams
+    targetEvent.commonParams = commonParams
   }
   return targetEvent
 }
