@@ -202,8 +202,9 @@ export const GlobalStyle = createGlobalStyle`
     user-select: none;
 
     display:flex;
+    opacity: 0.9;
     align-items:center;
-    min-width:48px;
+    min-width:80px;
     padding: 0px 8px;
     border: 1px solid #d9d9d9;
     box-shadow: 0px 6px 16px 3px rgba(0,0,0,0.08);
@@ -433,13 +434,13 @@ export const StyledArtTableWrapper = styled.div`
 
   .${Classes.rowDragging} {
     user-select:none;
-    .${Classes.tableBody} .${Classes.tableRow} >td{
-        cursor:move;
-    }
+    // .${Classes.tableBody} .${Classes.tableRow} >td{
+    //     cursor:move;
+    // }
 
-    .${Classes.tableFooter} .${Classes.tableRow} >td{
-        cursor:no-drop;
-    }
+    // .${Classes.tableFooter} .${Classes.tableRow} >td{
+    //     cursor:no-drop;
+    // }
     
   }
 

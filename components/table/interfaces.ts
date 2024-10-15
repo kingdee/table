@@ -150,9 +150,10 @@ export interface RowDragEvent {
   isFinished: boolean, // 是否拖拽完成
   dragPosition: string, // bottom | into | top 拖拽行基于目标行的位置
   startDropZoneTagret: Element, // 起始拖拽区域
+  startCommonParams: any // 起始表格公共参数,
+  commonParams?:any // 目标区域公共参数
   dropZoneTarget: Element, // 拖拽放置区域
   event: MouseEvent, // 鼠标事件,
-  source: string // startTable | targetTable 事件来源，由目标表格触发还是开始拖拽表格触发
   x: number, // 鼠标相对于拖拽区域的X位置
   y: number, // 鼠标相对于拖拽区域的Y位置
 }
@@ -160,6 +161,8 @@ export interface RowDragEvent {
 export interface DragEvent {
   dragItem:any // 起使拖拽行信息,
   startDropZoneTagret: Element // 起始拖拽区域,
+  startCommonParams: any // 起始表格公共参数,
+  commonParams?:any // 目标区域公共参数
   dropZoneTarget:Element  // 拖拽放置区域,
   dropZoneTableParams?: RowDropZoneTableParams, // 拖拽放置区域表格提供方法
   event:MouseEvent, // 鼠标事件,
