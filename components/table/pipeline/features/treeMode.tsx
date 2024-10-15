@@ -95,7 +95,16 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
       iconIndent,
       iconGap,
       indentSize,
-      treeMetaKey
+      treeMetaKey,
+      isExpanded: (rowKey) => {
+        return openKeySet.has(rowKey)
+      },
+      onExpand: (rowKey) => {
+        onChangeOpenKeys([...openKeys, rowKey], rowKey, 'expand')
+      },
+      onCollapse: (rowKey) => {
+        onChangeOpenKeys(openKeys.filter((key) => key !== rowKey),rowKey,'collapse')
+      }
     })
 
     const Icon = opts.icon
