@@ -107,7 +107,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       let overIndex = -1
       let direction = 'bottom'
 
-      if (!isLeave) {
+      if (!isLeave && dataSource.length > 0) {
         const overDragItem = getDragRowItem(event.target, dropZoneTarget, dataSource)
 
         if (overDragItem) {
@@ -115,6 +115,11 @@ export function rowDrag (opt:RowDragFeatureOptions) {
           overIndex = rowIndex
           direction = getDirection(cell, event.clientY, allowDragIntoRow)
         }
+      }
+
+      if(overIndex === -1 && dataSource.length > 0 && event.target === dropZoneTarget ){
+        overIndex = dataSource.length -1
+        direction = 'bottom'
       }
       const overRow = overIndex >= 0 ? dataSource[overIndex] : null
 
@@ -218,6 +223,8 @@ export function rowDrag (opt:RowDragFeatureOptions) {
           clearInterval(intervalId)
         }
 
+        if(!tableBody) return 
+
         const moveOffset = getScrollMoveOffset(tableBody, mouseMoveEvent)
         if (moveOffset === 0) {
           return
@@ -252,12 +259,15 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         const validDropZones = rowDropZones.concat(currentDropZone) // 可放置区域加上自身
         const dropTarget = validDropZones.find(zone => isMouseOnDropTarget(mouseMoveEvent, zone.getContainer())) || null
 
+        updateScrollPosition(dropTarget?.getContainer(), mouseMoveEvent) // 拖拽到底时让滚动条可以滚动
+
         if (dropTarget !== lastDropTarget) {
           // 拖拽离开表格
           if (lastDropTarget !== null && dropTarget === null) {
             if (lastDropTarget.onDragLeave) {
               setDragElementIcon(dragElement, 'notAllowed')
               hiddenDragLine(dragLine)
+              lastDropTarget.getContainer().classList.remove(Classes.rowDragNoData)
               const dragEvent = createDropTargetEvent(lastDropTarget, mouseMoveEvent, startDataItem, currentDropZone)
               lastDropTarget.onDragLeave(dragEvent)
             }
@@ -285,7 +295,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
               dragZone: dropTarget,
               event: mouseMoveEvent,
             })
-            updateScrollPosition(dropTarget.getContainer(), mouseMoveEvent) // 拖拽到底时让滚动条可以滚动
+            
           }
 
           // 树形表格悬停1s展开对应行节点
@@ -337,6 +347,12 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         }
 
         const rowDropZones = rowDragApi.getRowDropZone()
+        rowDropZones.forEach(dropzone=>{
+          const container = dropzone.getContainer()
+          container && container.classList.remove(Classes.rowDragNoData)
+        })
+
+
         const validDropZones = rowDropZones.concat(currentDropZone)
         const dropTarget = validDropZones.find(zone => isMouseOnDropTarget(mouseUpEvent, zone.getContainer()))
 
@@ -514,10 +530,18 @@ function positionDragLine ({ lineElement, dragZone, event }) {
   const treeModeOptions = getTreeModeOptions()
   const rowDragOptions = getRowDragOptions() || {}
   const { allowDragIntoRow } = rowDragOptions
+
+  if(dataSource.length === 0){
+    tableContainer.classList.add(Classes.rowDragNoData)
+    lineElement.style.display = 'none'
+  }else {
+    tableContainer.classList.remove(Classes.rowDragNoData)
+    lineElement.style.display = 'block'
+  }
   // 鼠标悬停所在的拖拽行信息
   const dragItem = getDragRowItem(event.target, tableContainer, dataSource)
 
-  if (!dragItem) return
+  if (!dragItem) return 
 
   const { cell, rowIndex, row } = dragItem
 

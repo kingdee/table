@@ -106,6 +106,7 @@ export const Classes = {
   rowDragElementIcon: `${prefix}row-drag-element-icon`,
   rowDragElementLabel: `${prefix}row-drag-element-label`,
   rowDragLine: `${prefix}row-drag-line`,
+  rowDragNoData: `${prefix}row-drag-no-data`,
   treeTableRowDragLine:`${prefix}tree-table-row-drag-line`,
   iconNotAllowed: `${prefix}icon-not-allowed`,
   iconMove:`${prefix}icon-move`,
@@ -396,6 +397,9 @@ export const StyledArtTableWrapper = styled.div`
     display: flex;
     flex: none;
   }
+  .${Classes.tableBody}{
+    flex-grow:1;
+  }
   .${Classes.tableBody}, .${Classes.tableFooter} {
     background: var(--bgcolor);
     overflow: auto;
@@ -446,6 +450,9 @@ export const StyledArtTableWrapper = styled.div`
 
   .${Classes.rowDragStart}{
     opacity: 0.5;
+  }
+  .${Classes.rowDragNoData}{
+    border: 1px solid var(--primary-color)
   }
 
   .${Classes.rowDragEndParent} td{
