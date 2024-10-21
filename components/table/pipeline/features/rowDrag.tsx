@@ -117,7 +117,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         }
       }
 
-      if(overIndex === -1 && dataSource.length > 0 && event.target === dropZoneTarget ){
+      if(overIndex === -1 && dataSource.length > 0 && dropZoneTarget.contains(event.target) ){
         overIndex = dataSource.length -1
         direction = 'bottom'
       }
@@ -531,6 +531,11 @@ function positionDragLine ({ lineElement, dragZone, event }) {
   const rowDragOptions = getRowDragOptions() || {}
   const { allowDragIntoRow } = rowDragOptions
 
+  const isTreeTable = !!treeModeOptions
+
+  const bodyRect = tableContainer.getBoundingClientRect()
+  const offsetParentSize = getElementRectWithOffset(document.body)
+
   if(dataSource.length === 0){
     tableContainer.classList.add(Classes.rowDragNoData)
     lineElement.style.display = 'none'
@@ -541,60 +546,44 @@ function positionDragLine ({ lineElement, dragZone, event }) {
   // 鼠标悬停所在的拖拽行信息
   const dragItem = getDragRowItem(event.target, tableContainer, dataSource)
 
-  if (!dragItem) return 
+  if (!dragItem) {
+    if(dataSource.length > 0 && tableContainer.contains(event.target)){
+      const rowIndex = dataSource.length -1
+      const row = dataSource[rowIndex]
+      const direction = 'bottom'
+      const targetCell = isTreeTable ? tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.tableExtendCell}`) : tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.rowDragCell}`)
+      if(!targetCell) return 
+      const { top, left , width} = getLinePosition({ treeModeOptions, cell: targetCell,  row, direction, offsetParentSize, bodyRect })
+      lineElement.style.left = `${left}px`
+      lineElement.style.top = `${top}px`
+      lineElement.style.width = `${width}px`
+
+    }
+
+    return 
+  }
 
   const { cell, rowIndex, row } = dragItem
 
-  const bodyRect = tableContainer.getBoundingClientRect()
-  const offsetParentSize = getElementRectWithOffset(document.body)
 
-  const isTreeTable = !!treeModeOptions
   const allowDragInto = isTreeTable && allowDragIntoRow
   const direction = getDirection(cell, event.clientY, allowDragInto)
 
-  if (isTreeTable) {
-    const {
-      iconWidth,
-      iconIndent,
-      iconGap,
-      indentSize,
-      treeMetaKey
-    } = treeModeOptions
-
-    const expandCell = tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.tableExtendCell}`)
-    if (expandCell) {
-      const { paddingLeft } = _getElementSize(expandCell)
-      const expandCellRect = expandCell.getBoundingClientRect()
-      const { rowKey, depth, isLeaf, expanded } = row[treeMetaKey]
-      const addWidth = isLeaf ? iconWidth + iconGap : 0
-      const indent = iconIndent + depth * indentSize + addWidth
-      const { x, y, height } = expandCellRect
-
-      const top = direction === 'bottom' ? y + height - offsetParentSize.top : y - offsetParentSize.top
-      const offsetX = Math.max(x + paddingLeft + indent - bodyRect.x, 0)
-      const left = bodyRect.x + offsetX - offsetParentSize.left
-
-      lineElement.style.left = `${left}px`
-      lineElement.style.top = `${top}px`
-      lineElement.style.width = `${bodyRect.width - offsetX}px`
-
-      if (direction === 'into') {
-        lineElement.style.display = 'none'
-      } else {
-        lineElement.style.display = 'block'
-      }
-      return
-    }
-  }
-  // 根据鼠标悬停位置所在单元格和显示位置计算拖拽线的位置
-  const rect = cell.getBoundingClientRect()
-  const { y, height } = rect
-  const top = direction === 'bottom' ? y + height - offsetParentSize.top : y - offsetParentSize.top
-  const left = bodyRect.x - offsetParentSize.left
+  const targetCell = isTreeTable ? tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.tableExtendCell}`) : cell
+  if(!targetCell) return 
+  const { top, left , width} = getLinePosition({ treeModeOptions, cell: targetCell,  row, direction, offsetParentSize, bodyRect })
 
   lineElement.style.left = `${left}px`
   lineElement.style.top = `${top}px`
-  lineElement.style.width = `${bodyRect.width}px`
+  lineElement.style.width = `${width}px`
+
+  if (direction === 'into') {
+    lineElement.style.display = 'none'
+  } else {
+    lineElement.style.display = 'block'
+  }
+
+  
 }
 
 function showDragLine (lineElement) {
@@ -770,4 +759,48 @@ function getDirection (cell, clientY, isTreeTable = false) : string {
   }
 
   return direction
+}
+
+const getLinePosition = ({ treeModeOptions, cell,  row, direction, offsetParentSize, bodyRect })=>{
+
+  const isTreeTable = !!treeModeOptions
+
+  if(isTreeTable){
+    const {
+      iconWidth,
+      iconIndent,
+      iconGap,
+      indentSize,
+      treeMetaKey
+    } = treeModeOptions
+    const { paddingLeft } = _getElementSize(cell)
+    const expandCellRect = cell.getBoundingClientRect()
+    const { rowKey, depth, isLeaf, expanded } = row[treeMetaKey]
+    const addWidth = isLeaf ? iconWidth + iconGap : 0
+    const indent = iconIndent + depth * indentSize + addWidth
+    const { x, y, height } = expandCellRect
+  
+    const top = direction === 'bottom' ? y + height - offsetParentSize.top : y - offsetParentSize.top
+    const offsetX = Math.max(x + paddingLeft + indent - bodyRect.x, 0)
+    const left = bodyRect.x + offsetX - offsetParentSize.left
+    const width = bodyRect.width - offsetX
+  
+    return {
+      top,
+      left,
+      width
+  
+    }
+  }
+
+
+   // 根据鼠标悬停位置所在单元格和显示位置计算拖拽线的位置
+   const rect = cell.getBoundingClientRect()
+   const { y, height } = rect
+   const top = direction === 'bottom' ? y + height - offsetParentSize.top : y - offsetParentSize.top
+   const left = bodyRect.x - offsetParentSize.left
+   const width = bodyRect.width
+
+   return { top, left, width }
+
 }
