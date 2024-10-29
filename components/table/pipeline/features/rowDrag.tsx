@@ -233,7 +233,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         timeoutId = setTimeout(() => {
           intervalId = setInterval(() => {
             tableBody.scrollTop += moveOffset
-          }, 100)
+          }, 50)
         }, 500)
       }
 
@@ -334,6 +334,9 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       }
 
       const handleDragStop = (mouseUpEvent: MouseEvent) => {
+        if(!isValidDrag){
+          return
+        }
         removeElement(dragElement)
         removeElement(dragLine)
         artTable.classList.remove(cx(Classes.rowDragging))
@@ -341,10 +344,6 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         clearTimeout(timeoutId)
         clearInterval(intervalId)
         clearTimeout(expandRowTimeoutId)
-        while(expandRowCallBackList.length > 0) {
-          const callback = expandRowCallBackList.pop()
-          callback()
-        }
 
         const rowDropZones = rowDragApi.getRowDropZone()
         rowDropZones.forEach(dropzone=>{
@@ -359,6 +358,11 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         if (dropTarget && dropTarget.onDragStop) {
           const dragEvent = createDropTargetEvent(dropTarget, mouseUpEvent, startDataItem, currentDropZone)
           dropTarget.onDragStop(dragEvent)
+        }
+
+        while(expandRowCallBackList.length > 0) {
+          const callback = expandRowCallBackList.pop()
+          callback()
         }
       }
 

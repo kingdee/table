@@ -211,6 +211,7 @@ export const GlobalStyle = createGlobalStyle`
     box-shadow: 0px 6px 16px 3px rgba(0,0,0,0.08);
     border-radius: 2px;
     background: #fff;
+    max-height:48px;
 
     .${Classes.rowDragElementLabel}{
       font-size:12px;
