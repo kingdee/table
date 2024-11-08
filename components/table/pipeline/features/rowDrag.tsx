@@ -279,6 +279,17 @@ export function rowDrag (opt:RowDragFeatureOptions) {
               setDragElementIcon(dragElement, 'move')
               if (dropTarget.isTable) {
                 showDragLine(dragLine)
+
+                const { getTreeModeOptions } = dropTarget.tableParams
+                const treeModeOptions = getTreeModeOptions()
+                const isTreeTable = !!treeModeOptions
+                // 判断拖拽进入的表格是否是树形表格，控制指示线样式
+                if(isTreeTable){
+                  dragLine.classList.add(Classes.treeTableRowDragLine)
+                }else {
+                  dragLine.classList.remove(Classes.treeTableRowDragLine)
+                }
+                
               }
               const dragEvent = createDropTargetEvent(dropTarget, mouseMoveEvent, startDataItem, currentDropZone)
               dropTarget.onDragEnter(dragEvent)
@@ -314,9 +325,9 @@ export function rowDrag (opt:RowDragFeatureOptions) {
               if (!dragItem) return
 
               const { row } = dragItem
-              const { rowKey } = row[treeMetaKey]
+              const { rowKey, isLeaf } = row[treeMetaKey]
 
-              if(!isExpanded(rowKey)){
+              if(!isLeaf && !isExpanded(rowKey)){
                 onExpand(rowKey)
                 expandRowCallBackList.push(()=>onCollapse(rowKey))
               }
