@@ -61,6 +61,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
     const primaryKey = pipeline.ensurePrimaryKey('treeMode')
 
     const openKeys: string[] = opts.openKeys ?? pipeline.getStateAtKey(stateKey) ?? opts.defaultOpenKeys ?? []
+    const curSort = pipeline.getStateAtKey('sort')
     const openKeySet = new Set(openKeys)
     const onChangeOpenKeys: TreeModeFeatureOptions['onChangeOpenKeys'] = (nextKeys: string[], key, action) => {
       opts.onChangeOpenKeys?.(nextKeys, key, action)
@@ -112,13 +113,13 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
     return pipeline.mapDataSource(processDataSource).mapColumns(processColumns)
 
     function processDataSource (input: any[]) {
-      if(pipeline.isSameInputDataSource() && openKeys === pipeline.getFeatureOptions('lastOpenKeys')){
-        return pipeline.getFeatureOptions('lastTreeMode');
-      }
-      pipeline.setFeatureOptions('lastOpenKeys', pipeline.getStateAtKey(stateKey) || openKeys)
-      const result: any[] = []
-      dfs(input, 0)
-
+        if(pipeline.isSameInputDataSource() && openKeys === pipeline.getFeatureOptions('lastOpenKeys') && curSort === pipeline.getFeatureOptions('lastSort')){
+          return pipeline.getFeatureOptions('lastTreeMode');
+        }
+        pipeline.setFeatureOptions('lastOpenKeys', openKeys)
+        pipeline.setFeatureOptions('lastSort', curSort)
+        const result: any[] = []
+        dfs(input, 0)
       function dfs (nodes: any[], depth: number, parentNode = null) {
         if (nodes == null) {
           return
@@ -131,7 +132,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
           const isLeaf = isLeafNode(node, { depth, expanded, rowKey })
           const treeMeta = { depth, isLeaf, expanded, rowKey, parentRowKey }
           result.push({ [treeMetaKey]: treeMeta, ...node })
- 
+
           if (!isLeaf && expanded) {
             dfs(node.children, depth + 1, node)
           }
