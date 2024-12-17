@@ -800,7 +800,10 @@ export const StyledArtTableWrapper = styled.div`
 
   //#region 滚动条占位
   .${Classes.verticalScrollPlaceholder} {
-    visibility: hidden;
+    // visibility: hidden;
+    background: var(--header-bgcolor);
+    position:sticky;
+    right:0px;
     flex-shrink: 0;
   }
   .${Classes.tableFooter} .${Classes.verticalScrollPlaceholder} {
