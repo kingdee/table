@@ -654,6 +654,7 @@ export const StyledArtTableWrapper = styled.div`
     // visibility: hidden;
     background: var(--header-bgcolor);
     position:sticky;
+    z-index:5;
     right:0px;
     flex-shrink: 0;
   }
