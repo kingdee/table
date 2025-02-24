@@ -17,8 +17,9 @@ import {
   BaseTableCSSVariables,
   Classes,
   LOCK_SHADOW_PADDING,
-  StyledArtTableWrapper
+  StyledArtTableWrapper,
 } from './styles'
+import GlobalStyleComponent from './globalStyleComponent'
 import {
   addResizeObserver,
   getScrollbarSize,
@@ -33,7 +34,7 @@ import {
   cssPolifill
 } from './utils'
 
-import { console, browserType } from '../utils'
+import { console, browserType, isStickyUIDegrade } from '../utils'
 import getTableRenderTemplate from './renderTemplates'
 
 let propsDotEmptyContentDeprecatedWarned = false
@@ -575,7 +576,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         'has-footer': footerDataSource.length > 0,
         'sticky-footer': isStickyFooter,
         [Classes.artTableBordered]: bordered,
-        'ie-polyfill-wrapper': browserType.isIE
+        'ie-polyfill-wrapper': browserType.isIE,
+        'sticky-polyfill-wrapper': isStickyUIDegrade()
       },
       className
     )
@@ -588,21 +590,24 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
     const tableProps = getTableProps() || {}
     return (
-      <StyledArtTableWrapper {...artTableWrapperProps}>
-        <Loading
-          visible={isLoading}
-          LoadingIcon={components.LoadingIcon}
-          LoadingContentWrapper={components.LoadingContentWrapper}
-        >
-          <div {...tableProps} className={cx(Classes.artTable, tableProps.className)}>
-            {this.renderTableHeader(info)}
-            {this.renderTableBody(info)}
-            {this.renderTableFooter(info)}
-            {this.renderLockShadows(info)}
-          </div>
-          {this.renderStickyScroll(info)}
-        </Loading>
-      </StyledArtTableWrapper>
+      <>
+        <GlobalStyleComponent />
+        <StyledArtTableWrapper {...artTableWrapperProps}>
+          <Loading
+            visible={isLoading}
+            LoadingIcon={components.LoadingIcon}
+            LoadingContentWrapper={components.LoadingContentWrapper}
+          >
+            <div {...tableProps} className={cx(Classes.artTable, tableProps.className)}>
+              {this.renderTableHeader(info)}
+              {this.renderTableBody(info)}
+              {this.renderTableFooter(info)}
+              {this.renderLockShadows(info)}
+            </div>
+            {this.renderStickyScroll(info)}
+          </Loading>
+        </StyledArtTableWrapper>
+      </>
     )
   }
 

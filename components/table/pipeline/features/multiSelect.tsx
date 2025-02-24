@@ -5,6 +5,10 @@ import { always, arrayUtils } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
 import { collectNodes, mergeCellProps, MULTI_SELECT_MARK_PROPNAME } from '../../utils'
 
+const fullRowsSetKey = 'fullRowsSetKey'
+const allEnableKeys = 'allEnableKeys'
+const selectValueSetKey = 'selectValueSetKey'
+
 export interface MultiSelectFeatureOptions {
   /** 非受控用法：默认选中的值 */
   defaultValue?: string[]
@@ -64,19 +68,18 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
       pipeline.setStateAtKey(stateKey, { value: nextValue, lastKey: key }, { keys, action })
     }
 
-    const dataSource = pipeline.getDataSource()
 
     /** dataSource 中包含的所有 keys */
-    const fullKeySet = new Set<string>()
+    let fullKeySet = new Set<string>()
 
     /** 所有有效的 keys（disable 状态为 false） */
-    const allKeys: string[] = []
+    let allKeys: string[] = []
 
-    const set = new Set(value)
+    let set = new Set(value)
     let isAllChecked = set.size !== 0 // 当前不存在选中则默认为false
     let isAnyChecked = false
 
-    const flatDataSource = collectNodes(dataSource)
+    const flatDataSource = collectNodes(pipeline.getDataSource())
     flatDataSource.forEach((row, rowIndex) => {
       const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
       fullKeySet.add(rowKey)
@@ -104,6 +107,7 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
           checked={isAllChecked}
           indeterminate={!isAllChecked && isAnyChecked}
           onChange={(_: any) => {
+            const allKeys = pipeline.getFeatureOptions(allEnableKeys)
             if (isAllChecked) {
               onChange(arrayUtils.diff(value, allKeys), '', allKeys, 'uncheck-all')
             } else {
@@ -123,8 +127,10 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
           const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
           let checkboxCellProps = {}
           const preCellProps = opts.checkboxColumn?.getCellProps?.(value, row, rowIndex)
-          if (fullKeySet.has(rowKey) && clickArea === 'cell') {
-            const prevChecked = set.has(rowKey)
+          const fullRowsSet = pipeline.getFeatureOptions(fullRowsSetKey) || new Set<string>()
+          const selectValueSet = pipeline.getFeatureOptions(selectValueSetKey) || new Set<string>()
+          if (fullRowsSet.has(rowKey) && clickArea === 'cell') {
+            const prevChecked = selectValueSet.has(rowKey)
             const disabled = isDisabled(row, rowIndex)
             checkboxCellProps = {
               style: { cursor: disabled ? 'not-allowed' : 'pointer' },
@@ -145,7 +151,8 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
             return null
           }
           const key = internals.safeGetRowKey(primaryKey, row, rowIndex)
-          const checked = set.has(key)
+          const selectValueSet = pipeline.getFeatureOptions(selectValueSetKey) || new Set<string>()
+          const checked = selectValueSet.has(key)
           return (
             <Checkbox
               checked={checked}
@@ -187,7 +194,8 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
 
     pipeline.appendRowPropsGetter((row, rowIndex) => {
       const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
-      if (!fullKeySet.has(rowKey)) {
+      const fullRowsSet = pipeline.getFeatureOptions(fullRowsSetKey) || new Set<string>()
+      if (!fullRowsSet.has(rowKey)) {
         // rowKey 不在 fullKeySet 中说明这一行是在 multiSelect 之后才生成的，multiSelect 不对之后生成的行进行处理
         return
       }
@@ -196,7 +204,8 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
       let className: string
       let onClick: any
 
-      const checked = set.has(rowKey)
+      const selectValueSet = pipeline.getFeatureOptions(selectValueSetKey) || new Set<string>()
+      const checked = selectValueSet.has(rowKey)
       if (opts.highlightRowWhenSelected && checked) {
         className = 'highlight'
       }
@@ -217,12 +226,21 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
       return { className, style, onClick }
     })
 
+    // 只保留一份到pipeline， 避免行数据过多时内容被握住
+    pipeline.setFeatureOptions(fullRowsSetKey, fullKeySet)
+    pipeline.setFeatureOptions(allEnableKeys, allKeys)
+    pipeline.setFeatureOptions(selectValueSetKey, set)
+    fullKeySet = null
+    allKeys = null
+    set = null
+
     return pipeline
 
     function onCheckboxChange(prevChecked: boolean, key: string, batch: boolean) {
       let batchKeys = [key]
 
       if (batch && lastKey) {
+        const allKeys = pipeline.getFeatureOptions(allEnableKeys)
         const lastIdx = allKeys.indexOf(lastKey)
         const cntIdx = allKeys.indexOf(key)
         const [start, end] = lastIdx < cntIdx ? [lastIdx, cntIdx] : [cntIdx, lastIdx]

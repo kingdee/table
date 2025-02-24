@@ -163,6 +163,8 @@ export function getRichVisibleRectsStream(
   virtualDebugLabel?: string,
 ) {
   return structureMayChange$.pipe(
+    op.mapTo(target),
+    op.distinctUntilChanged(shallowEqual), // 当target没有发生变化时，无需重新查找
     op.startWith('init'),
     op.map(() => {
       // target 的第一个滚动父元素，我们认为这就是虚拟滚动发生的地方

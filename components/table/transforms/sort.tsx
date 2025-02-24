@@ -59,9 +59,9 @@ function DefaultSortHeaderCell({ children, column, onToggle, sortOrder, sortInde
   )
 }
 
-function hasAnySortableColumns(cols: ArtColumn[]): boolean {
+function hasAnySortableColumns (cols: ArtColumn[]): boolean {
   return cols.some(
-    (col) => Boolean(col.features?.sortable) || (!isLeafNode(col) && hasAnySortableColumns(col.children)),
+    (col) => Boolean(col.features?.sortable) || (!isLeafNode(col) && hasAnySortableColumns(col.children))
   )
 }
 
@@ -158,15 +158,6 @@ export function makeSortTransform({
   const sortMap = new Map(sorts.map((sort, index) => [sort.code, { index, ...sort }]))
 
   return ({ dataSource, columns }) => {
-    if (process.env.NODE_ENV !== 'production') {
-      if (!hasAnySortableColumns(columns)) {
-        console.warn(
-          '[ali-react-table] commonTransform.sort 缺少可排序的列，请通过 column.features.sortable 来指定哪些列可排序',
-          columns,
-        )
-      }
-    }
-
     return { columns: processColumns(columns), dataSource: processDataSource(dataSource) }
 
     function processDataSource(dataSource: any[]) {

@@ -221,7 +221,7 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
       }
     }
 
-    pipeline.addTableProps({ onMouseDown, onKeyDown, tabIndex: -1, className: cx([Classes.rangeSelection]) }) // todo: 后面可以把mousedown放到一个流里面
+    pipeline.addTableProps({ onMouseDown, onKeyDown, tabIndex: -1 }) // todo: 后面可以把mousedown放到一个流里面
 
     return pipeline.mapColumns(makeRecursiveMapper((col) => {
       const cellRanges = pipeline.getStateAtKey(rangeSelectionKey) || []

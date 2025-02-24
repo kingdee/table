@@ -141,3 +141,52 @@ export interface CustomeFilterPanelProps extends FilterPanelProps{
 
 
 export type FilterPanel = React.ComponentType<DefaultFilterPanelProps|CustomeFilterPanelProps >
+
+export interface RowDragEvent {
+  startRowIndex:number,
+  startRow: any, // 起始的拖拽行
+  endRowIndex:number,
+  endRow:any, // 结束的拖拽行
+  isFinished: boolean, // 是否拖拽完成
+  dragPosition: string, // bottom | into | top 拖拽行基于目标行的位置
+  startDropZoneTagret: Element, // 起始拖拽区域
+  startCommonParams: any // 起始表格公共参数,
+  commonParams?:any // 目标区域公共参数
+  dropZoneTarget: Element, // 拖拽放置区域
+  event: MouseEvent, // 鼠标事件,
+  x: number, // 鼠标相对于拖拽区域的X位置
+  y: number, // 鼠标相对于拖拽区域的Y位置
+}
+
+export interface DragEvent {
+  dragItem:any // 起使拖拽行信息,
+  startDropZoneTagret: Element // 起始拖拽区域,
+  startCommonParams: any // 起始表格公共参数,
+  commonParams?:any // 目标区域公共参数
+  dropZoneTarget:Element  // 拖拽放置区域,
+  dropZoneTableParams?: RowDropZoneTableParams, // 拖拽放置区域表格提供方法
+  event:MouseEvent, // 鼠标事件,
+  x: number, // 鼠标相对于拖拽区域的X位置
+  y: number, // 鼠标相对于拖拽区域的Y位置
+}
+
+export interface RowDropZoneParams {
+  // 获取拖拽响应容器
+  getContainer: () => HTMLElement;
+  // 拖拽进入事件 
+  onDragEnter?: (params: DragEvent) => void;
+  // 拖拽离开事件
+  onDragLeave?: (params: DragEvent) => void;
+  // 拖拽移动事件
+  onDragging?: (params: DragEvent) => void;
+  // 拖拽结束事件 
+  onDragStop?: (params: DragEvent, source?:string) => void;
+  isTable?: boolean,
+  tableParams?: RowDropZoneTableParams
+}
+
+interface RowDropZoneTableParams {
+  getDataSource: () => any[];
+  getTreeModeOptions: () => any;
+  getRowDragOptions:() => any;
+}

@@ -306,8 +306,7 @@ function keepWithinBounds (popupParent: HTMLElement, ePopup: HTMLElement, x: num
   }
 
   if (y) {
-    const minHeight = Math.min(ePopupRect.height, 180)
-    const maxY = parentHeight - minHeight
+    const maxY = parentHeight - ePopupRect.height
     y = Math.min(Math.max(y, 0), Math.abs(maxY)) // 目前位置，最大支持的位置
   }
 

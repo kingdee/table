@@ -18,3 +18,4 @@ export { getEventPath, isElementInEventPath, getTargetEleInEventPath, calculateP
 export { default as console } from './console'
 export { browserType } from './browserType'
 export { MULTI_SELECT_MARK_PROPNAME, SINGLE_SELECT_MARK_PROPNAME, isSelectColumn } from './selectColumn'
+export { isStickyUIDegrade } from './uiDegrade'

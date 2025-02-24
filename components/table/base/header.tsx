@@ -206,7 +206,7 @@ export default function TableHeader ({ info, theaderPosition, rowCount: _rowCoun
         } else if (colIndex >= fullFlatCount - rightFlatCount) {
           positionStyle.position = 'sticky'
           const stickyRightIndex = colSpan > 1 ? colIndex + colSpan -1 : colIndex
-          positionStyle.right = stickyRightMap.get(stickyRightIndex) + stickyRightOffset
+          positionStyle.right = stickyRightMap.get(stickyRightIndex) + (typeof stickyRightOffset === 'number' ? stickyRightOffset : 0)
         }
 
         const justifyContent = col.align === 'right'
