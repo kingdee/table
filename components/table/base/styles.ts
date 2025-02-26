@@ -1,4 +1,5 @@
 import styled, { css,  createGlobalStyle } from 'styled-components'
+import { swapRTLDirection } from './utils'
 export const LOCK_SHADOW_PADDING = 20
 
 const prefix = 'kd-'
@@ -196,7 +197,7 @@ export const GlobalStyle = createGlobalStyle<{ direction: string }>`
   .${Classes.rowDragElement}{
     position: absolute;
     top:0;
-    left:0;
+    ${props => swapRTLDirection(props.direction, 'left')}:0;
     z-index: 9999;
     pointer-events:none;
     user-select: none;
@@ -224,7 +225,7 @@ export const GlobalStyle = createGlobalStyle<{ direction: string }>`
   .${Classes.rowDragLine}{
     position: absolute;
     top:0;
-    left:0;
+    ${props => swapRTLDirection(props.direction, 'left')}:0;
     z-index: 9998;
     pointer-events:none;
     user-select: none;
@@ -251,11 +252,11 @@ const outerBorderStyleMixin = css`
 
   td.${Classes.first},
   th.${Classes.first} {
-    border-left: none;
+    border-${props => props.direction === 'rtl' ? 'right' : 'left'}: none;
   }
   td.${Classes.last},
   th.${Classes.last} {
-    border-right: none;
+    border-${props => props.direction === 'rtl' ? 'left' : 'right'}: none;
   }
 
   thead tr.${Classes.first} th,
@@ -269,10 +270,10 @@ const outerBorderStyleMixin = css`
     border-bottom: none;
   }
   td.${Classes.rowSpan}:not(.${Classes.first}){
-    border-left: var(---cell-border-vertical);
+    border-${props => props.direction === 'rtl' ? 'right' : 'left'}: var(---cell-border-vertical);
   }
   td.${Classes.rowSpan}:not(.${Classes.last}){
-    border-right: var(---cell-border-vertical);
+    border-${props => props.direction === 'rtl' ? 'left' : 'right'}: var(---cell-border-vertical);
   }
 `
 
@@ -422,13 +423,13 @@ export const StyledArtTableWrapper = styled.div`
       border-top: 1px solid #0E5FD8 !important;
     }
     .${Classes.tableCellRangeLeft}{
-      border-left: 1px solid #0E5FD8 !important;
+      border-${props => swapRTLDirection(props.direction, 'left')}: 1px solid #0E5FD8 !important;
     }
     .${Classes.tableCellRangeBottom}{
       border-bottom: 1px solid #0E5FD8 !important;
     }
     .${Classes.tableCellRangeRight}{
-      border-right: 1px solid #0E5FD8 !important;
+      border-${props => swapRTLDirection(props.direction, 'right')}: 1px solid #0E5FD8 !important;
     }
   }
 
@@ -461,11 +462,11 @@ export const StyledArtTableWrapper = styled.div`
     
   }
   .${Classes.rowDragEndParent} td:first-child{
-    border-left: 1px solid var(--primary-color) !important;
+    border-${props => swapRTLDirection(props.direction, 'left')}: 1px solid var(--primary-color) !important;
     
   }
   .${Classes.rowDragEndParent} td:last-child{
-    border-right: 1px solid var(--primary-color) !important;
+    border-${props => swapRTLDirection(props.direction, 'right')}: 1px solid var(--primary-color) !important;
     
   }
 
@@ -480,11 +481,11 @@ export const StyledArtTableWrapper = styled.div`
   }
 
   .${Classes.rowDragEndInto} td:first-child{
-    border-left: 1px solid var(--primary-color) !important;
+    border-${props => swapRTLDirection(props.direction, 'left')}: 1px solid var(--primary-color) !important;
   }
 
   .${Classes.rowDragEndInto} td:last-child{
-    border-right: 1px solid var(--primary-color) !important;
+    border-${props => swapRTLDirection(props.direction, 'right')}: 1px solid var(--primary-color) !important;
   }
 
   // .${Classes.rowDragEndToBottom} td{
@@ -537,23 +538,23 @@ export const StyledArtTableWrapper = styled.div`
 
   th {
     font-weight: normal;
-    text-align: left;
+    text-align: ${props => swapRTLDirection(props.direction, 'left')};
     padding: var(--cell-padding);
     height: var(--header-row-height);
     color: var(--header-color);
     background: var(--header-bgcolor);
     border:1px solid transparent;
-    border-right: var(--header-cell-border-vertical);
+    border-${props => swapRTLDirection(props.direction, 'right')}: var(--header-cell-border-vertical);
     border-bottom: var(--header-cell-border-horizontal);
     position: relative;
   }
 
   th.resizeable{
-    border-right: var(--header-cell-border-vertical)
+    border-${props => swapRTLDirection(props.direction, 'right')}: var(--header-cell-border-vertical)
   }
 
   th.${Classes.leaf} {
-    border-right: var(--header-cell-border-vertical);
+    border-${props => swapRTLDirection(props.direction, 'right')}: var(--header-cell-border-vertical);
     border-bottom: none;
   }
 
@@ -561,7 +562,7 @@ export const StyledArtTableWrapper = styled.div`
     border-top: var(--header-cell-border-horizontal);
   }
   th.${Classes.first} {
-    border-left: var(--header-cell-border-vertical);
+    border-${props => swapRTLDirection(props.direction, 'left')}: var(--header-cell-border-vertical);
   }
 
   td {
@@ -569,12 +570,12 @@ export const StyledArtTableWrapper = styled.div`
     background: var(--bgcolor);
     height: var(--row-height);
     border:1px solid transparent;
-    border-right: var(--cell-border-vertical);
+    border-${props => swapRTLDirection(props.direction, 'right')}: var(--cell-border-vertical);
     border-bottom: var(--cell-border-horizontal);
     word-break: break-all;
   }
   td.${Classes.first} {
-    border-left: var(--cell-border-vertical);
+    border-${props => swapRTLDirection(props.direction, 'left')}: var(--cell-border-vertical);
   }
   tr.${Classes.first} td {
     border-top: var(--cell-border-horizontal);
@@ -605,23 +606,23 @@ export const StyledArtTableWrapper = styled.div`
     }
 
     .${Classes.leftLockShadow} {
-     ${props => props.direction === 'rtl' ? `margin-left: ${LOCK_SHADOW_PADDING}px;` : `margin-right: ${LOCK_SHADOW_PADDING}px;` }
+       margin-${props => swapRTLDirection(props.direction, 'right')}: ${LOCK_SHADOW_PADDING}px;
      
       box-shadow: none;
 
       &.show-shadow {
         box-shadow: var(--lock-shadow);
-        border-right: var(--cell-border-vertical);
+        border-${props => swapRTLDirection(props.direction, 'right')}: var(--cell-border-vertical);
       }
     }
 
     .${Classes.rightLockShadow} {
-      ${props => props.direction === 'rtl'? `margin-right: ${LOCK_SHADOW_PADDING}px;` : `margin-left: ${LOCK_SHADOW_PADDING}px;` }
+      margin-${props => swapRTLDirection(props.direction, 'left')}: ${LOCK_SHADOW_PADDING}px;
       box-shadow: none;
 
       &.show-shadow {
         box-shadow: var(--lock-shadow);
-        border-left: var(--cell-border-vertical);
+        border-${props => swapRTLDirection(props.direction, 'left')}: var(--cell-border-vertical);
       }
     }
   }
@@ -634,7 +635,7 @@ export const StyledArtTableWrapper = styled.div`
     font-size: 12px;
     text-align: center;
     position: absolute;
-    left: 50%;
+    ${props => swapRTLDirection(props.direction, 'left')}: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
 
@@ -680,10 +681,10 @@ export const StyledArtTableWrapper = styled.div`
       top: 0;
     }
     .${Classes.fixedLeft}{
-      left:0;
+      ${props => swapRTLDirection(props.direction, 'left')}:0;
     }
     .${Classes.fixedRight}{
-      right:0;
+      rig${props => swapRTLDirection(props.direction, 'right')}ht:0;
     }
 
     .${Classes.rowDetailContainer}{
@@ -804,7 +805,7 @@ export const StyledArtTableWrapper = styled.div`
     background: var(--header-bgcolor);
     position:sticky;
     z-index:5;
-    right:0px;
+    ${props => swapRTLDirection(props.direction, 'right')}:0px;
     flex-shrink: 0;
   }
   .${Classes.tableFooter} .${Classes.verticalScrollPlaceholder} {
@@ -818,10 +819,10 @@ export const StyledArtTableWrapper = styled.div`
   }
   //解决部分浏览器(chrome109)最后一个单元格的列宽拖拽区域绝对定位超出表格，导致表格竖分割线无法对齐
   .${Classes.tableHeaderRow} th.${Classes.last} .${Classes.tableHeaderCellResize}{
-    right: 0;
+    ${props => swapRTLDirection(props.direction, 'right')}: 0;
     width: 5px;
     &::after{
-      left: 4px;
+      ${props => swapRTLDirection(props.direction, 'left')}: 4px;
     }
   }
 `
