@@ -45,4 +45,6 @@ export interface RenderInfo {
   leftLockTotalWidth: number
   /** 右侧锁定列的总宽度 */
   rightLockTotalWidth: number
+  /** 表格流式布局方向 */
+  direction?:string
 }

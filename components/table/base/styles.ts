@@ -1,5 +1,4 @@
 import styled, { css,  createGlobalStyle } from 'styled-components'
-
 export const LOCK_SHADOW_PADDING = 20
 
 const prefix = 'kd-'
@@ -193,7 +192,7 @@ export type BaseTableCSSVariables = Partial<{
   '--header-cell-border-vertical': string
 }>
 
-export const GlobalStyle = createGlobalStyle`
+export const GlobalStyle = createGlobalStyle<{ direction: string }>`
   .${Classes.rowDragElement}{
     position: absolute;
     top:0;
@@ -606,7 +605,8 @@ export const StyledArtTableWrapper = styled.div`
     }
 
     .${Classes.leftLockShadow} {
-      margin-right: ${LOCK_SHADOW_PADDING}px;
+     ${props => props.direction === 'rtl' ? `margin-left: ${LOCK_SHADOW_PADDING}px;` : `margin-right: ${LOCK_SHADOW_PADDING}px;` }
+     
       box-shadow: none;
 
       &.show-shadow {
@@ -616,7 +616,7 @@ export const StyledArtTableWrapper = styled.div`
     }
 
     .${Classes.rightLockShadow} {
-      margin-left: ${LOCK_SHADOW_PADDING}px;
+      ${props => props.direction === 'rtl'? `margin-right: ${LOCK_SHADOW_PADDING}px;` : `margin-left: ${LOCK_SHADOW_PADDING}px;` }
       box-shadow: none;
 
       &.show-shadow {
@@ -824,12 +824,9 @@ export const StyledArtTableWrapper = styled.div`
       left: 4px;
     }
   }
-  //#endregion
-
-  `
+`
 export const ButtonCSS = css`
   ${variableConst}
-  //#region 按钮
   .${Classes.button}{
     color: var(--color);
     background:#ffffff;
@@ -851,7 +848,6 @@ export const ButtonCSS = css`
       border:none;
     }
   }
-//#endregion
 `
 interface VariableObj {
   [key:string]: string|number
