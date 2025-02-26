@@ -178,7 +178,7 @@ interface TableHeaderProps {
 }
 
 export default function TableHeader ({ info, theaderPosition, rowCount: _rowCount, stickyRightOffset }: TableHeaderProps) {
-  const { nested, flat, stickyLeftMap, stickyRightMap } = info
+  const { nested, flat, stickyLeftMap, stickyRightMap, direction } = info
   const rowCount = _rowCount ?? (getTreeDepth(nested.full) + 1)
   const headerRenderInfo = calculateHeaderRenderInfo(info, rowCount)
 
@@ -202,13 +202,21 @@ export default function TableHeader ({ info, theaderPosition, rowCount: _rowCoun
         const positionStyle: CSSProperties = {}
         if (colIndex < leftFlatCount) {
           positionStyle.position = 'sticky'
-          positionStyle.left = stickyLeftMap.get(colIndex)
+          
+          if(direction === 'rtl'){
+            positionStyle.right = stickyLeftMap.get(colIndex)
+          }else{
+            positionStyle.left = stickyLeftMap.get(colIndex) 
+          }
         } else if (colIndex >= fullFlatCount - rightFlatCount) {
           positionStyle.position = 'sticky'
           const stickyRightIndex = colSpan > 1 ? colIndex + colSpan -1 : colIndex
-          positionStyle.right = stickyRightMap.get(stickyRightIndex) + (typeof stickyRightOffset === 'number' ? stickyRightOffset : 0)
+          if(direction === 'rtl'){
+            positionStyle.left = stickyRightMap.get(stickyRightIndex) + (typeof stickyRightOffset === 'number' ? stickyRightOffset : 0)
+          }else{
+            positionStyle.right = stickyRightMap.get(stickyRightIndex) + (typeof stickyRightOffset === 'number' ? stickyRightOffset : 0)
+          }
         }
-
         const justifyContent = col.align === 'right'
           ? 'flex-end'
           : col.align === 'center' ? 'center' : 'flex-start'

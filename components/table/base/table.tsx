@@ -137,6 +137,8 @@ export interface BaseTableProps {
     /** 每个数据块的数据条数 */
     blockSize?:number
   }
+  // 表格流布局方向
+  direction?:string
 }
 
 export interface BaseTableState {
@@ -182,7 +184,9 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     getRowProps: noop,
     dataSource: [] as any[],
 
-    useOuterBorder: true
+    useOuterBorder: true,
+
+    direction: 'rtl'
 
   }
 
@@ -323,13 +327,14 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
   /** 同步横向滚动偏移量 */
   private syncHorizontalScroll (x: number) {
-    this.updateOffsetX(x)
+    const _x = Math.abs(x)
+    this.updateOffsetX(_x)
 
     const { flat } = this.lastInfo
 
     const leftLockShadow = this.domHelper.getLeftLockShadow()
     if (leftLockShadow) {
-      const shouldShowLeftLockShadow = flat.left.length > 0 && this.state.needRenderLock && x > 0
+      const shouldShowLeftLockShadow = flat.left.length > 0 && this.state.needRenderLock && _x > 0
       if (shouldShowLeftLockShadow) {
         leftLockShadow.classList.add('show-shadow')
       } else {
@@ -340,7 +345,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const rightLockShadow = this.domHelper.getRightLockShadow()
     if (rightLockShadow) {
       const shouldShowRightLockShadow =
-        flat.right.length > 0 && this.state.needRenderLock && x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth
+        flat.right.length > 0 && this.state.needRenderLock && _x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth
       if (shouldShowRightLockShadow) {
         rightLockShadow.classList.add('show-shadow')
       } else {
@@ -482,17 +487,19 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   private renderLockShadows (info: RenderInfo) {
     const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
     // console.log('render LockShadows')
+    const leftLockShadowWidth = info.direction === 'rtl' ? info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset : info.leftLockTotalWidth + LOCK_SHADOW_PADDING
+    const rightLockShadownWidth = info.direction === 'rtl' ? info.leftLockTotalWidth + LOCK_SHADOW_PADDING : info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset 
     return (
       <>
         <div
           className={Classes.lockShadowMask}
-          style={{ left: 0, width: info.leftLockTotalWidth + LOCK_SHADOW_PADDING }}
+          style={{ left: 0, width: leftLockShadowWidth }}
         >
           <div className={cx(Classes.lockShadow, Classes.leftLockShadow)} />
         </div>
         <div
           className={Classes.lockShadowMask}
-          style={{ right: 0, width: info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset }}
+          style={{ right: 0, width: rightLockShadownWidth}}
         >
           <div className={cx(Classes.lockShadow, Classes.rightLockShadow)} />
         </div>
@@ -562,9 +569,10 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       getTableProps,
       footerDataSource,
       components,
-      bordered
+      bordered,
+      direction
     } = this.props
-
+    info.direction = direction
     const artTableWrapperClassName = cx(
       Classes.artTableWrapper,
       {
@@ -584,15 +592,15 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
     const artTableWrapperProps = {
       className: artTableWrapperClassName,
-      style,
+      style:{...style,direction},
       [STYLED_REF_PROP]: this.artTableWrapperRef
     }
 
     const tableProps = getTableProps() || {}
     return (
       <>
-        <GlobalStyleComponent />
-        <StyledArtTableWrapper {...artTableWrapperProps}>
+        <GlobalStyleComponent direction={info.direction}/>
+        <StyledArtTableWrapper {...artTableWrapperProps} direction={info.direction}>
           <Loading
             visible={isLoading}
             LoadingIcon={components.LoadingIcon}
