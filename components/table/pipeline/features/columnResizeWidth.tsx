@@ -7,11 +7,12 @@ import { mergeCellProps, collectNodes, makeRecursiveMapper, isGroupColumn } from
 import { TablePipeline } from '../pipeline'
 import { internals } from '../../internals'
 import { Classes } from '../../base/styles'
+import { swapRTLDirection } from '../../base/utils'
 
 const TableHeaderCellResize = styled.div`
   position: absolute;
   top: 0;
-  right: -5px;
+  ${props => swapRTLDirection(props.direction, 'right')}: -5px;
   height: 100%;
   width: 10px;
   cursor: ew-resize;
@@ -24,7 +25,7 @@ const TableHeaderCellResize = styled.div`
     content: "";
     position: absolute;
     display: block;
-    left: calc(50% - 1px);
+    ${props => swapRTLDirection(props.direction, 'left')}: calc(50% - 1px);
     width: 1px;
     height: calc(100% - 14px);
     top: 7px;
@@ -32,36 +33,6 @@ const TableHeaderCellResize = styled.div`
 `
 
 const TableHeaderGroupCellResize = styled(props => <TableHeaderCellResize {...props}/>)`
-  &:after {
-    height: 100%;
-    top: 0;
-  }
-`
-
-const TableHeaderCellRTLResize = styled.div`
-  position: absolute;
-  top: 0;
-  left: -5px;
-  height: 100%;
-  width: 10px;
-  cursor: ew-resize;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index:1;
-
-  &:after {
-    content: "";
-    position: absolute;
-    display: block;
-    right: calc(50% - 1px);
-    width: 1px;
-    height: calc(100% - 14px);
-    top: 7px;
-  }
-`
-
-const TableHeaderGroupCellRTLResize = styled(props => <TableHeaderCellRTLResize {...props}/>)`
   &:after {
     height: 100%;
     top: 0;
@@ -207,8 +178,6 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
     return pipeline.mapColumns(makeRecursiveMapper((col) => {
       const prevTitle = internals.safeRenderHeader(col)
       const { code, features, width } = col
-      const DragEle = pipeline.ctx.direction === 'rtl'? TableHeaderCellRTLResize : TableHeaderCellResize
-      const DragGroupEle = pipeline.ctx.direction === 'rtl'? TableHeaderGroupCellRTLResize : TableHeaderGroupCellResize
       return {
         ...col,
         width: columnSize[code] ?? width,
@@ -217,8 +186,8 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
             {prevTitle}
             {features?.resizeable !== false && (
               isGroup
-                ? <DragEle className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
-                : <DragGroupEle className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
+                ? <TableHeaderGroupCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
+                : <TableHeaderCellResize direction={pipeline.ctx.direction} className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
             )}
           </>
         ),
