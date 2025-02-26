@@ -48,7 +48,9 @@ pipeline.use(features.columnResize())
       </svg>
     )
   }
-    const pipeline = useTablePipeline()
+    const pipeline = useTablePipeline({
+      direction:'rtl'
+    })
     .input({ dataSource: dataSource, columns: columns })
     .primaryKey('id')
     .use(features.columnResize(

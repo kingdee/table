@@ -38,6 +38,36 @@ const TableHeaderGroupCellResize = styled(props => <TableHeaderCellResize {...pr
   }
 `
 
+const TableHeaderCellRTLResize = styled.div`
+  position: absolute;
+  top: 0;
+  left: -5px;
+  height: 100%;
+  width: 10px;
+  cursor: ew-resize;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index:1;
+
+  &:after {
+    content: "";
+    position: absolute;
+    display: block;
+    right: calc(50% - 1px);
+    width: 1px;
+    height: calc(100% - 14px);
+    top: 7px;
+  }
+`
+
+const TableHeaderGroupCellRTLResize = styled(props => <TableHeaderCellRTLResize {...props}/>)`
+  &:after {
+    height: 100%;
+    top: 0;
+  }
+`
+
 interface ColumnSize {
   [key: string]: number
 }
@@ -122,7 +152,7 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
         op.map((e) => {
           const movingX = e.clientX
           const nextColumnSize = { ...columnSize }
-          const deltaSum = movingX - startX
+          const deltaSum = pipeline.ctx.direction === 'rtl'?  startX - movingX  : movingX - startX
           let deltaRemaining = deltaSum
           if (children?.length > 0) {
             const leafChildColumns = collectNodes(children, 'leaf-only')
@@ -177,6 +207,8 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
     return pipeline.mapColumns(makeRecursiveMapper((col) => {
       const prevTitle = internals.safeRenderHeader(col)
       const { code, features, width } = col
+      const DragEle = pipeline.ctx.direction === 'rtl'? TableHeaderCellRTLResize : TableHeaderCellResize
+      const DragGroupEle = pipeline.ctx.direction === 'rtl'? TableHeaderGroupCellRTLResize : TableHeaderGroupCellResize
       return {
         ...col,
         width: columnSize[code] ?? width,
@@ -185,8 +217,8 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
             {prevTitle}
             {features?.resizeable !== false && (
               isGroup
-                ? <TableHeaderGroupCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
-                : <TableHeaderCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
+                ? <DragEle className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
+                : <DragGroupEle className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
             )}
           </>
         ),
