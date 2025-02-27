@@ -325,14 +325,16 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
   /** 同步横向滚动偏移量 */
   private syncHorizontalScroll (x: number) {
+    const direction = this.props.direction
     const _x = Math.abs(x)
     this.updateOffsetX(_x)
 
     const { flat } = this.lastInfo
-
+    const shouldShowLeftByScroll = direction === 'rtl' ? _x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth : _x > 0  
+    const shouldShowRighByScroll =  direction === 'rtl' ? _x > 0 : _x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth
     const leftLockShadow = this.domHelper.getLeftLockShadow()
     if (leftLockShadow) {
-      const shouldShowLeftLockShadow = flat.left.length > 0 && this.state.needRenderLock && _x > 0
+      const shouldShowLeftLockShadow = flat.left.length > 0 && this.state.needRenderLock && shouldShowLeftByScroll
       if (shouldShowLeftLockShadow) {
         leftLockShadow.classList.add('show-shadow')
       } else {
@@ -343,7 +345,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const rightLockShadow = this.domHelper.getRightLockShadow()
     if (rightLockShadow) {
       const shouldShowRightLockShadow =
-        flat.right.length > 0 && this.state.needRenderLock && _x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth
+        flat.right.length > 0 && this.state.needRenderLock && shouldShowRighByScroll
       if (shouldShowRightLockShadow) {
         rightLockShadow.classList.add('show-shadow')
       } else {
