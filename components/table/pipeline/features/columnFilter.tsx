@@ -114,6 +114,7 @@ export function filter (opts: FilterFeatureOptions = {}) {
             hideFilterPopupHeader={hideFilterPopupHeader}
             getPopupParent={getPopupParent}
             localeText={localeText}
+            direction={pipeline.ctx.direction}
           />)
           if (col.renderHeader) {
             result.title = col.renderHeader(result.title, _Filter)

@@ -138,13 +138,16 @@ interface OffSet {
  * @param event 
  * @param popupParent 
  */
-export function calculatePopupRelative(trigger: HTMLElement, popupParent: HTMLElement, offset?:OffSet){
+export function calculatePopupRelative(trigger: HTMLElement, popupParent: HTMLElement, offset?:OffSet, direction?: string){
   const triggerRect = trigger.getBoundingClientRect()
   const parent = popupParent === document.body ? document.documentElement : popupParent
   const parentRect = parent.getBoundingClientRect()
+  const offsetX = offset ? offset.x : 0
+  const offsetY = offset ? offset.y : 0
+
   return {
-    x: triggerRect.left - parentRect.left - (offset ? offset.x : 0),
-    y: triggerRect.top - parentRect.top - (offset ? offset.y : 0)
+    x: triggerRect.left - parentRect.left + (direction === 'rtl' ? offsetX + triggerRect.width : -offsetX),
+    y: triggerRect.top - parentRect.top - offsetY
   }
 }
 
