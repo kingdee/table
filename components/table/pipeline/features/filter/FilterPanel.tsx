@@ -53,10 +53,11 @@ export interface FilterPanel {
   position: PositionType
   style?: CSSProperties
   filterIcon:ReactNode
-  children?: ReactNode
+  children?: ReactNode,
+  direction?: string
 }
 
-function FilterPanel ({ style, children, position, filterIcon, onClose, hideFilterPopupHeader }) {
+function FilterPanel ({ style, children, position, filterIcon, onClose, hideFilterPopupHeader, direction }) {
   const [perfectPosition, setPerfectPosition] = useState(position)
   const [visible, setVisible] = useState(false)
   const ref = React.useRef<HTMLDivElement>(null)
@@ -64,9 +65,14 @@ function FilterPanel ({ style, children, position, filterIcon, onClose, hideFilt
     return isElementInEventPath(ref.current, e)
   }
   useEffect(() => {
-    setPerfectPosition(keepWithinBounds(document.body, ref.current, position.x, position.y, true))
+    const isRTL = direction === 'rtl'
+    let { x, y } = position
+    if (isRTL) {
+      x -= ref.current?.offsetWidth
+    }
+    setPerfectPosition(keepWithinBounds(document.body, ref.current, x, y, true))
     setVisible(true)
-  }, [position])
+  }, [position, direction])
 
   const hasPopupMouseEvent = useRef(false)
   const handleMouseEvent = () => {
@@ -94,13 +100,15 @@ function FilterPanel ({ style, children, position, filterIcon, onClose, hideFilt
         ...style,
         left: visible ? perfectPosition.x : 0,
         top: visible ? perfectPosition.y : 0,
-        opacity: visible ? 1 : 0
+        opacity: visible ? 1 : 0,
+        direction: direction
       }}
       onMouseDown={handleMouseEvent}
       onMouseUp={handleMouseEvent}
       onKeyDown={handleKeyDown}
       ref={ref}
       tabIndex={-1}
+      direction={direction}
     >
       {
         !hideFilterPopupHeader ? <div className={Classes.popupHeader}>
