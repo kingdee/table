@@ -186,8 +186,6 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
     useOuterBorder: true,
 
-    direction: 'rtl'
-
   }
 
   private rowHeightManager = makeRowHeightManager(this.props.dataSource.length, this.props.estimatedRowHeight)
