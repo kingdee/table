@@ -186,7 +186,7 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
             {prevTitle}
             {features?.resizeable !== false && (
               isGroup
-                ? <TableHeaderGroupCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
+                ? <TableHeaderGroupCellResize direction={pipeline.ctx.direction}  className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
                 : <TableHeaderCellResize direction={pipeline.ctx.direction} className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
             )}
           </>
