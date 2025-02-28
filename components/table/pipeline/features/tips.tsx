@@ -4,13 +4,14 @@ import { icons } from '../../common-views'
 import { internals } from '../../internals'
 import { makeRecursiveMapper } from '../../utils'
 import { TablePipeline } from '../pipeline'
+import { swapRTLDirection } from '../../base/utils'
 
 const HeaderCellWithTips = styled.div`
   display: flex;
   align-items: center;
 
   .tip-icon-wrapper {
-    margin-left: 2px;
+    margin-${props => swapRTLDirection(props.direction, 'left')}: 2px;
   }
 
   .tip-icon {
@@ -39,7 +40,7 @@ export function tips () {
         return {
           ...col,
           title: (
-            <HeaderCellWithTips style={{ justifyContent }}>
+            <HeaderCellWithTips style={{ justifyContent }} direction={pipeline.ctx.direction}>
               {internals.safeRenderHeader(col)}
               {Balloon ? (
                 // fusion/hippo

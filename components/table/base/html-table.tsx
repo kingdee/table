@@ -15,7 +15,7 @@ export interface HtmlTableProps extends Required<Pick<BaseTableProps, 'getRowPro
 
   horizontalRenderInfo: Pick<
     RenderInfo,
-    'flat' | 'visible' | 'horizontalRenderRange' | 'stickyLeftMap' | 'stickyRightMap'
+    'flat' | 'visible' | 'horizontalRenderRange' | 'stickyLeftMap' | 'stickyRightMap' | 'direction'
   >
 
   verticalRenderInfo: {
@@ -38,7 +38,7 @@ export function HtmlTable ({
   horizontalRenderInfo: hozInfo,
   tbodyPosition
 }: HtmlTableProps) {
-  const { flat, horizontalRenderRange: hoz } = hozInfo
+  const { flat, horizontalRenderRange: hoz, direction } = hozInfo
 
   const spanManager = new SpanManager()
   const fullFlatCount = flat.full.length
@@ -146,9 +146,19 @@ export function HtmlTable ({
     if (colIndex < leftFlatCount) {
       positionStyle.position = 'sticky'
       positionStyle.left = hozInfo.stickyLeftMap.get(colIndex)
+      if(direction === 'rtl'){
+        positionStyle.right = hozInfo.stickyLeftMap.get(colIndex)
+      }else{
+        positionStyle.left = hozInfo.stickyLeftMap.get(colIndex)
+      }
+     
     } else if (colIndex >= fullFlatCount - rightFlatCount) {
       positionStyle.position = 'sticky'
-      positionStyle.right = hozInfo.stickyRightMap.get(colIndex) + (typeof stickyRightOffset === 'number' ? stickyRightOffset : 0)
+      if(direction === 'rtl'){
+        positionStyle.left = hozInfo.stickyRightMap.get(colIndex) + (typeof stickyRightOffset === 'number' ? stickyRightOffset : 0)
+      }else{
+        positionStyle.right = hozInfo.stickyRightMap.get(colIndex) + (typeof stickyRightOffset === 'number' ? stickyRightOffset : 0)
+      }
     }
 
     return React.createElement(
