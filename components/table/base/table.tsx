@@ -137,8 +137,6 @@ export interface BaseTableProps {
     /** 每个数据块的数据条数 */
     blockSize?:number
   }
-  // 表格流布局方向
-  direction?:string
 }
 
 export interface BaseTableState {
@@ -325,16 +323,13 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
   /** 同步横向滚动偏移量 */
   private syncHorizontalScroll (x: number) {
-    const direction = this.props.direction
-    const _x = Math.abs(x)
-    this.updateOffsetX(_x)
+    this.updateOffsetX(x)
 
     const { flat } = this.lastInfo
-    const shouldShowLeftByScroll = direction === 'rtl' ? _x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth : _x > 0  
-    const shouldShowRighByScroll =  direction === 'rtl' ? _x > 0 : _x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth
+
     const leftLockShadow = this.domHelper.getLeftLockShadow()
     if (leftLockShadow) {
-      const shouldShowLeftLockShadow = flat.left.length > 0 && this.state.needRenderLock && shouldShowLeftByScroll
+      const shouldShowLeftLockShadow = flat.left.length > 0 && this.state.needRenderLock && x > 0
       if (shouldShowLeftLockShadow) {
         leftLockShadow.classList.add('show-shadow')
       } else {
@@ -345,7 +340,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const rightLockShadow = this.domHelper.getRightLockShadow()
     if (rightLockShadow) {
       const shouldShowRightLockShadow =
-        flat.right.length > 0 && this.state.needRenderLock && shouldShowRighByScroll
+        flat.right.length > 0 && this.state.needRenderLock && x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth
       if (shouldShowRightLockShadow) {
         rightLockShadow.classList.add('show-shadow')
       } else {
@@ -487,19 +482,17 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   private renderLockShadows (info: RenderInfo) {
     const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
     // console.log('render LockShadows')
-    const leftLockShadowWidth = info.direction === 'rtl' ? info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset : info.leftLockTotalWidth + LOCK_SHADOW_PADDING
-    const rightLockShadownWidth = info.direction === 'rtl' ? info.leftLockTotalWidth + LOCK_SHADOW_PADDING : info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset 
     return (
       <>
         <div
           className={Classes.lockShadowMask}
-          style={{ left: 0, width: leftLockShadowWidth }}
+          style={{ left: 0, width: info.leftLockTotalWidth + LOCK_SHADOW_PADDING }}
         >
           <div className={cx(Classes.lockShadow, Classes.leftLockShadow)} />
         </div>
         <div
           className={Classes.lockShadowMask}
-          style={{ right: 0, width: rightLockShadownWidth}}
+          style={{ right: 0, width: info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset }}
         >
           <div className={cx(Classes.lockShadow, Classes.rightLockShadow)} />
         </div>
@@ -569,10 +562,9 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       getTableProps,
       footerDataSource,
       components,
-      bordered,
-      direction
+      bordered
     } = this.props
-    info.direction = direction
+
     const artTableWrapperClassName = cx(
       Classes.artTableWrapper,
       {
@@ -592,15 +584,15 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
     const artTableWrapperProps = {
       className: artTableWrapperClassName,
-      style:{...style,direction},
+      style,
       [STYLED_REF_PROP]: this.artTableWrapperRef
     }
 
     const tableProps = getTableProps() || {}
     return (
       <>
-        <GlobalStyleComponent direction={info.direction}/>
-        <StyledArtTableWrapper {...artTableWrapperProps} direction={info.direction}>
+        <GlobalStyleComponent />
+        <StyledArtTableWrapper {...artTableWrapperProps}>
           <Loading
             visible={isLoading}
             LoadingIcon={components.LoadingIcon}

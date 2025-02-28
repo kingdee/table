@@ -1,4 +1,4 @@
-import React, { useRef, useLayoutEffect, useState } from 'react'
+import React, { useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import cx from 'classnames'
 import { ContextMenuStyleWrap } from '../../common-views'
@@ -129,7 +129,7 @@ export function contextMenu (opts: ContextMenuFeatureOptions = {}) {
         return
       }
       const position = positionForMenu(e, popupParent)
-      const menu = <Menu options={options} hideContextMenu={hideContextMenu} position={position} getPopupParent={getPopupParent} className={menuClassName} direction={pipeline.ctx.direction}/>
+      const menu = <Menu options={options} hideContextMenu={hideContextMenu} position={position} getPopupParent={getPopupParent} className={menuClassName}/>
       const _hidePopup = addPopup(menu)
       menuHelper.init(_hidePopup)
     }
@@ -157,24 +157,20 @@ function Menu (props) {
     options: ContextMenuItem[]
     hideContextMenu: () => void
     position: {x:number, y:number}
-    getPopupParent: () => HTMLElement,
-    direction?: string
+    getPopupParent: () => HTMLElement
   } = props
   const menuRef = useRef<HTMLElement>()
-  useLayoutEffect(() => {
+
+  useEffect(() => {
     if (menuRef.current) {
       const popupParent = getPopupParent()
-      let { x, y } = position
-      const isRTL = props.direction === 'rtl'
-      if (isRTL) {
-        x -= menuRef.current.offsetWidth
-      }
+      const { x, y } = position
       const { x: _x, y: _y } = keepWithinBounds(popupParent, menuRef.current, x, y)
 
       menuRef.current.style.left = _x + 'px'
       menuRef.current.style.top = _y + 'px'
     }
-  }, [position, props.direction])
+  }, [position])
 
   return <ContextMenuStyleWrap className={cx(MenuClasses.menu, className)} ref={menuRef} style={{ left: position.x, top: position.y }}>
     <div className={MenuClasses.menuList}>

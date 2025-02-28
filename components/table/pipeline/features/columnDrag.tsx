@@ -31,16 +31,8 @@ function stopClickPropagation (e) {
   e.stopPropagation()
 }
 
-function adjustTranslation(isRTL: boolean) {
-  return (value: number): number => {
-    return isRTL ? -value : value;
-  }
-}
-
 export function columnDrag (opts: ColumnDragOptions = {}) {
   return (pipeline: TablePipeline) => {
-    const { direction }=pipeline.ctx
-    const _adjustTranslation = adjustTranslation(direction === 'rtl')
     const { cloumnsTranslateData } = pipeline.getStateAtKey(stateKey, {} as any)
     const columns = pipeline.getColumns()
     const tableBody = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.tableBody
@@ -92,7 +84,7 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
 
               let currentTarget = e.currentTarget as HTMLElement
               const rect = (e.currentTarget as HTMLElement).parentElement.getClientRects()[0]
-              const startX = direction === 'rtl' ? rect.right : rect.left
+              const startX = rect.left
               const mouseDownClientX = e.clientX
               const mouseDownClientY = e.clientY
               let moveData = []
@@ -117,10 +109,9 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                   clientY: e.clientY
                 }
                 const scrollDistance = pipeline.ref.current.domHelper.virtual.scrollLeft - startScrollLeft
-                const startPosition = startX - scrollDistance // 表头最左边起点
-                const offsetDistance =  direction === 'rtl' ?  startPosition - e.clientX  : e.clientX - startPosition
+                const leftPosition = startX - scrollDistance // 表头最左边起点
                 updateScrollPosition(client)
-                if (offsetDistance < 20) {
+                if (e.clientX - leftPosition < 20) {
                   return
                 } else {
                   e.stopPropagation()
@@ -160,9 +151,8 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
 
                 // 计算平移位置
                 let replaceIndex = 0
-                
                 let totalWitdth = getColumnWidth(columns[replaceIndex])
-                while (totalWitdth < offsetDistance && replaceIndex < columns.length - 1) {
+                while (totalWitdth < e.clientX - leftPosition && replaceIndex < columns.length - 1) {
                   replaceIndex++
                   totalWitdth += getColumnWidth(columns[replaceIndex])
                 }
@@ -181,12 +171,12 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                   while (index < startIndex) {
                     const { code, lock, width, children } = columns[index]
                     if (enableMove({ code, lock })) {
-                      cloumnsTranslateData[code] += _adjustTranslation(optionColumn.width)
+                      cloumnsTranslateData[code] += optionColumn.width
                       if (isLeafNode(columns[index])) {
-                        cloumnsTranslateData[optionColumn.code] -= _adjustTranslation(width)
+                        cloumnsTranslateData[optionColumn.code] -= width
                       } else {
-                        cloumnsTranslateData[optionColumn.code] -=  _adjustTranslation(getColumnWidth(columns[index]))
-                        moveAllChildren(children, cloumnsTranslateData, _adjustTranslation(optionColumn.width))
+                        cloumnsTranslateData[optionColumn.code] -= getColumnWidth(columns[index])
+                        moveAllChildren(children, cloumnsTranslateData, optionColumn.width)
                       }
                       columnMoved = true
                     }
@@ -196,12 +186,12 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
                   while (startIndex < index) {
                     const { code, lock, width, children } = columns[index]
                     if (enableMove({ code, lock })) {
-                      cloumnsTranslateData[code] -= _adjustTranslation(optionColumn.width)
+                      cloumnsTranslateData[code] -= optionColumn.width
                       if (isLeafNode(columns[index])) {
-                        cloumnsTranslateData[optionColumn.code] +=  _adjustTranslation(width)
+                        cloumnsTranslateData[optionColumn.code] += width
                       } else {
-                        cloumnsTranslateData[optionColumn.code] += _adjustTranslation(getColumnWidth(columns[index]))
-                        moveAllChildren(children, cloumnsTranslateData, _adjustTranslation(optionColumn.width), true)
+                        cloumnsTranslateData[optionColumn.code] += getColumnWidth(columns[index])
+                        moveAllChildren(children, cloumnsTranslateData, optionColumn.width, true)
                       }
                       columnMoved = true
                     }

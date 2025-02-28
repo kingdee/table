@@ -31,8 +31,7 @@ interface FilterProps{
   stopESCKeyDownEventPropagation?: boolean
   hideFilterPopupHeader?: boolean
   getPopupParent? : (triggerElement: HTMLElement) => HTMLElement
-  localeText?: {[key: string]: string},
-  direction?: string
+  localeText?: {[key: string]: string}
 }
 
 interface FilterPanelProps {
@@ -41,8 +40,7 @@ interface FilterPanelProps {
   hidePanel: () => void
   renderPanelContent: () => JSX.Element
   hideFilterPopupHeader?: boolean
-  popupParent? : HTMLElement,
-  direction?: string
+  popupParent? : HTMLElement
 }
 
 const FilterIconSpanStyle = styled.span`
@@ -57,16 +55,16 @@ const FilterIconSpanStyle = styled.span`
   }
 `
 
-function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopupHeader, popupParent, direction }: FilterPanelProps) {
+function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopupHeader, popupParent }: FilterPanelProps) {
   const filterPanelRef = React.useRef(null)
-  const [position, setPosition] = React.useState(calculatePopupRelative(ele, popupParent, _getPanelOffset(ele, hideFilterPopupHeader), direction))
+  const [position, setPosition] = React.useState(calculatePopupRelative(ele, popupParent, _getPanelOffset(ele, hideFilterPopupHeader)))
   const style = {
     position: 'absolute',
     zIndex: 1050
   }
 
   const handleFilterPanelResize = (resize) => {
-    setPosition(calculatePopupRelative(ele, popupParent, _getPanelOffset(ele, hideFilterPopupHeader), direction))
+    setPosition(calculatePopupRelative(ele, popupParent, _getPanelOffset(ele, hideFilterPopupHeader)))
   }
 
   useEffect(() => {
@@ -84,7 +82,6 @@ function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopu
         position={position}
         filterIcon={filterIcon}
         hideFilterPopupHeader={hideFilterPopupHeader}
-        direction={direction}
       >
         {renderPanelContent()}
       </FilterPanel>
@@ -94,7 +91,7 @@ function Panel ({ ele, filterIcon, hidePanel, renderPanelContent, hideFilterPopu
 
 function Filter ({
   size = 12, style, className, FilterPanelContent, filterIcon, setFilter, setFilterModel, filterModel, isFilterActive,
-  stopClickEventPropagation, stopESCKeyDownEventPropagation, hideFilterPopupHeader, getPopupParent, localeText, direction
+  stopClickEventPropagation, stopESCKeyDownEventPropagation, hideFilterPopupHeader, getPopupParent, localeText
 }: FilterProps) {
   const [showPanel, setShowPanel] = React.useState(false)
   const iconRef = React.useRef(null)
@@ -171,7 +168,6 @@ function Filter ({
           renderPanelContent={renderPanelContent}
           hideFilterPopupHeader={hideFilterPopupHeader}
           popupParent={popupParent}
-          direction={direction}
         />, popupParent)}
     </FilterIconSpanStyle>
   )

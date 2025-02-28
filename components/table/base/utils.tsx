@@ -214,10 +214,3 @@ export const cssPolifill = (
     silent: true
   })
 }
-
-export const swapRTLDirection = (direction: string, directionKey: 'left' | 'right'): 'left' | 'right' => {
-  const isRTL = direction === 'rtl'
-  if (directionKey === 'left' && isRTL) return 'right'
-  if (directionKey === 'right' && isRTL) return 'left'
-  return directionKey
-}

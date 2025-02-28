@@ -251,8 +251,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       }
 
       const handleDragMove = (mouseMoveEvent: MouseEvent) => {
-        const direction = pipeline.ctx.direction
-        positionDragElemment(dragElement, mouseMoveEvent, direction) // 更新拖拽悬浮框位置
+        positionDragElemment(dragElement, mouseMoveEvent) // 更新拖拽悬浮框位置
         rowDragApi.setDragStatus('dragging')
         setDragElementIcon(dragElement, 'move')
 
@@ -610,9 +609,8 @@ function hiddenDragLine (lineElement) {
   lineElement.style.display = 'none'
 }
 
-function positionDragElemment (element: HTMLElement, event: MouseEvent, direction: string) {
+function positionDragElemment (element: HTMLElement, event: MouseEvent) {
   if (!element) return
-  const isRTL = direction === 'rtl'
   const elementRect = element.getBoundingClientRect()
   const eleHeight = elementRect.height
   const browserWidth = document.body?.clientWidth ?? (window.innerHeight || document.documentElement?.clientWidth || 0)
@@ -621,9 +619,8 @@ function positionDragElemment (element: HTMLElement, event: MouseEvent, directio
   const { clientX, clientY } = event
   let top = clientY - offsetParentSize.top - eleHeight / 2
   let left = clientX - offsetParentSize.left
-  let right = Math.max(browserWidth - clientX, 0)
-  const windowScrollX = window.pageXOffset || window.scrollX
-  const windowScrollY = window.pageYOffset || window.scrollY
+  const windowScrollX = window.pageXOffset
+  const windowScrollY = window.pageYOffset
 
   if (browserWidth > 0 && left + element.clientWidth > browserWidth + windowScrollX) {
     left = Math.max(browserWidth + windowScrollX - element.clientWidth, 0)
@@ -631,13 +628,7 @@ function positionDragElemment (element: HTMLElement, event: MouseEvent, directio
   if (browserHeight > 0 && top + element.clientHeight > browserHeight + windowScrollY) {
     top = Math.max(browserHeight + windowScrollY - element.clientHeight, 0)
   }
-  if (browserWidth > 0 && right + element.clientWidth > browserWidth + windowScrollX) {
-    right = Math.max(browserWidth + windowScrollX - element.clientWidth, 0)
-  }
-  if (isRTL) {
-    element.style.cssText += `;width: 100%; right: ${right}px; top: ${top}px;`
-    return
-  }
+
   element.style.left = `${left}px`
   element.style.top = `${top}px`
 }

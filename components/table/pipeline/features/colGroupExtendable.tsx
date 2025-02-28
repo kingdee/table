@@ -6,7 +6,6 @@ import { internals } from '../../internals'
 import { isLeafNode, makeRecursiveMapper } from '../../utils'
 import cx from 'classnames'
 import { Classes } from '../../base/styles'
-import { swapRTLDirection } from "../../base/utils";
 export interface colGroupExtendOption {
   onChangeExtendStatus?({ }: any, { }: any): void,
   extendStatus?: {},
@@ -21,7 +20,7 @@ interface ExpandProps {
 }
 const ExtendIconStyle = styled.span`
   font-size:12px;
-  margin-${props => swapRTLDirection(props.direction, 'left')}:4px;
+  margin-left:4px;
 `
 const stateKey = 'colExtend'
 const ExpandIcon = ({ style, className, size, isExtend }: ExpandProps) => {
@@ -56,7 +55,6 @@ export const colGroupExtendable = (opts: colGroupExtendOption = {}) => (pipeline
           {internals.safeRenderHeader({ ...col })}
           <ExtendIconStyle
             onClick={() => { toggle(col) }}
-            direction={pipeline.ctx.direction}
           >
             {
               displaycolExtendIcon || <ExpandIcon
