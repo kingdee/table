@@ -31,7 +31,8 @@ import {
   throttledWindowResize$,
   getTableScrollFooterDOM,
   getTableScrollHeaderDOM,
-  cssPolifill
+  cssPolifill,
+  swapRTLDirection
 } from './utils'
 
 import { console, browserType, isStickyUIDegrade } from '../utils'
@@ -330,8 +331,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     this.updateOffsetX(_x)
 
     const { flat } = this.lastInfo
-    const shouldShowLeftByScroll = direction === 'rtl' ? _x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth : _x > 0  
-    const shouldShowRighByScroll =  direction === 'rtl' ? _x > 0 : _x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth
+    const shouldShowLeftByScroll = _x > 0  
+    const shouldShowRighByScroll = _x < this.domHelper.virtual.scrollWidth - this.domHelper.virtual.clientWidth
     const leftLockShadow = this.domHelper.getLeftLockShadow()
     if (leftLockShadow) {
       const shouldShowLeftLockShadow = flat.left.length > 0 && this.state.needRenderLock && shouldShowLeftByScroll
@@ -487,19 +488,19 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   private renderLockShadows (info: RenderInfo) {
     const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
     // console.log('render LockShadows')
-    const leftLockShadowWidth = info.direction === 'rtl' ? info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset : info.leftLockTotalWidth + LOCK_SHADOW_PADDING
-    const rightLockShadownWidth = info.direction === 'rtl' ? info.leftLockTotalWidth + LOCK_SHADOW_PADDING : info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset 
+    const leftLockShadowWidth =  info.leftLockTotalWidth + LOCK_SHADOW_PADDING
+    const rightLockShadownWidth = info.rightLockTotalWidth + LOCK_SHADOW_PADDING + stickyRightOffset 
     return (
       <>
         <div
           className={Classes.lockShadowMask}
-          style={{ left: 0, width: leftLockShadowWidth }}
+          style={{ [swapRTLDirection(info.direction, 'left')]: 0, width: leftLockShadowWidth }}
         >
           <div className={cx(Classes.lockShadow, Classes.leftLockShadow)} />
         </div>
         <div
           className={Classes.lockShadowMask}
-          style={{ right: 0, width: rightLockShadownWidth}}
+          style={{ [swapRTLDirection(info.direction, 'right')]: 0, width: rightLockShadownWidth}}
         >
           <div className={cx(Classes.lockShadow, Classes.rightLockShadow)} />
         </div>
