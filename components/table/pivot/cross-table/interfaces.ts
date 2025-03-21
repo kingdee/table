@@ -18,7 +18,7 @@ export interface CrossTableLeftMetaColumn extends Omit<ArtColumnStaticPart, 'hid
 export interface CrossTreeNode {
   key: string
   value: string
-  title?: ReactNode
+  title?: ReactNode[] | ReactNode
   data?: any
   hidden?: boolean
   children?: CrossTreeNode[]
