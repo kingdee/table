@@ -224,7 +224,7 @@ export const GlobalStyle = createGlobalStyle<{ direction: string }>`
   .${Classes.rowDragLine}{
     position: absolute;
     top:0;
-    ${props => swapRTLDirection(props.direction, 'left')}:0;
+    left:0;
     z-index: 9998;
     pointer-events:none;
     user-select: none;
