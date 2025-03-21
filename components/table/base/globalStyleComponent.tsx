@@ -4,8 +4,12 @@ import {
   GlobalStyle
 } from './styles'
 
-export default class GlobalStyleComponent extends PureComponent {
+interface GlobalStyleComponentProps {
+  direction: string;
+}
+
+export default class GlobalStyleComponent extends PureComponent<GlobalStyleComponentProps> {
   render () {
-    return <GlobalStyle />
+    return <GlobalStyle direction={this.props.direction}/>
   }
 }
