@@ -604,7 +604,7 @@ export const StyledArtTableWrapper = styled.div`
     }
 
     .${Classes.leftLockShadow} {
-      margin-right: ${LOCK_SHADOW_PADDING}px;
+      margin-${props => swapRTLDirection(props.direction, 'right')}: ${LOCK_SHADOW_PADDING}px;
      
       box-shadow: none;
 
@@ -615,7 +615,7 @@ export const StyledArtTableWrapper = styled.div`
     }
 
     .${Classes.rightLockShadow} {
-      margin-left: ${LOCK_SHADOW_PADDING}px;
+      margin-${props => swapRTLDirection(props.direction, 'left')}: ${LOCK_SHADOW_PADDING}px;
       box-shadow: none;
 
       &.show-shadow {
@@ -633,7 +633,7 @@ export const StyledArtTableWrapper = styled.div`
     font-size: 12px;
     text-align: center;
     position: absolute;
-    ${props => swapRTLDirection(props.direction, 'left')}: 50%;
+    left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
 
