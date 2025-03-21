@@ -251,7 +251,8 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       }
 
       const handleDragMove = (mouseMoveEvent: MouseEvent) => {
-        positionDragElemment(dragElement, mouseMoveEvent) // 更新拖拽悬浮框位置
+        const isRTL = pipeline.ctx.direction === 'rtl'
+        positionDragElemment(dragElement, mouseMoveEvent, isRTL) // 更新拖拽悬浮框位置
         rowDragApi.setDragStatus('dragging')
         setDragElementIcon(dragElement, 'move')
 
@@ -305,6 +306,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
               lineElement: dragLine,
               dragZone: dropTarget,
               event: mouseMoveEvent,
+              isRTL
             })
             
           }
@@ -537,7 +539,7 @@ function createDragLine (isTreeTable) {
   return dragLine
 }
 
-function positionDragLine ({ lineElement, dragZone, event }) {
+function positionDragLine ({ lineElement, dragZone, event, isRTL }) {
   const tableContainer = dragZone.getContainer()
 
   const { getDataSource, getTreeModeOptions, getRowDragOptions } = dragZone.tableParams
@@ -568,7 +570,7 @@ function positionDragLine ({ lineElement, dragZone, event }) {
       const direction = 'bottom'
       const targetCell = isTreeTable ? tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.tableExtendCell}`) : tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.rowDragCell}`)
       if(!targetCell) return 
-      const { top, left , width} = getLinePosition({ treeModeOptions, cell: targetCell,  row, direction, offsetParentSize, bodyRect })
+      const { top, left , width} = getLinePosition({ treeModeOptions, cell: targetCell,  row, direction, offsetParentSize, bodyRect, isRTL })
       lineElement.style.left = `${left}px`
       lineElement.style.top = `${top}px`
       lineElement.style.width = `${width}px`
@@ -586,7 +588,7 @@ function positionDragLine ({ lineElement, dragZone, event }) {
 
   const targetCell = isTreeTable ? tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.tableExtendCell}`) : cell
   if(!targetCell) return 
-  const { top, left , width} = getLinePosition({ treeModeOptions, cell: targetCell,  row, direction, offsetParentSize, bodyRect })
+  const { top, left , width} = getLinePosition({ treeModeOptions, cell: targetCell,  row, direction, offsetParentSize, bodyRect, isRTL })
 
   lineElement.style.left = `${left}px`
   lineElement.style.top = `${top}px`
@@ -609,7 +611,7 @@ function hiddenDragLine (lineElement) {
   lineElement.style.display = 'none'
 }
 
-function positionDragElemment (element: HTMLElement, event: MouseEvent) {
+function positionDragElemment (element: HTMLElement, event: MouseEvent, isRTL: boolean) {
   if (!element) return
   const elementRect = element.getBoundingClientRect()
   const eleHeight = elementRect.height
@@ -619,8 +621,9 @@ function positionDragElemment (element: HTMLElement, event: MouseEvent) {
   const { clientX, clientY } = event
   let top = clientY - offsetParentSize.top - eleHeight / 2
   let left = clientX - offsetParentSize.left
-  const windowScrollX = window.pageXOffset
-  const windowScrollY = window.pageYOffset
+  let right = Math.max(browserWidth - clientX, 0)
+  const windowScrollX = window.pageXOffset || window.scrollX
+  const windowScrollY = window.pageYOffset || window.scrollY
 
   if (browserWidth > 0 && left + element.clientWidth > browserWidth + windowScrollX) {
     left = Math.max(browserWidth + windowScrollX - element.clientWidth, 0)
@@ -628,7 +631,13 @@ function positionDragElemment (element: HTMLElement, event: MouseEvent) {
   if (browserHeight > 0 && top + element.clientHeight > browserHeight + windowScrollY) {
     top = Math.max(browserHeight + windowScrollY - element.clientHeight, 0)
   }
-
+  if (browserWidth > 0 && right + element.clientWidth > browserWidth + windowScrollX) {
+    right = Math.max(browserWidth + windowScrollX - element.clientWidth, 0)
+  }
+  if (isRTL) {
+    element.style.cssText += `;right: ${right}px; top: ${top}px;`
+    return
+  }
   element.style.left = `${left}px`
   element.style.top = `${top}px`
 }
@@ -776,7 +785,7 @@ function getDirection (cell, clientY, isTreeTable = false) : string {
   return direction
 }
 
-const getLinePosition = ({ treeModeOptions, cell,  row, direction, offsetParentSize, bodyRect })=>{
+const getLinePosition = ({ treeModeOptions, cell,  row, direction, offsetParentSize, bodyRect, isRTL })=>{
 
   const isTreeTable = !!treeModeOptions
 
@@ -788,7 +797,7 @@ const getLinePosition = ({ treeModeOptions, cell,  row, direction, offsetParentS
       indentSize,
       treeMetaKey
     } = treeModeOptions
-    const { paddingLeft } = _getElementSize(cell)
+    const { paddingLeft, paddingRight } = _getElementSize(cell)
     const expandCellRect = cell.getBoundingClientRect()
     const { rowKey, depth, isLeaf, expanded } = row[treeMetaKey]
     const addWidth = isLeaf ? iconWidth + iconGap : 0
@@ -799,7 +808,18 @@ const getLinePosition = ({ treeModeOptions, cell,  row, direction, offsetParentS
     const offsetX = Math.max(x + paddingLeft + indent - bodyRect.x, 0)
     const left = bodyRect.x + offsetX - offsetParentSize.left
     const width = bodyRect.width - offsetX
-  
+
+    if (isRTL) {
+      const expandCellOffsetRight = bodyRect.right - expandCellRect.right // 展示收起单元格相较于表格右边的距离
+      const _left = bodyRect.x - offsetParentSize.left
+      // 表格的宽度 - expandCellOffsetRight - 表格的paddingRight - 计算得出的缩进
+      const _width = bodyRect.width - expandCellOffsetRight - paddingRight - indent
+      return {
+        top,
+        left: _left,
+        width: _width
+      }
+    }
     return {
       top,
       left,
