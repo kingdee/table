@@ -33,6 +33,9 @@ export const Classes = {
   stickyScrollItem: `${prefix}sticky-scroll-item`,
   horizontalScrollContainer: `${prefix}horizontal-scroll-container`,
   verticalScrollPlaceholder: `${prefix}vertical-scroll-placeholder`,
+  horizontalStickyScrollContainer: `${prefix}horizontal-sticky-scroll-container`,
+  horizontalScrollLeftSpacer: `${prefix}horizontal-scroll-left-spacer`,
+  horizontalScrollRightSpacer: `${prefix}horizontal-scroll-right-spacer`,
 
   lockShadowMask: `${prefix}lock-shadow-mask`,
   lockShadow: `${prefix}lock-shadow`,
@@ -567,14 +570,28 @@ export const StyledArtTableWrapper = styled.div`
   //#endregion
 
   //#region 粘性滚动条
+  .${Classes.horizontalStickyScrollContainer}{
+    display:flex;
+    background: var(--bgcolor);
+  }
+  .${Classes.horizontalScrollLeftSpacer}{
+    height: 1px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .${Classes.horizontalScrollRightSpacer}{
+    height: 1px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border-color);
+  }
   .${Classes.stickyScroll} {
     overflow-y: hidden;
     overflow-x: auto;
     z-index: ${Z.scrollItem};
-    flex-shrink: 0;
+    flex-shrink: 1;
     flex-grow: 0;
     border-top: 1px solid var(--border-color);
-    background: var(--bgcolor);
   }
 
   .${Classes.stickyScrollItem} {
