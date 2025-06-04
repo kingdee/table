@@ -10,6 +10,7 @@ import TableHeader from './header'
 import { getRichVisibleRectsStream } from './helpers/getRichVisibleRectsStream'
 import { getFullRenderRange, makeRowHeightManager } from './helpers/rowHeightManager'
 import { TableDOMHelper } from './helpers/TableDOMUtils'
+import { FastScrollManager, FastScrollCallbacks, ScrollEventData } from './helpers/FastScrollManager'
 import { HtmlTable } from './html-table'
 import { RenderInfo, ResolvedUseVirtual, VerticalRenderRange, VirtualEnum } from './interfaces'
 import Loading, { LoadingContentWrapperProps } from './loading'
@@ -36,6 +37,7 @@ import {
 
 import { console, browserType, isStickyUIDegrade } from '../utils'
 import getTableRenderTemplate from './renderTemplates'
+import { TopBlank, BottomBlank, BlankRef } from './BlankComponent'
 
 let propsDotEmptyContentDeprecatedWarned = false
 function warnPropsDotEmptyContentIsDeprecated () {
@@ -62,6 +64,8 @@ export interface BaseTableProps {
   useVirtual?: VirtualEnum | { horizontal?: VirtualEnum; vertical?: VirtualEnum; header?: VirtualEnum }
   /** 虚拟滚动开启情况下，表格中每一行的预估高度 */
   estimatedRowHeight?: number
+  /** 性能差浏览器和处理器，性能差则启动快速滚动优化，默认为 false */
+  isLowPerformance?: boolean
 
   /** @deprecated 表格头部是否置顶，默认为 true。请使用 isStickyHeader 代替 */
   isStickyHead?: boolean
@@ -159,6 +163,14 @@ export interface BaseTableState {
   offsetX: number
   /** 横向虚拟滚动 最大渲染尺寸 */
   maxRenderWidth: number
+
+  /** 快速滚动时保留的上一次渲染数据 */
+  previousRenderData?: {
+    offsetY: number
+    maxRenderHeight: number
+    maxRenderWidth: number
+    verticalRenderRange: VerticalRenderRange
+  }
 }
 
 export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
@@ -175,6 +187,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
     useVirtual: 'auto',
     estimatedRowHeight: 48,
+    isLowPerformance: false,
 
     isLoading: false,
     components: {},
@@ -207,6 +220,14 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
   private offsetY = 0
 
+  // 快速滚动管理器
+  private fastScrollManager: FastScrollManager
+
+  // Blank组件的引用，用于快速滚动时直接更新
+  private topBlankRef = React.createRef<BlankRef>()
+
+  private bottomBlankRef = React.createRef<BlankRef>()
+
   /** @deprecated BaseTable.getDoms() 已经过时，请勿调用 */
   getDoms () {
     console.warn('[kd-table] BaseTable.getDoms() 已经过时')
@@ -228,6 +249,30 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       maxRenderHeight: 600,
       maxRenderWidth: 800
     }
+
+    // 初始化快速滚动管理器
+    const fastScrollCallbacks: FastScrollCallbacks = {
+      onFastScrollStart: (renderData) => {
+        this.setState({
+          previousRenderData: renderData
+        })
+      },
+      onFastScrollEnd: (scrollData: ScrollEventData) => {
+        this.setState({
+          previousRenderData: undefined,
+          offsetY: scrollData.offsetY,
+          maxRenderHeight: scrollData.maxRenderHeight,
+          maxRenderWidth: scrollData.maxRenderWidth
+        })
+      },
+      getCurrentRenderRange: (offsetY, maxRenderHeight, dataLength) => {
+        return this.rowHeightManager.getRenderRange(offsetY, maxRenderHeight, dataLength)
+      }
+    }
+
+    this.fastScrollManager = new FastScrollManager(
+      fastScrollCallbacks
+    )
   }
 
   /** 自定义滚动条宽度为table宽度，使滚动条滑块宽度相同 */
@@ -242,7 +287,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const artTableWidth = artTable.offsetWidth
     const artTableHeight = artTable.offsetHeight
     // 表格隐藏后，不需要对表格的滚动条做额外的逻辑处理
-    if(artTableWidth === 0  && artTableHeight === 0) return
+    if (artTableWidth === 0 && artTableHeight === 0) return
     const stickyScrollHeightProp = this.props.stickyScrollHeight
     const stickyScrollHeight = stickyScrollHeightProp === 'auto' ? this.getScrollBarWidth() : stickyScrollHeightProp
 
@@ -282,7 +327,6 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     const lockTotalWidth = leftLockTotalWidth + rightLockTotalWidth
 
     const stickyRightOffset = this.hasScrollY ? this.getScrollBarWidth() : 0
-
 
     // 设置子节点宽度
     stickyScrollItem.style.width = `${innerTableWidth - lockTotalWidth + stickyRightOffset}px`
@@ -350,9 +394,15 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   }
 
   getVerticalRenderRange (useVirtual: ResolvedUseVirtual): VerticalRenderRange {
-    const { dataSource } = this.props
-    const { offsetY, maxRenderHeight } = this.state
+    const { dataSource, isLowPerformance } = this.props
+    const { offsetY, maxRenderHeight, previousRenderData } = this.state
     const rowCount = dataSource.length
+
+    // 只有在启用快速滚动时才使用 FastScrollManager 的判断
+    if (isLowPerformance && this.fastScrollManager.getIsFastScrolling() && previousRenderData?.verticalRenderRange) {
+      return previousRenderData.verticalRenderRange
+    }
+
     if (useVirtual.vertical) {
       return this.rowHeightManager.getRenderRange(offsetY, maxRenderHeight, rowCount)
     } else {
@@ -376,7 +426,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
 
   private renderTableBody = (info: RenderInfo) => {
     // console.log('render body')
-    const { dataSource, getRowProps, primaryKey, isLoading, emptyCellHeight, footerDataSource } = this.props
+    const { dataSource, getRowProps, primaryKey, isLoading, emptyCellHeight } = this.props
     const tableBodyClassName = cx(Classes.tableBody, Classes.horizontalScrollContainer)
 
     // 低版本Edge浏览器下也会出现双滚动条，这里设置overflow: 'hidden'，先去掉edge的方向键控制滚动条的功能
@@ -414,25 +464,27 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     return (
       <div className={tableBodyClassName}>
         <div className={Classes.virtual} tabIndex={-1} style={virtualStyle}>
-          {topBlank > 0 && (
-            <div key="top-blank" className={cx(Classes.virtualBlank, 'top')} style={{ height: topBlank }} />
-          )}
+          <TopBlank
+            ref={this.topBlankRef}
+            height={topBlank} // 直接使用
+          />
           <HtmlTable
             tbodyHtmlTag="tbody"
             getRowProps={getRowProps}
             primaryKey={primaryKey}
-            data={dataSource.slice(topIndex, bottomIndex)}
+            data={dataSource.slice(topIndex, bottomIndex)} // 直接使用
             horizontalRenderInfo={info}
             verticalRenderInfo={{
               first: 0,
-              offset: topIndex,
-              limit: bottomIndex,
+              offset: topIndex, // 直接使用
+              limit: bottomIndex, // 直接使用
               last: dataSource.length - 1
             }}
           />
-          {bottomBlank > 0 && (
-            <div key="bottom-blank" className={cx(Classes.virtualBlank, 'bottom')} style={{ height: bottomBlank }} />
-          )}
+          <BottomBlank
+            ref={this.bottomBlankRef}
+            height={bottomBlank} // 直接使用
+          />
         </div>
       </div>
     )
@@ -630,7 +682,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   componentDidUpdate (prevProps: Readonly<BaseTableProps>, prevState: Readonly<BaseTableState>) {
     // console.log('did update start')
     const { cssVariables, enableCSSVariables, bordered } = this.props
-    if(!shallowEqual(prevProps?.cssVariables,this.props?.cssVariables)){
+    if (!shallowEqual(prevProps?.cssVariables, this.props?.cssVariables)) {
       cssPolifill({ variables: cssVariables || {}, enableCSSVariables, bordered })
     }
     this.updateDOMHelper()
@@ -640,10 +692,12 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   }
 
   private didMountOrUpdate (prevProps?: Readonly<BaseTableProps>, prevState?: Readonly<BaseTableState>) {
-    this.syncHorizontalScrollFromTableBody()
-    this.updateStickyScroll()
-    this.adjustNeedRenderLock()
-    this.updateRowHeightManager()
+    window.requestAnimationFrame(() => {
+      this.syncHorizontalScrollFromTableBody()
+      this.updateStickyScroll()
+      this.adjustNeedRenderLock()
+      this.updateRowHeightManager()
+    })
     this.updateScrollLeftWhenLayoutChanged(prevProps, prevState)
   }
 
@@ -746,10 +800,42 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
               Math.abs(x.maxRenderHeight - y.maxRenderHeight) < OVERSCAN_SIZE / 2 &&
               Math.abs(x.offsetY - y.offsetY) < OVERSCAN_SIZE / 2
             )
+          }),
+          // 快速滚动检测和处理
+          op.tap((sizeAndOffset) => {
+            // 只有在启用快速滚动时才使用 FastScrollManager 处理滚动事件
+            if (this.props.isLowPerformance) {
+              this.fastScrollManager.handleScrollEvent(
+                sizeAndOffset,
+                {
+                  offsetY: this.state.offsetY,
+                  maxRenderHeight: this.state.maxRenderHeight,
+                  maxRenderWidth: this.state.maxRenderWidth
+                },
+                this.props.dataSource.length,
+                this.domHelper.virtual.scrollHeight
+              )
+            }
           })
         )
         .subscribe((sizeAndOffset) => {
-          this.setState(sizeAndOffset)
+          // 正常滚动时也需要实时更新 blank 高度，确保缓慢滚动时的视觉连续性
+          const currentRange = this.rowHeightManager.getRenderRange(
+            sizeAndOffset.offsetY,
+            sizeAndOffset.maxRenderHeight,
+            this.props.dataSource.length
+          )
+
+          // 直接更新 DOM，避免等待下次渲染
+          this.topBlankRef.current?.updateHeight(currentRange.topBlank)
+          this.bottomBlankRef.current?.updateHeight(currentRange.bottomBlank)
+
+          // 只有在启用快速滚动时才检查快速滚动状态
+          if (this.props.isLowPerformance && this.fastScrollManager.getIsFastScrolling()) {
+            return
+          }
+
+          this.setState(sizeAndOffset as any)
         })
     )
 
@@ -802,6 +888,10 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     this.resizeObserver?.disconnect()
     this.rootSubscription.unsubscribe()
     this.resizeSubject.unsubscribe()
+    // 只有在启用快速滚动时才清理快速滚动管理器
+    if (this.props.isLowPerformance) {
+      this.fastScrollManager.cleanup()
+    }
   }
 
   /** 更新 DOM 节点的引用，方便其他方法直接操作 DOM */
