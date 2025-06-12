@@ -1,5 +1,4 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
 import { fromEvent } from 'rxjs'
 import { map, takeUntil, filter } from 'rxjs/operators'
 
@@ -9,6 +8,7 @@ import cx from 'classnames'
 import { Classes } from '../../base/styles'
 import { FeatureName } from '../const'
 import { internals } from '../../internals'
+import { getEventCoordinates, getEventTarget } from './utils/touchEventUtils'
 
 export interface RowDragFeatureOptions {
   /** 拖拽开始事件 */
@@ -44,13 +44,11 @@ export interface RowDragFeatureOptions {
   /** 公共参数，作为拖拽回调参数，可在此提供业务层取数接口 */
   commonParams?:any
 
-
-
 }
 
 export const ROW_DRAG_COLUMN_CODE = '$_row_drag_column_&'
 export const rowDragKey = 'rowDragKey'
-export const rowDragOptionsKey  = 'rowDragOptions'
+export const rowDragOptionsKey = 'rowDragOptions'
 const SCROLL_OFFSET = 30
 const SCROLL_START_OFFSET = 20
 
@@ -69,14 +67,14 @@ const defaultRowDragColumn: ArtColumn = {
   render (value: any, row: any, rowIndex: number) {
     return (
       <svg
-        viewBox='0 0 1024 1024'
-        version='1.1'
-        xmlns='http://www.w3.org/1999/xlink'
-        data-icon='drag'
-        width='16'
-        height='16'
+        viewBox="0 0 1024 1024"
+        version="1.1"
+        xmlns="http://www.w3.org/1999/xlink"
+        data-icon="drag"
+        width="16"
+        height="16"
       >
-        <path d='M298.688 192a64 64 0 1 0 128 0 64 64 0 0 0-128 0z m298.624 0a64 64 0 1 0 128 0 64 64 0 0 0-128 0zM298.688 512a64 64 0 1 0 128 0 64 64 0 0 0-128 0z m298.624 0a64 64 0 1 0 128 0 64 64 0 0 0-128 0z m-298.624 320a64 64 0 1 0 128 0 64 64 0 0 0-128 0z m298.624 0a64 64 0 1 0 128 0 64 64 0 0 0-128 0z' p-id='4278' />
+        <path d="M298.688 192a64 64 0 1 0 128 0 64 64 0 0 0-128 0z m298.624 0a64 64 0 1 0 128 0 64 64 0 0 0-128 0zM298.688 512a64 64 0 1 0 128 0 64 64 0 0 0-128 0z m298.624 0a64 64 0 1 0 128 0 64 64 0 0 0-128 0z m-298.624 320a64 64 0 1 0 128 0 64 64 0 0 0-128 0z m298.624 0a64 64 0 1 0 128 0 64 64 0 0 0-128 0z" />
       </svg>
     )
   }
@@ -101,24 +99,24 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       const rowDragOptions = getRowDragOptions()
 
       const allowDragIntoRow = !!treeModeOptions && rowDragOptions?.allowDragIntoRow
-      
-      const isLeave = !isMouseOnDropTarget(event, dropZoneTarget)
+
+      const isLeave = !isPointerOnDropTarget(event, dropZoneTarget)
 
       let overIndex = -1
       let direction = 'bottom'
 
       if (!isLeave && dataSource.length > 0) {
-        const overDragItem = getDragRowItem(event.target, dropZoneTarget, dataSource)
+        const overDragItem = getDragRowItem(getEventTarget(event), dropZoneTarget, dataSource)
 
         if (overDragItem) {
           const { rowIndex, cell } = overDragItem
           overIndex = rowIndex
-          direction = getDirection(cell, event.clientY, allowDragIntoRow)
+          direction = getDirection(cell, getEventCoordinates(event).clientY, allowDragIntoRow)
         }
       }
 
-      if(overIndex === -1 && dataSource.length > 0 && dropZoneTarget.contains(event.target) ){
-        overIndex = dataSource.length -1
+      if (overIndex === -1 && dataSource.length > 0 && dropZoneTarget.contains(getEventTarget(event))) {
+        overIndex = dataSource.length - 1
         direction = 'bottom'
       }
       const overRow = overIndex >= 0 ? dataSource[overIndex] : null
@@ -130,7 +128,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         endRow: overRow,
         startDropZoneTagret,
         startCommonParams,
-        commonParams, 
+        commonParams,
         dropZoneTarget,
         event,
         dragPosition: direction,
@@ -148,7 +146,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
 
     const onDragStop = (event: DragEvent) => {
       const rowDragEvent = getRowDragEvent(event, true)
-      
+
       pipeline.setStateAtKey(rowDragKey, rowDragEvent)
       opt?.onDragEnd?.(rowDragEvent)
     }
@@ -189,7 +187,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
           const lastPipeline = pipeline.getLastPipeline()
           return lastPipeline.getFeatureOptions('treeModeOptions')
         },
-        getRowDragOptions:()=>{
+        getRowDragOptions: () => {
           const lastPipeline = pipeline.getLastPipeline()
           return lastPipeline.getFeatureOptions('rowDragOptions')
         }
@@ -197,8 +195,26 @@ export function rowDrag (opt:RowDragFeatureOptions) {
     }
 
     const onMouseDown = (event: React.MouseEvent<HTMLTableElement, MouseEvent>) => {
-      const mouseDownEvent = event.nativeEvent
-      const startDataItem = getDragRowItem(mouseDownEvent.target, tableBody, dataSource)
+      handlePointerDown(event.nativeEvent)
+    }
+
+    // PC 单据移动端显示，兼容移动端的拖拽事件
+    const onTouchStart = (event: React.TouchEvent<HTMLTableElement>) => {
+      // 尝试阻止触摸事件的默认行为，防止页面滚动
+      try {
+        if (event.cancelable) {
+          event.preventDefault()
+        }
+      } catch (error) {
+        // 忽略passive event listener错误
+        console.warn('preventDefault failed in passive touch event listener')
+      }
+      handlePointerDown(event.nativeEvent)
+    }
+
+    // 统一的拖拽处理函数
+    const handlePointerDown = (startEvent: MouseEvent | TouchEvent) => {
+      const startDataItem = getDragRowItem(getEventTarget(startEvent), tableBody, dataSource)
       if (!startDataItem || startDataItem.code !== rowDragColumn.code) return
 
       if (opt?.isDisabled?.(startDataItem.row, startDataItem.rowIndex)) return
@@ -211,9 +227,9 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       let timeoutId = null
       let intervalId = null
       let expandRowTimeoutId = null
-      let expandRowCallBackList = []
+      const expandRowCallBackList = []
 
-      const updateScrollPosition = (tableBody:Element, mouseMoveEvent: MouseEvent) => {
+      const updateScrollPosition = (tableBody:Element, moveEvent: MouseEvent | TouchEvent) => {
         if (opt?.suppressScrollMove) return
 
         if (timeoutId) {
@@ -223,9 +239,9 @@ export function rowDrag (opt:RowDragFeatureOptions) {
           clearInterval(intervalId)
         }
 
-        if(!tableBody) return 
+        if (!tableBody) return
 
-        const moveOffset = getScrollMoveOffset(tableBody, mouseMoveEvent)
+        const moveOffset = getScrollMoveOffset(tableBody, moveEvent)
         if (moveOffset === 0) {
           return
         }
@@ -237,8 +253,24 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         }, 500)
       }
 
-      const handleDragStart = (mouseDownEvent: MouseEvent) => {
-        dragElement = createDragElement(mouseDownEvent, tableBody) // 创建拖拽悬浮框
+      const handleDragStart = (event: MouseEvent | TouchEvent) => {
+        // 屏蔽默认事件，防止文本选择、框选等
+        try {
+          if (event.cancelable) {
+            event.preventDefault()
+          }
+        } catch (error) {
+          // 忽略passive event listener错误
+          console.warn('preventDefault failed in passive event listener')
+        }
+        // 禁用页面的文本选择
+        document.body.style.userSelect = 'none'
+        document.body.style.webkitUserSelect = 'none'
+
+        // 添加拖拽状态的CSS类，可以在样式中进一步控制
+        document.body.classList.add('row-dragging')
+
+        dragElement = createDragElement(event, tableBody) // 创建拖拽悬浮框
         const isTreeTable = !!pipeline.getFeatureOptions('treeModeOptions')
         dragLine = createDragLine(isTreeTable) // 创建拖拽插入指示线
         const dragText = opt?.rowDragText ? opt?.rowDragText?.(startDataItem.row, startDataItem.rowIndex) : `第${startDataItem.rowIndex}行内容`
@@ -246,21 +278,31 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         artTable.classList.add(cx(Classes.rowDragging))
         rowDragApi.setDragStatus('start')
 
-        const dragEvent = createDropTargetEvent(currentDropZone, mouseDownEvent, startDataItem, currentDropZone)
+        const dragEvent = createDropTargetEvent(currentDropZone, event, startDataItem, currentDropZone)
         onDragStart(dragEvent)
       }
 
-      const handleDragMove = (mouseMoveEvent: MouseEvent) => {
+      const handleDragMove = (moveEvent: MouseEvent | TouchEvent) => {
+        // 尝试屏蔽默认事件，在passive监听器中可能会失败
+        try {
+          if (moveEvent.cancelable) {
+            moveEvent.preventDefault()
+          }
+        } catch (error) {
+          // 忽略passive event listener错误
+          console.warn('preventDefault failed in passive event listener')
+        }
+
         const isRTL = pipeline.ctx.direction === 'rtl'
-        positionDragElemment(dragElement, mouseMoveEvent, isRTL) // 更新拖拽悬浮框位置
+        positionDragElemment(dragElement, moveEvent, isRTL) // 更新拖拽悬浮框位置
         rowDragApi.setDragStatus('dragging')
         setDragElementIcon(dragElement, 'move')
 
         const rowDropZones = rowDragApi.getRowDropZone()
         const validDropZones = rowDropZones.concat(currentDropZone) // 可放置区域加上自身
-        const dropTarget = validDropZones.find(zone => isMouseOnDropTarget(mouseMoveEvent, zone.getContainer())) || null
+        const dropTarget = validDropZones.find(zone => isPointerOnDropTarget(moveEvent, zone.getContainer())) || null
 
-        updateScrollPosition(dropTarget?.getContainer(), mouseMoveEvent) // 拖拽到底时让滚动条可以滚动
+        updateScrollPosition(dropTarget?.getContainer(), moveEvent) // 拖拽到底时让滚动条可以滚动
 
         if (dropTarget !== lastDropTarget) {
           // 拖拽离开表格
@@ -269,7 +311,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
               setDragElementIcon(dragElement, 'notAllowed')
               hiddenDragLine(dragLine)
               lastDropTarget.getContainer().classList.remove(Classes.rowDragNoData)
-              const dragEvent = createDropTargetEvent(lastDropTarget, mouseMoveEvent, startDataItem, currentDropZone)
+              const dragEvent = createDropTargetEvent(lastDropTarget, moveEvent, startDataItem, currentDropZone)
               lastDropTarget.onDragLeave(dragEvent)
             }
           }
@@ -285,14 +327,13 @@ export function rowDrag (opt:RowDragFeatureOptions) {
                 const treeModeOptions = getTreeModeOptions()
                 const isTreeTable = !!treeModeOptions
                 // 判断拖拽进入的表格是否是树形表格，控制指示线样式
-                if(isTreeTable){
+                if (isTreeTable) {
                   dragLine.classList.add(Classes.treeTableRowDragLine)
-                }else {
+                } else {
                   dragLine.classList.remove(Classes.treeTableRowDragLine)
                 }
-                
               }
-              const dragEvent = createDropTargetEvent(dropTarget, mouseMoveEvent, startDataItem, currentDropZone)
+              const dragEvent = createDropTargetEvent(dropTarget, moveEvent, startDataItem, currentDropZone)
               dropTarget.onDragEnter(dragEvent)
             }
           }
@@ -305,14 +346,13 @@ export function rowDrag (opt:RowDragFeatureOptions) {
             positionDragLine({
               lineElement: dragLine,
               dragZone: dropTarget,
-              event: mouseMoveEvent,
+              event: moveEvent,
               isRTL
             })
-            
           }
 
           // 树形表格悬停1s展开对应行节点
-          if(dropTarget?.tableParams?.getTreeModeOptions()){
+          if (dropTarget?.tableParams?.getTreeModeOptions()) {
             if (expandRowTimeoutId) {
               clearTimeout(expandRowTimeoutId)
             }
@@ -322,34 +362,39 @@ export function rowDrag (opt:RowDragFeatureOptions) {
               const { treeMetaKey, onExpand, isExpanded, onCollapse } = treeModeOptions
               // 鼠标悬停所在的拖拽行信息
               const dataSource = dropTarget.tableParams.getDataSource()
-              const dragItem = getDragRowItem(mouseMoveEvent.target, dropTarget.getContainer(), dataSource)
+              const dragItem = getDragRowItem(getEventTarget(moveEvent), dropTarget.getContainer(), dataSource)
 
               if (!dragItem) return
 
               const { row } = dragItem
               const { rowKey, isLeaf } = row[treeMetaKey]
 
-              if(!isLeaf && !isExpanded(rowKey)){
+              if (!isLeaf && !isExpanded(rowKey)) {
                 onExpand(rowKey)
-                expandRowCallBackList.push(()=>onCollapse(rowKey))
+                expandRowCallBackList.push(() => onCollapse(rowKey))
               }
-              
             }, 1000)
-            
-
           }
 
           if (dropTarget.onDragging) {
-            const dragEvent = createDropTargetEvent(dropTarget, mouseMoveEvent, startDataItem, currentDropZone)
+            const dragEvent = createDropTargetEvent(dropTarget, moveEvent, startDataItem, currentDropZone)
             dropTarget.onDragging(dragEvent)
           }
         }
       }
 
-      const handleDragStop = (mouseUpEvent: MouseEvent) => {
-        if(!isValidDrag){
+      const handleDragStop = (endEvent: MouseEvent | TouchEvent) => {
+        if (!isValidDrag) {
           return
         }
+
+        // 恢复默认的文本选择功能
+        document.body.style.userSelect = ''
+        document.body.style.webkitUserSelect = ''
+
+        // 移除拖拽状态的CSS类
+        document.body.classList.remove('row-dragging')
+
         removeElement(dragElement)
         removeElement(dragLine)
         artTable.classList.remove(cx(Classes.rowDragging))
@@ -359,63 +404,107 @@ export function rowDrag (opt:RowDragFeatureOptions) {
         clearTimeout(expandRowTimeoutId)
 
         const rowDropZones = rowDragApi.getRowDropZone()
-        rowDropZones.forEach(dropzone=>{
+        rowDropZones.forEach(dropzone => {
           const container = dropzone.getContainer()
           container && container.classList.remove(Classes.rowDragNoData)
         })
 
-
         const validDropZones = rowDropZones.concat(currentDropZone)
-        const dropTarget = validDropZones.find(zone => isMouseOnDropTarget(mouseUpEvent, zone.getContainer()))
+        const dropTarget = validDropZones.find(zone => isPointerOnDropTarget(endEvent, zone.getContainer()))
 
         if (dropTarget && dropTarget.onDragStop) {
-          const dragEvent = createDropTargetEvent(dropTarget, mouseUpEvent, startDataItem, currentDropZone)
+          const dragEvent = createDropTargetEvent(dropTarget, endEvent, startDataItem, currentDropZone)
           dropTarget.onDragStop(dragEvent)
         }
 
-        while(expandRowCallBackList.length > 0) {
+        while (expandRowCallBackList.length > 0) {
           const callback = expandRowCallBackList.pop()
           callback()
         }
       }
 
-      const mousemove$ = fromEvent<MouseEvent>(window, 'mousemove')
-      const mouseup$ = fromEvent<MouseEvent>(window, 'mouseup')
+      // 判断是鼠标事件还是触摸事件，分别监听对应的移动和结束事件
+      const isTouchEvent = 'touches' in startEvent
 
-      const rowDragMove$ = mousemove$.pipe(
-        filter((mouseMoveEvent: MouseEvent) => {
-          const mouseMoveClientY = mouseMoveEvent.clientY
-          const mouseDownClientY = mouseDownEvent.clientY
-          // 上下移动偏移量大于5才是有效的拖拽
-          if (Math.abs(mouseMoveClientY - mouseDownClientY) > 5) {
-            isValidDrag = true
+      if (isTouchEvent) {
+        // 触摸事件处理
+        const touchmove$ = fromEvent<TouchEvent>(window, 'touchmove', { passive: false })
+        const touchend$ = fromEvent<TouchEvent>(window, 'touchend', { passive: false })
+
+        const touchDragMove$ = touchmove$.pipe(
+          filter((moveEvent: TouchEvent) => {
+            const coordinates = getEventCoordinates(moveEvent)
+            const startCoordinates = getEventCoordinates(startEvent)
+            const moveClientY = coordinates.clientY
+            const startClientY = startCoordinates.clientY
+            // 上下移动偏移量大于5才是有效的拖拽
+            if (Math.abs(moveClientY - startClientY) > 5) {
+              isValidDrag = true
+            }
+            return isValidDrag
+          }),
+          map((moveEvent: TouchEvent) => {
+            if (!isDragging) {
+              isDragging = true
+              handleDragStart(startEvent)
+              handleDragMove(startEvent)
+            }
+            handleDragMove(moveEvent)
+          }),
+          takeUntil(touchend$)
+        )
+
+        touchDragMove$.subscribe()
+
+        const touchDragEnd$ = touchend$.pipe(
+          map((endEvent: TouchEvent) => {
+            handleDragStop(endEvent)
+          })
+        ).subscribe({
+          next: () => {
+            touchDragEnd$.unsubscribe()
           }
-
-          return isValidDrag
-        }),
-        map((mouseMoveEvent: MouseEvent) => {
-          if (!isDragging) {
-            isDragging = true
-            handleDragStart(mouseDownEvent)
-            handleDragMove(mouseDownEvent)
-          }
-
-          handleDragMove(mouseMoveEvent)
-        }),
-        takeUntil(mouseup$)
-      )
-
-      rowDragMove$.subscribe()
-
-      const rowDragEnd$ = mouseup$.pipe(
-        map((mouseUpEvent: MouseEvent) => {
-          handleDragStop(mouseUpEvent)
         })
-      ).subscribe({
-        next: () => {
-          rowDragEnd$.unsubscribe()
-        }
-      })
+      } else {
+        // 鼠标事件处理
+        const mousemove$ = fromEvent<MouseEvent>(window, 'mousemove')
+        const mouseup$ = fromEvent<MouseEvent>(window, 'mouseup')
+
+        const rowDragMove$ = mousemove$.pipe(
+          filter((moveEvent: MouseEvent) => {
+            const coordinates = getEventCoordinates(moveEvent)
+            const startCoordinates = getEventCoordinates(startEvent)
+            const moveClientY = coordinates.clientY
+            const startClientY = startCoordinates.clientY
+            // 上下移动偏移量大于5才是有效的拖拽
+            if (Math.abs(moveClientY - startClientY) > 5) {
+              isValidDrag = true
+            }
+            return isValidDrag
+          }),
+          map((moveEvent: MouseEvent) => {
+            if (!isDragging) {
+              isDragging = true
+              handleDragStart(startEvent)
+              handleDragMove(startEvent)
+            }
+            handleDragMove(moveEvent)
+          }),
+          takeUntil(mouseup$)
+        )
+
+        rowDragMove$.subscribe()
+
+        const rowDragEnd$ = mouseup$.pipe(
+          map((endEvent: MouseEvent) => {
+            handleDragStop(endEvent)
+          })
+        ).subscribe({
+          next: () => {
+            rowDragEnd$.unsubscribe()
+          }
+        })
+      }
     }
 
     const rowDragColumn = opt?.rowDragColumn || defaultRowDragColumn
@@ -427,7 +516,11 @@ export function rowDrag (opt:RowDragFeatureOptions) {
     nextColumns.unshift(rowDragColumn)
     pipeline.columns(nextColumns)
 
-    pipeline.addTableProps({ onMouseDown })
+    pipeline.addTableProps({
+      onMouseDown,
+      onTouchStart
+    })
+
     pipeline.appendRowPropsGetter((row, rowIndex) => {
       const rowDragEvent = pipeline.getStateAtKey(rowDragKey) || {}
       const dragStatus = rowDragApi.getDragStatus()
@@ -451,7 +544,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       const className = cx({
         [Classes.rowDragStart]: rowIndex === startRowIndex && dragStatus !== 'finished',
         [Classes.rowDragEnd]: rowIndex === endRowIndex,
-        [Classes.rowDragEndParent]: isTreeTable && rowIndex === parentRowKeyIndex && dragPosition !== 'into' ,
+        [Classes.rowDragEndParent]: isTreeTable && rowIndex === parentRowKeyIndex && dragPosition !== 'into',
         [Classes.rowDragEndInto]: rowIndex === endRowIndex && dragPosition === 'into',
         [Classes.rowDragEndToTop]: rowIndex === endRowIndex && dragPosition === 'top',
         [Classes.rowDragEndToBottom]: rowIndex === endRowIndex && dragPosition === 'bottom'
@@ -505,7 +598,7 @@ function isEleInFooter (target) {
   return false
 }
 
-function createDragElement (mouseDownEvent:MouseEvent, tableBody:Element) {
+function createDragElement (event: MouseEvent | TouchEvent, tableBody:Element) {
   const ELEMENT_TEMPLATE = (
     `<div class='${Classes.rowDragElement}'>
       <span class='${Classes.rowDragElementIcon}'></span>
@@ -517,7 +610,7 @@ function createDragElement (mouseDownEvent:MouseEvent, tableBody:Element) {
   element.innerHTML = ELEMENT_TEMPLATE
   const dragElement = element.firstChild as HTMLElement
 
-  const targetRow = findTargetRow(mouseDownEvent.target, tableBody)
+  const targetRow = findTargetRow(getEventTarget(event), tableBody)
   if (targetRow) {
     const rect = targetRow.getBoundingClientRect()
     dragElement.style.height = rect.height + 'px'
@@ -553,42 +646,40 @@ function positionDragLine ({ lineElement, dragZone, event, isRTL }) {
   const bodyRect = tableContainer.getBoundingClientRect()
   const offsetParentSize = getElementRectWithOffset(document.body)
 
-  if(dataSource.length === 0){
+  if (dataSource.length === 0) {
     tableContainer.classList.add(Classes.rowDragNoData)
     lineElement.style.display = 'none'
-  }else {
+  } else {
     tableContainer.classList.remove(Classes.rowDragNoData)
     lineElement.style.display = 'block'
   }
   // 鼠标悬停所在的拖拽行信息
-  const dragItem = getDragRowItem(event.target, tableContainer, dataSource)
+  const dragItem = getDragRowItem(getEventTarget(event), tableContainer, dataSource)
 
   if (!dragItem) {
-    if(dataSource.length > 0 && tableContainer.contains(event.target)){
-      const rowIndex = dataSource.length -1
+    if (dataSource.length > 0 && tableContainer.contains(getEventTarget(event))) {
+      const rowIndex = dataSource.length - 1
       const row = dataSource[rowIndex]
       const direction = 'bottom'
       const targetCell = isTreeTable ? tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.tableExtendCell}`) : tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.rowDragCell}`)
-      if(!targetCell) return 
-      const { top, left , width} = getLinePosition({ treeModeOptions, cell: targetCell,  row, direction, offsetParentSize, bodyRect, isRTL })
+      if (!targetCell) return
+      const { top, left, width } = getLinePosition({ treeModeOptions, cell: targetCell, row, direction, offsetParentSize, bodyRect, isRTL })
       lineElement.style.left = `${left}px`
       lineElement.style.top = `${top}px`
       lineElement.style.width = `${width}px`
-
     }
 
-    return 
+    return
   }
 
   const { cell, rowIndex, row } = dragItem
 
-
   const allowDragInto = isTreeTable && allowDragIntoRow
-  const direction = getDirection(cell, event.clientY, allowDragInto)
+  const direction = getDirection(cell, getEventCoordinates(event).clientY, allowDragInto)
 
   const targetCell = isTreeTable ? tableContainer.querySelector(`tr[data-rowindex="${rowIndex}"] .${Classes.tableExtendCell}`) : cell
-  if(!targetCell) return 
-  const { top, left , width} = getLinePosition({ treeModeOptions, cell: targetCell,  row, direction, offsetParentSize, bodyRect, isRTL })
+  if (!targetCell) return
+  const { top, left, width } = getLinePosition({ treeModeOptions, cell: targetCell, row, direction, offsetParentSize, bodyRect, isRTL })
 
   lineElement.style.left = `${left}px`
   lineElement.style.top = `${top}px`
@@ -599,8 +690,6 @@ function positionDragLine ({ lineElement, dragZone, event, isRTL }) {
   } else {
     lineElement.style.display = 'block'
   }
-
-  
 }
 
 function showDragLine (lineElement) {
@@ -611,14 +700,14 @@ function hiddenDragLine (lineElement) {
   lineElement.style.display = 'none'
 }
 
-function positionDragElemment (element: HTMLElement, event: MouseEvent, isRTL: boolean) {
+function positionDragElemment (element: HTMLElement, event: MouseEvent | TouchEvent, isRTL: boolean) {
   if (!element) return
   const elementRect = element.getBoundingClientRect()
   const eleHeight = elementRect.height
   const browserWidth = document.body?.clientWidth ?? (window.innerHeight || document.documentElement?.clientWidth || 0)
   const browserHeight = document.body?.clientHeight ?? (window.innerHeight || document.documentElement?.clientHeight || 0)
   const offsetParentSize = getElementRectWithOffset(element.offsetParent)
-  const { clientX, clientY } = event
+  const { clientX, clientY } = getEventCoordinates(event)
   let top = clientY - offsetParentSize.top - eleHeight / 2
   let left = clientX - offsetParentSize.left
   let right = Math.max(browserWidth - clientX, 0)
@@ -634,12 +723,13 @@ function positionDragElemment (element: HTMLElement, event: MouseEvent, isRTL: b
   if (browserWidth > 0 && right + element.clientWidth > browserWidth + windowScrollX) {
     right = Math.max(browserWidth + windowScrollX - element.clientWidth, 0)
   }
+
   if (isRTL) {
-    element.style.cssText += `;right: ${right}px; top: ${top}px;`
-    return
+    element.style.right = right + 'px'
+  } else {
+    element.style.left = left + 'px'
   }
-  element.style.left = `${left}px`
-  element.style.top = `${top}px`
+  element.style.top = top + 'px'
 }
 
 function getElementRectWithOffset (el) {
@@ -709,13 +799,13 @@ function setDragElementIcon (element, iconName) {
 }
 
 function clearElementChildren (element) {
-  while (element && element.firstChild) {
+  while (element?.firstChild) {
     element.removeChild(element.firstChild)
   }
 }
 
-function getScrollMoveOffset (tableBody: Element, mouseMoveEvent: MouseEvent) {
-  const clientY = mouseMoveEvent.clientY
+function getScrollMoveOffset (tableBody: Element, moveEvent: MouseEvent | TouchEvent) {
+  const { clientY } = getEventCoordinates(moveEvent)
   const tableBodyClientRect = tableBody.getBoundingClientRect()
 
   const { top, height } = tableBodyClientRect
@@ -736,16 +826,18 @@ function setDragText (element, dragText): void {
   elementIcon.appendChild(stringNode)
 }
 
-function isMouseOnDropTarget (mouseEvent, target): boolean {
-  return target.contains(mouseEvent.target)
+function isPointerOnDropTarget (pointerEvent: MouseEvent | TouchEvent, target): boolean {
+  const eventTarget = getEventTarget(pointerEvent)
+  return target.contains(eventTarget)
 }
 
 function createDropTargetEvent (dropZone, event, dragItem, startDropZone): DragEvent {
   const dropZoneTarget = dropZone.getContainer()
   const startDropZoneTagret = startDropZone.getContainer()
   const rect = dropZoneTarget.getBoundingClientRect()
-  const x = event.clientX - rect.left
-  const y = event.clientY - rect.top
+  const { clientX, clientY } = getEventCoordinates(event)
+  const x = clientX - rect.left
+  const y = clientY - rect.top
   const startDropZoneOptions = startDropZone.tableParams.getRowDragOptions()
   const startCommonParams = startDropZoneOptions?.commonParams
   const targetEvent:DragEvent = {
@@ -757,8 +849,7 @@ function createDropTargetEvent (dropZone, event, dragItem, startDropZone): DragE
     x,
     y
   }
-  if(dropZone.isTable){
-    
+  if (dropZone.isTable) {
     const dropZoneOptions = dropZone.tableParams.getRowDragOptions()
     const commonParams = dropZoneOptions?.commonParams
     targetEvent.dropZoneTableParams = dropZone.tableParams
@@ -785,11 +876,10 @@ function getDirection (cell, clientY, isTreeTable = false) : string {
   return direction
 }
 
-const getLinePosition = ({ treeModeOptions, cell,  row, direction, offsetParentSize, bodyRect, isRTL })=>{
-
+const getLinePosition = ({ treeModeOptions, cell, row, direction, offsetParentSize, bodyRect, isRTL }) => {
   const isTreeTable = !!treeModeOptions
 
-  if(isTreeTable){
+  if (isTreeTable) {
     const {
       iconWidth,
       iconIndent,
@@ -799,11 +889,11 @@ const getLinePosition = ({ treeModeOptions, cell,  row, direction, offsetParentS
     } = treeModeOptions
     const { paddingLeft, paddingRight } = _getElementSize(cell)
     const expandCellRect = cell.getBoundingClientRect()
-    const { rowKey, depth, isLeaf, expanded } = row[treeMetaKey]
+    const { depth, isLeaf } = row[treeMetaKey]
     const addWidth = isLeaf ? iconWidth + iconGap : 0
     const indent = iconIndent + depth * indentSize + addWidth
     const { x, y, height } = expandCellRect
-  
+
     const top = direction === 'bottom' ? y + height - offsetParentSize.top : y - offsetParentSize.top
     const offsetX = Math.max(x + paddingLeft + indent - bodyRect.x, 0)
     const left = bodyRect.x + offsetX - offsetParentSize.left
@@ -824,18 +914,16 @@ const getLinePosition = ({ treeModeOptions, cell,  row, direction, offsetParentS
       top,
       left,
       width
-  
+
     }
   }
 
+  // 根据鼠标悬停位置所在单元格和显示位置计算拖拽线的位置
+  const rect = cell.getBoundingClientRect()
+  const { y, height } = rect
+  const top = direction === 'bottom' ? y + height - offsetParentSize.top : y - offsetParentSize.top
+  const left = bodyRect.x - offsetParentSize.left
+  const width = bodyRect.width
 
-   // 根据鼠标悬停位置所在单元格和显示位置计算拖拽线的位置
-   const rect = cell.getBoundingClientRect()
-   const { y, height } = rect
-   const top = direction === 'bottom' ? y + height - offsetParentSize.top : y - offsetParentSize.top
-   const left = bodyRect.x - offsetParentSize.left
-   const width = bodyRect.width
-
-   return { top, left, width }
-
+  return { top, left, width }
 }
