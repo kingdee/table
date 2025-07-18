@@ -323,11 +323,7 @@ const borderedStyleMixin = css`
 `
 
 export const StyledArtTableWrapper = styled.div`
-  :root {
-    ${variableConst}
-  }
-  ${variableConst}
-
+  ${({ prefixCls }) => prefixCls ? `&.${prefixCls}-table {:root {${variableConst}} ${variableConst}}` : `:root {${variableConst}} ${variableConst}`}
   box-sizing: border-box;
   * {
     box-sizing: border-box;
