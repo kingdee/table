@@ -143,7 +143,10 @@ export interface BaseTableProps {
     blockSize?:number
   }
   // 表格流布局方向
-  direction?:string
+  direction?:string,
+
+  // 表格的前缀类名
+  prefixCls?: string
 }
 
 export interface BaseTableState {
@@ -622,7 +625,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       footerDataSource,
       components,
       bordered,
-      direction
+      direction,
+      prefixCls
     } = this.props
     info.direction = direction
     const artTableWrapperClassName = cx(
@@ -637,7 +641,8 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         'sticky-footer': isStickyFooter,
         [Classes.artTableBordered]: bordered,
         'ie-polyfill-wrapper': browserType.isIE,
-        'sticky-polyfill-wrapper': isStickyUIDegrade()
+        'sticky-polyfill-wrapper': isStickyUIDegrade(),
+        [`${prefixCls}-table`]: prefixCls
       },
       className
     )
@@ -652,7 +657,7 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
     return (
       <>
         <GlobalStyleComponent direction={info.direction}/>
-        <StyledArtTableWrapper {...artTableWrapperProps} direction={info.direction}>
+        <StyledArtTableWrapper {...artTableWrapperProps} direction={info.direction} prefixCls={this.props.prefixCls}>
           <Loading
             visible={isLoading}
             LoadingIcon={components.LoadingIcon}
