@@ -7,7 +7,7 @@ import { mergeCellProps, collectNodes, makeRecursiveMapper, isGroupColumn } from
 import { TablePipeline } from '../pipeline'
 import { internals } from '../../internals'
 import { Classes } from '../../base/styles'
-
+import { getEventCoordinates } from './utils/touchEventUtils'
 const TableHeaderCellResize = styled.div`
   position: absolute;
   top: 0;
@@ -106,21 +106,33 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
       opts.doubleClickCallback?.(e, col)
     }
 
-    const handleMouseDown = (e: React.MouseEvent<HTMLSpanElement>, col: ArtColumn) => {
+    // 通用的拖拽处理逻辑
+    const handleResize = (startEvent: MouseEvent | TouchEvent, col: ArtColumn, eventType: 'mouse' | 'touch') => {
       window.addEventListener('selectstart', disableSelect)
       const changedColumnSize = {}
-      const startX = e.clientX
+      const startCoordinates = getEventCoordinates(startEvent)
+      const startX = startCoordinates.clientX
       const { children, code, features = {} } = col
       const { minWidth, maxWidth } = features
       const realMinSize = typeof minWidth === 'number' ? minWidth : minSize
       const realMaxSize = typeof maxWidth === 'number' ? maxWidth : maxSize
       const columnSize = pipeline.getFeatureOptions(COLUMN_SIZE_KEY)
       let recordColumnSize = columnSize
-      e.stopPropagation()
-      const nextSize$ = fromEvent<MouseEvent>(window, 'mousemove').pipe(
-        op.takeUntil(fromEvent(window, 'mouseup')),
+      // 根据事件类型选择不同的事件监听器
+      const moveEventName = eventType === 'mouse' ? 'mousemove' : 'touchmove'
+      const endEventName = eventType === 'mouse' ? 'mouseup' : 'touchend'
+      const moveEventOptions = eventType === 'touch' ? { passive: false } : undefined
+      const endEventOptions = eventType === 'touch' ? { passive: false } : undefined
+
+      const nextSize$ = fromEvent<MouseEvent | TouchEvent>(window, moveEventName, moveEventOptions).pipe(
+        op.takeUntil(fromEvent(window, endEventName, endEventOptions)),
         op.map((e) => {
-          const movingX = e.clientX
+          // 触摸事件需要阻止默认行为，防止页面滚动
+          if (eventType === 'touch' && e.cancelable) {
+            e.preventDefault()
+          }
+          const coordinates = getEventCoordinates(e)
+          const movingX = coordinates.clientX
           const nextColumnSize = { ...columnSize }
           const deltaSum = movingX - startX
           let deltaRemaining = deltaSum
@@ -171,6 +183,20 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
         }
       })
     }
+    const handleMouseDown = (e: React.MouseEvent<HTMLSpanElement>, col: ArtColumn) => {
+      e.stopPropagation()
+      handleResize(e.nativeEvent, col, 'mouse')
+    }
+
+    // 触摸事件处理函数
+    const handleTouchStart = (e: React.TouchEvent<HTMLSpanElement>, col: ArtColumn) => {
+      // 阻止触摸事件的默认行为
+      if (e.cancelable) {
+        e.preventDefault()
+      }
+      e.stopPropagation()
+      handleResize(e.nativeEvent, col, 'touch')
+    }
 
     const isGroup = isGroupColumn(pipeline.getColumns())
 
@@ -185,8 +211,9 @@ export function columnResize (opts: ColumnResizeOptions = {}) {
             {prevTitle}
             {features?.resizeable !== false && (
               isGroup
-                ? <TableHeaderGroupCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
-                : <TableHeaderCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)}/>
+                ? <TableHeaderGroupCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)} onTouchStart={(e: React.TouchEvent<HTMLSpanElement>) => handleTouchStart(e, col)}/>
+                : <TableHeaderCellResize className={Classes.tableHeaderCellResize} onDoubleClick={(e: React.MouseEvent<HTMLSpanElement>) => handleDoubleClick(e, col)} onMouseDown={(e: React.MouseEvent<HTMLSpanElement>) => handleMouseDown(e, col)} onTouchStart={(e: React.TouchEvent<HTMLSpanElement>) => handleTouchStart(e, col)}
+                />
             )}
           </>
         ),

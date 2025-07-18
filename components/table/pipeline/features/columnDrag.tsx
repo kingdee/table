@@ -2,6 +2,7 @@ import { TablePipeline } from '../pipeline'
 import { makeRecursiveMapper, mergeCellProps, collectNodes, isLeafNode, isSelectColumn } from '../../utils'
 import { ArtColumn, CellProps } from '../../interfaces'
 import { FILL_COLUMN_CODE } from './autoFill'
+import { getEventCoordinates, hasMovedEnough, addPointerEventListeners, removePointerEventListeners } from './utils/touchEventUtils'
 
 const stateKey = 'columnDrag'
 const SCROLL_SIZE = 30
@@ -10,7 +11,8 @@ function disableSelect (event) {
   event.preventDefault()
 }
 export interface ColumnDragOptions {
-  onColumnDragStopped?: (columnMoved: boolean, columns: ArtColumn[]) => void
+  onColumnDragStopped?: (columnMoved: boolean, columns: ArtColumn[]) => void,
+  onColumnDragStart?:(startColumn: ArtColumn) => void
 }
 
 function sortColumns (columns: any[], sort: any) {
@@ -30,8 +32,16 @@ function stopClickPropagation (e) {
   e.stopPropagation()
 }
 
+function adjustTranslation (isRTL: boolean) {
+  return (value: number): number => {
+    return isRTL ? -value : value
+  }
+}
+
 export function columnDrag (opts: ColumnDragOptions = {}) {
   return (pipeline: TablePipeline) => {
+    const { direction } = pipeline.ctx
+    const _adjustTranslation = adjustTranslation(direction === 'rtl')
     const { cloumnsTranslateData } = pipeline.getStateAtKey(stateKey, {} as any)
     const columns = pipeline.getColumns()
     const tableBody = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.tableBody
@@ -60,220 +70,216 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
             })
           },
           headerCellProps: mergeCellProps(col.headerCellProps, {
-            onMouseDown: !isLeaf || path.length > 1 ? undefined : (e) => {
-              if (e.button !== 0 || !e.currentTarget.contains(e.target as HTMLElement)) {
-                return
-              }
-              window.addEventListener('selectstart', disableSelect)
-              // const cx = e.clientX
-              // const width = col.width
-              // const a = startIndex
-              // const b = endIndex
-              // const newColumnDragData = [...columnDragData]
-              // let newColumn = [...columns]
-              // let newStartIndex = startIndex
-              // let endIdx = endIndex
-              let columnMoved = false
-              const columns = pipeline.getColumns()
-              let { cloumnsTranslateData } = pipeline.getStateAtKey(stateKey, {} as any)
-              const cloumnsSortData = {}
-              columns.forEach((item, index) => {
-                cloumnsSortData[item.code] = index
-              })
-
-              let currentTarget = e.currentTarget as HTMLElement
-              const rect = (e.currentTarget as HTMLElement).parentElement.getClientRects()[0]
-              const startX = rect.left
-              const mouseDownClientX = e.clientX
-              const mouseDownClientY = e.clientY
-              let moveData = []
-
-              const allColumns = collectNodes(columns)
-              const tableBodyClientRect = tableBody.getBoundingClientRect()
-              const startScrollLeft = pipeline.ref.current.domHelper.virtual.scrollLeft
-              const updateScrollPosition = (client) => {
-                const { clientX } = client
-                const { left, width } = tableBodyClientRect
-                if (clientX + SCROLL_SIZE >= left + width) {
-                  pipeline.ref.current.domHelper.virtual.scrollLeft += SCROLL_SIZE
-                }
-                if (clientX - SCROLL_SIZE <= left) {
-                  pipeline.ref.current.domHelper.virtual.scrollLeft -= SCROLL_SIZE
-                }
-              }
-
-              function handleMouseMove (e) {
-                const client = {
-                  clientX: e.clientX,
-                  clientY: e.clientY
-                }
-                const scrollDistance = pipeline.ref.current.domHelper.virtual.scrollLeft - startScrollLeft
-                const leftPosition = startX - scrollDistance // 表头最左边起点
-                updateScrollPosition(client)
-                if (e.clientX - leftPosition < 20) {
+            // 通用的拖拽处理逻辑
+            ...((isLeaf && path.length === 1) ? {
+              onMouseDown: (e: React.MouseEvent<HTMLElement>) => {
+                if (e.button !== 0 || !e.currentTarget.contains(e.target as HTMLElement)) {
                   return
-                } else {
-                  e.stopPropagation()
                 }
-                document.body.style.userSelect = 'none'
-                currentTarget.style.cursor = 'move'
-
-                // 循环计算每一个的位置
-                // if (startIndex !== replaceIndex) {
-                //   const optionColumn = columns[startIndex]
-                //   const move = startIndex > replaceIndex ? 1 : -1
-                //   let index = Math.min(startIndex, replaceIndex)
-                //   while (index < Math.max(startIndex, replaceIndex)) {
-                //     const code = columns[index].code
-                //     cloumnsTranslateData[code] += move * optionColumn.width
-                //     cloumnsTranslateData[optionColumn.code] -= move * optionColumn.width
-                //     index += move
-                //   }
-                // }
-
-                // const opColumn = columns[startIndex]
-                // let index = Math.min(startIndex, replaceIndex)
-                // while (index <= Math.max(startIndex, replaceIndex)) {
-                //   const code = columns[index].code
-                //   if (index !== startIndex && index !== replaceIndex) {
-                //     cloumnsTranslateData[code] += opColumn.width * (index > startIndex ? -1 : 1)
-                //     cloumnsTranslateData[opColumn.code] += columns[index].width * (index < startIndex ? -1 : 1)
-                //   }
-                //   index++
-                // }
-
-                // 重置位置信息
-                cloumnsTranslateData = {}
-                allColumns.forEach((item) => {
-                  cloumnsTranslateData[item.code] = 0
-                })
-
-                // 计算平移位置
-                let replaceIndex = 0
-                let totalWitdth = getColumnWidth(columns[replaceIndex])
-                while (totalWitdth < e.clientX - leftPosition && replaceIndex < columns.length - 1) {
-                  replaceIndex++
-                  totalWitdth += getColumnWidth(columns[replaceIndex])
+                handlePointerDown(e.nativeEvent, false, e.currentTarget as HTMLElement)
+              },
+              onTouchStart: (e: React.TouchEvent<HTMLElement>) => {
+                // 阻止触摸事件的默认行为
+                if (e.cancelable) {
+                  e.preventDefault()
                 }
-
-                // 需要取最新startIndex, 不能直接用makeRecursiveMapper提供的startIndex（因为map时还没添加选择列、充满列等后面use添加的列）
-                let startIndex
-                columns.forEach((column, index) => {
-                  if (column.code === col.code) {
-                    startIndex = index
-                  }
-                })
-
-                const optionColumn = columns[startIndex]
-                let index = replaceIndex
-                if (startIndex > replaceIndex) { // 左移
-                  while (index < startIndex) {
-                    const { code, lock, width, children } = columns[index]
-                    if (enableMove({ code, lock })) {
-                      cloumnsTranslateData[code] += optionColumn.width
-                      if (isLeafNode(columns[index])) {
-                        cloumnsTranslateData[optionColumn.code] -= width
-                      } else {
-                        cloumnsTranslateData[optionColumn.code] -= getColumnWidth(columns[index])
-                        moveAllChildren(children, cloumnsTranslateData, optionColumn.width)
-                      }
-                      columnMoved = true
-                    }
-                    index++
-                  }
-                } else if (startIndex < replaceIndex) { // 右移
-                  while (startIndex < index) {
-                    const { code, lock, width, children } = columns[index]
-                    if (enableMove({ code, lock })) {
-                      cloumnsTranslateData[code] -= optionColumn.width
-                      if (isLeafNode(columns[index])) {
-                        cloumnsTranslateData[optionColumn.code] += width
-                      } else {
-                        cloumnsTranslateData[optionColumn.code] += getColumnWidth(columns[index])
-                        moveAllChildren(children, cloumnsTranslateData, optionColumn.width, true)
-                      }
-                      columnMoved = true
-                    }
-                    index--
-                  }
-                }
-
-                window.requestAnimationFrame(() => {
-                  pipeline.setStateAtKey(stateKey, {
-                    cloumnsTranslateData
-                  })
-                  moveData = [startIndex, replaceIndex]
-                })
+                handlePointerDown(e.nativeEvent, true, e.currentTarget as HTMLElement)
               }
-              function handleMouseUp (e) {
-                document.body.removeEventListener('mousemove', handleMouseMove)
-                document.body.removeEventListener('mouseup', handleMouseUp)
-                window.removeEventListener('selectstart', disableSelect)
-                if (_isMoveWhenClicking(mouseDownClientX, mouseDownClientY, e.clientX, e.clientY)) {
-                  e.stopPropagation() // 存在移动就阻止冒泡
-                  currentTarget.addEventListener('click', stopClickPropagation) // 阻止列头点击事件，防止拖动后触发列头过滤事件
-                }
-                window.requestAnimationFrame(() => {
-                  // 取消阻止列头点击事件
-                  currentTarget.removeEventListener('click', stopClickPropagation)
-                  currentTarget = null
-
-                  const [startIndex, replaceIndex] = moveData
-                  const optionColumn = columns[startIndex]
-                  // const move = startIndex > replaceIndex ? 1 : -1
-                  // let index = Math.min(startIndex, replaceIndex)
-                  // while (index < Math.max(startIndex, replaceIndex) && index > 0) {
-                  //   const code = columns[index].code
-                  //   cloumnsSortData[optionColumn.code] -= move
-                  //   cloumnsSortData[code] += move
-                  //   index += move
-                  // }
-                  let index = replaceIndex
-                  if (startIndex > replaceIndex) { // 左移
-                    while (index < startIndex) {
-                      const { code, lock } = columns[index]
-                      if (enableMove({ code, lock })) {
-                        cloumnsSortData[code] += 1
-                        cloumnsSortData[optionColumn.code] -= 1
-                        columnMoved = true
-                      }
-                      index++
-                    }
-                  } else if (startIndex < replaceIndex) { // 右移
-                    while (index > startIndex) {
-                      const { code, lock } = columns[index]
-                      if (enableMove({ code, lock })) {
-                        cloumnsSortData[code] -= 1
-                        cloumnsSortData[optionColumn.code] += 1
-                        columnMoved = true
-                      }
-                      index--
-                    }
-                  }
-                  const { onColumnDragStopped } = opts
-                  // 拖拽结束返回列顺序
-                  if (onColumnDragStopped) {
-                    const isRowDragColumn = (code) => {
-                      const rowDragColumnKey = pipeline.getFeatureOptions('rowDragColumnKey')
-                      return code === rowDragColumnKey
-                    }
-                    const newColumns = sortColumns(columns, cloumnsSortData).filter((column) => column.code !== FILL_COLUMN_CODE && !isRowDragColumn(column.code) && !isSelectColumn(column))
-                    // TODO drag需要在resize之后use,否则这里返回的列对应的宽度不是拖拽后的
-                    onColumnDragStopped(columnMoved, newColumns)
-                  }
-                  pipeline.setStateAtKey(stateKey, {
-                    cloumnsTranslateData: null
-                  })
-                })
-                document.body.style.userSelect = ''
-                currentTarget.style.opacity = ''
-                currentTarget.style.cursor = ''
-              }
-              document.body.addEventListener('mousemove', handleMouseMove)
-              document.body.addEventListener('mouseup', handleMouseUp)
-            },
+            } : {}),
             style
           })
+        }
+
+        // 统一的拖拽处理函数
+        function handlePointerDown (startEvent: MouseEvent | TouchEvent, isTouch: boolean, currentTarget: HTMLElement) {
+          window.addEventListener('selectstart', disableSelect)
+          let columnMoved = false
+          const columns = pipeline.getColumns()
+          let { cloumnsTranslateData } = pipeline.getStateAtKey(stateKey, {} as any)
+          const cloumnsSortData = {}
+          columns.forEach((item, index) => {
+            cloumnsSortData[item.code] = index
+          })
+
+          const rect = currentTarget.parentElement?.getClientRects()[0]
+          if (!rect) return
+          const startX = direction === 'rtl' ? rect.right : rect.left
+          const startCoordinates = getEventCoordinates(startEvent)
+          const mouseDownClientX = startCoordinates.clientX
+          const mouseDownClientY = startCoordinates.clientY
+          let moveData = []
+
+          const allColumns = collectNodes(columns)
+          const tableBodyClientRect = tableBody.getBoundingClientRect()
+          const startScrollLeft = pipeline.ref.current.domHelper.virtual.scrollLeft
+
+          const updateScrollPosition = (client: { clientX: number; clientY: number }) => {
+            const { clientX } = client
+            const { left, width } = tableBodyClientRect
+            if (clientX + SCROLL_SIZE >= left + width) {
+              pipeline.ref.current.domHelper.virtual.scrollLeft += SCROLL_SIZE
+            }
+            if (clientX - SCROLL_SIZE <= left) {
+              pipeline.ref.current.domHelper.virtual.scrollLeft -= SCROLL_SIZE
+            }
+          }
+
+          function handlePointerMove (e: MouseEvent | TouchEvent) {
+            // 触摸事件需要阻止默认行为，防止页面滚动
+            if (isTouch && e.cancelable) {
+              e.preventDefault()
+            }
+
+            const coordinates = getEventCoordinates(e)
+            const client = {
+              clientX: coordinates.clientX,
+              clientY: coordinates.clientY
+            }
+            const scrollDistance = pipeline.ref.current.domHelper.virtual.scrollLeft - startScrollLeft
+            const startPosition = startX - scrollDistance // 表头最左边起点
+            const offsetDistance = direction === 'rtl' ? startPosition - coordinates.clientX : coordinates.clientX - startPosition
+            updateScrollPosition(client)
+            if (offsetDistance < 20) {
+              return
+            } else {
+              e.stopPropagation()
+            }
+            document.body.style.userSelect = 'none'
+            currentTarget.style.cursor = 'move'
+
+            // 重置位置信息
+            cloumnsTranslateData = {}
+            allColumns.forEach((item) => {
+              cloumnsTranslateData[item.code] = 0
+            })
+
+            // 计算平移位置
+            let replaceIndex = 0
+
+            let totalWitdth = getColumnWidth(columns[replaceIndex])
+            while (totalWitdth < offsetDistance && replaceIndex < columns.length - 1) {
+              replaceIndex++
+              totalWitdth += getColumnWidth(columns[replaceIndex])
+            }
+
+            // 需要取最新startIndex, 不能直接用makeRecursiveMapper提供的startIndex（因为map时还没添加选择列、充满列等后面use添加的列）
+            let startIndex
+            columns.forEach((column, index) => {
+              if (column.code === col.code) {
+                startIndex = index
+              }
+            })
+
+            const optionColumn = columns[startIndex]
+            let index = replaceIndex
+            if (startIndex > replaceIndex) { // 左移
+              while (index < startIndex) {
+                const { code, lock, width, children } = columns[index]
+                if (enableMove({ code, lock })) {
+                  cloumnsTranslateData[code] += _adjustTranslation(optionColumn.width)
+                  if (isLeafNode(columns[index])) {
+                    cloumnsTranslateData[optionColumn.code] -= _adjustTranslation(width)
+                  } else {
+                    cloumnsTranslateData[optionColumn.code] -= _adjustTranslation(getColumnWidth(columns[index]))
+                    moveAllChildren(children, cloumnsTranslateData, _adjustTranslation(optionColumn.width))
+                  }
+                  columnMoved = true
+                }
+                index++
+              }
+            } else if (startIndex < replaceIndex) { // 右移
+              while (startIndex < index) {
+                const { code, lock, width, children } = columns[index]
+                if (enableMove({ code, lock })) {
+                  cloumnsTranslateData[code] -= _adjustTranslation(optionColumn.width)
+                  if (isLeafNode(columns[index])) {
+                    cloumnsTranslateData[optionColumn.code] += _adjustTranslation(width)
+                  } else {
+                    cloumnsTranslateData[optionColumn.code] += _adjustTranslation(getColumnWidth(columns[index]))
+                    moveAllChildren(children, cloumnsTranslateData, _adjustTranslation(optionColumn.width), true)
+                  }
+                  columnMoved = true
+                }
+                index--
+              }
+            }
+
+            window.requestAnimationFrame(() => {
+              pipeline.setStateAtKey(stateKey, {
+                cloumnsTranslateData
+              })
+              moveData = [startIndex, replaceIndex]
+            })
+          }
+
+          function handlePointerUp (e: MouseEvent | TouchEvent) {
+            removePointerEventListeners(document.body, {
+              onPointerMove: handlePointerMove,
+              onPointerUp: handlePointerUp
+            }, isTouch)
+            window.removeEventListener('selectstart', disableSelect)
+
+            const endCoordinates = getEventCoordinates(e)
+            if (hasMovedEnough(mouseDownClientX, mouseDownClientY, endCoordinates.clientX, endCoordinates.clientY)) {
+              e.stopPropagation() // 存在移动就阻止冒泡
+              currentTarget.addEventListener('click', stopClickPropagation) // 阻止列头点击事件，防止拖动后触发列头过滤事件
+            }
+            window.requestAnimationFrame(() => {
+              // 取消阻止列头点击事件
+              currentTarget.removeEventListener('click', stopClickPropagation)
+              currentTarget = null
+
+              const [startIndex, replaceIndex] = moveData
+              const optionColumn = columns[startIndex]
+              let index = replaceIndex
+              if (startIndex > replaceIndex) { // 左移
+                while (index < startIndex) {
+                  const { code, lock } = columns[index]
+                  if (enableMove({ code, lock })) {
+                    cloumnsSortData[code] += 1
+                    cloumnsSortData[optionColumn.code] -= 1
+                    columnMoved = true
+                  }
+                  index++
+                }
+              } else if (startIndex < replaceIndex) { // 右移
+                while (index > startIndex) {
+                  const { code, lock } = columns[index]
+                  if (enableMove({ code, lock })) {
+                    cloumnsSortData[code] -= 1
+                    cloumnsSortData[optionColumn.code] += 1
+                    columnMoved = true
+                  }
+                  index--
+                }
+              }
+              const { onColumnDragStopped } = opts
+              // 拖拽结束返回列顺序
+              if (onColumnDragStopped) {
+                const isRowDragColumn = (code: string) => {
+                  const rowDragColumnKey = pipeline.getFeatureOptions('rowDragColumnKey')
+                  return code === rowDragColumnKey
+                }
+                const newColumns = sortColumns(columns, cloumnsSortData).filter((column) => column.code !== FILL_COLUMN_CODE && !isRowDragColumn(column.code) && !isSelectColumn(column))
+                // TODO drag需要在resize之后use,否则这里返回的列对应的宽度不是拖拽后的
+                onColumnDragStopped(columnMoved, newColumns)
+              }
+              pipeline.setStateAtKey(stateKey, {
+                cloumnsTranslateData: null
+              })
+            })
+            document.body.style.userSelect = ''
+            currentTarget.style.opacity = ''
+            currentTarget.style.cursor = ''
+          }
+
+          const { onColumnDragStart } = opts
+          onColumnDragStart && onColumnDragStart(col)
+
+          addPointerEventListeners(document.body, {
+            onPointerMove: handlePointerMove,
+            onPointerUp: handlePointerUp
+          }, isTouch)
         }
       })
     )
@@ -302,14 +308,4 @@ function moveAllChildren (cols:ArtColumn[], cloumnsTranslateData, width: number,
       moveAllChildren(children, cloumnsTranslateData, width)
     }
   })
-}
-
-function _isMoveWhenClicking (mouseDownClientX: number, mouseDownClientY: number, mouseUpClientX: number, mouseUpClientY: number): boolean {
-  const xDiff = mouseUpClientX - mouseDownClientX
-  const yDiff = mouseUpClientY - mouseDownClientY
-  // 鼠标点按和松开的偏移量大于5px，认为存在移动
-  if (Math.sqrt(xDiff * xDiff + yDiff * yDiff) > 5) {
-    return true
-  }
-  return false
 }
