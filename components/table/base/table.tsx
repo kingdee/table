@@ -626,8 +626,9 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
       components,
       bordered,
       direction,
-      prefixCls
+      prefixCls: _prefixCls
     } = this.props
+    const prefixCls = _prefixCls === 'kd' || !_prefixCls ? undefined : _prefixCls // 不生效上层传的prefix为kd，只有传除'kd'外的前缀才生效，kui默认传kd，避免对之前的样式层级有影响
     info.direction = direction
     const artTableWrapperClassName = cx(
       Classes.artTableWrapper,
