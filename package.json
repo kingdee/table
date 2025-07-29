@@ -56,6 +56,7 @@
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --skip-unstable",
     "pub": "npm run test:all && npm run build && cross-env PUB_ENV=pub np --no-cleanup --no-tests",
     "pub:canary": "npm run build && cross-env PUB_ENV=pub np --no-cleanup --anyBranch --no-tests --tag=canary",
+    "pub:canary-hotfix": "npm run build && cross-env PUB_ENV=pub np --no-cleanup --anyBranch --no-tests --tag=canaryHotFix",
     "new": "node scripts/create-component.js",
     "kd-ui": "npm install @kingdee-ui/kui --registry http://npm.kingdee.com/"
   },
