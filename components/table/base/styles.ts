@@ -52,9 +52,9 @@ export const Classes = {
 
   tableHeaderCellLine: `${prefix}table-header-cell-line`,
 
-  tableFilterTrigger: `${prefix}filter-trigger`,
-  tableSortIcon: `${prefix}sort-icon`,
-  tableExtendIcon: `${prefix}extend-icon`,
+  tableFilterTrigger:`${prefix}filter-trigger`,
+  tableSortIcon:`${prefix}sort-icon`,
+  tableExtendIcon:`${prefix}extend-icon`,
 
   button: `${prefix}btn`,
   buttonPrimary: `${prefix}btn-primary`,
@@ -110,8 +110,9 @@ export const MenuClasses = {
   menuOption: `${prefix}table-menu-option`,
   menuOptionActive: `${prefix}table-menu-option-active`,
   menuOptionDisable: `${prefix}table-menu-option-disable`,
-  menuOptionText: `${prefix}table-menu-option-text`
+  menuOptionText: `${prefix}table-menu-option-text`,
 }
+
 
 const Z = {
   lock: 5,
@@ -141,9 +142,9 @@ export type BaseTableCSSVariables = Partial<{
   '--primary-color-level1': string
   /** 主题色浅色2，深色选中、悬浮 */
   '--primary-color-level2': string
-  /** 图标默认颜色 */
+  /**图标默认颜色 */
   '--icon-color':string
-  /** 边框颜色 */
+  /**边框颜色 */
   '--strong-border-color': string
 
   /** 表头中一行的高度，注意该属性将被作为 CSS variable，不能使用数字作为简写 */
@@ -214,6 +215,7 @@ const outerBorderStyleMixin = css`
     border-right: var(---cell-border-vertical);
   }
 `
+
 
 export const defaultCSSVariables = {
   '--row-height': '48px',
@@ -705,10 +707,7 @@ export const StyledArtTableWrapper = styled.div`
 
   //#region 滚动条占位
   .${Classes.verticalScrollPlaceholder} {
-     // visibility: hidden;
-    background: var(--header-bgcolor);
-    position:sticky;
-    right:0px;
+    visibility: hidden;
     flex-shrink: 0;
   }
   .${Classes.tableFooter} .${Classes.verticalScrollPlaceholder} {
@@ -760,9 +759,9 @@ export const ButtonCSS = css`
 interface VariableObj {
   [key:string]: string|number
 }
-function getCssVariableText (obj: VariableObj) {
-  return Object.keys(obj).reduce((acc, key) => {
+function getCssVariableText(obj: VariableObj){
+  return Object.keys(obj).reduce((acc,key)=>{
     acc += `${key}:${obj[key]};`
     return acc
-  }, '')
+  },'')
 }
