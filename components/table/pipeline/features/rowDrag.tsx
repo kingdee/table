@@ -7,30 +7,31 @@ import { TablePipeline } from '../pipeline'
 import { ArtColumn, CellProps } from '../../interfaces'
 import cx from 'classnames'
 import { Classes } from '../../base/styles'
+import { getEventCoordinates, getEventTarget, isTouchEvent, addPointerEventListeners, removePointerEventListeners, hasMovedEnough } from './utils/touchEventUtils'
 
 interface RowDragEvent {
-    startRowIndex:number,
-    startRow: any, // 起始的拖拽行
-    endRowIndex:number,
-    endRow:any, // 结束的拖拽行
-    isFinished: boolean, // 是否拖拽完成
-    dragPosition: string // bottom | top 拖拽行基于目标行的位置
+  startRowIndex: number,
+  startRow: any, // 起始的拖拽行
+  endRowIndex: number,
+  endRow: any, // 结束的拖拽行
+  isFinished: boolean, // 是否拖拽完成
+  dragPosition: string // bottom | top 拖拽行基于目标行的位置
 
 }
 
 export interface RowDragFeatureOptions {
 
   /** 拖拽开始事件 */
-  onDragStart?:(event:RowDragEvent) => void,
+  onDragStart?: (event: RowDragEvent) => void,
 
   /** 拖拽移动事件 */
-  onDragMove?:(event:RowDragEvent) => void,
+  onDragMove?: (event: RowDragEvent) => void,
 
   /** 拖拽结束事件 */
-  onDragEnd?:(event:RowDragEvent) => void,
+  onDragEnd?: (event: RowDragEvent) => void,
 
   /** 判断一行是否要禁用拖拽 */
-  isDisabled?:(row: any, rowIndex: number) => boolean,
+  isDisabled?: (row: any, rowIndex: number) => boolean,
 
   /** 拖拽列定义 */
   rowDragColumn?: ArtColumn,
@@ -39,7 +40,7 @@ export interface RowDragFeatureOptions {
   rowHeight?: number,
 
   /** 拖拽过程中是否禁止滚动条滚动 */
-  suppressScrollMove?:boolean
+  suppressScrollMove?: boolean
 
 }
 
@@ -54,12 +55,12 @@ const defaultRowDragColumn: ArtColumn = {
   title: '',
   width: 40,
   align: 'center',
-  getCellProps (value: any, row: any, rowIndex: number) : CellProps {
+  getCellProps(value: any, row: any, rowIndex: number): CellProps {
     return {
       className: cx(Classes.rowDragCell)
     }
   },
-  render (value: any, row: any, rowIndex: number) {
+  render(value: any, row: any, rowIndex: number) {
     return (
       <svg
         viewBox='0 0 1024 1024'
@@ -75,8 +76,8 @@ const defaultRowDragColumn: ArtColumn = {
   }
 }
 
-export function rowDrag (opt:RowDragFeatureOptions) {
-  return function rowDragStep (pipeline:TablePipeline) {
+export function rowDrag(opt: RowDragFeatureOptions) {
+  return function rowDragStep(pipeline: TablePipeline) {
     const tableBody = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.tableBody
     const artTable = pipeline.ref.current.domHelper && pipeline.ref.current.domHelper.artTable
 
@@ -85,19 +86,19 @@ export function rowDrag (opt:RowDragFeatureOptions) {
     const dataSource = pipeline.getDataSource()
     const rowHeight = opt?.rowHeight || 48
 
-    const handleDragStrat = (event:RowDragEvent) => {
+    const handleDragStrat = (event: RowDragEvent) => {
       // 开始拖拽
       artTable.classList.add(cx(Classes.rowDragging))
       opt?.onDragStart?.(event)
     }
 
-    const handleDragMove = (event:RowDragEvent) => {
+    const handleDragMove = (event: RowDragEvent) => {
       opt?.onDragMove?.(event)
 
       pipeline.setStateAtKey(rowDragKey, event)
     }
 
-    const handleDragEnd = (event:RowDragEvent, isValid:boolean) => {
+    const handleDragEnd = (event: RowDragEvent, isValid: boolean) => {
       artTable.classList.remove(cx(Classes.rowDragging))
       pipeline.setStateAtKey(rowDragKey, event)
       // 超出拖拽范围不触发dragend事件
@@ -117,9 +118,9 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       }
     }
 
-    const updateScrollPosition = (mouseMoveEvent:MouseEvent) => {
+    const updateScrollPosition = (moveEvent: MouseEvent | TouchEvent) => {
       if (opt?.suppressScrollMove) return
-      const clientY = mouseMoveEvent.clientY
+      const { clientY } = getEventCoordinates(moveEvent)
       const tableBodyClientRect = tableBody.getBoundingClientRect()
 
       const { top, height } = tableBodyClientRect
@@ -132,8 +133,10 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       }
     }
 
-    const onMouseDown = (mouseDownEvent: React.MouseEvent<HTMLTableElement, MouseEvent>) => {
-      const startRowInfo = getTargetRowInfo(mouseDownEvent.target, tableBody, dataSource)
+    const handlePointerDown = (downEvent: React.MouseEvent<HTMLTableElement, MouseEvent> | React.TouchEvent<HTMLTableElement>) => {
+      const isTouchStart = isTouchEvent(downEvent.nativeEvent)
+      const target = getEventTarget(downEvent.nativeEvent)
+      const startRowInfo = getTargetRowInfo(target, tableBody, dataSource)
       let endRowInfo = startRowInfo
 
       if (!startRowInfo || startRowInfo.code !== rowDragColumn.code) return
@@ -150,15 +153,27 @@ export function rowDrag (opt:RowDragFeatureOptions) {
       const tableWidth = tableBody.clientWidth
       const startRowRects = startRowInfo.cell.getBoundingClientRect()
       // 光标位置距离初始拖拽行的偏移量
-      const mouseDownClientY = mouseDownEvent.clientY
-      const startOffset = mouseDownEvent.clientY - startRowRects.top
+      const { clientX: downClientX, clientY: downClientY } = getEventCoordinates(downEvent.nativeEvent)
+      const startOffset = downClientY - startRowRects.top
       const dragElement = createDragElement(startRowRects, tableWidth, rowHeight)
       // 可拖拽的范围
       let dragRange = getDragRange(tableBody, { startOffset, rowHeight })
-      let mousePosition = { x: mouseDownEvent.clientX, y: mouseDownEvent.clientY }
+      let pointerPosition = { x: downClientX, y: downClientY }
 
-      const mousemove$ = fromEvent<MouseEvent>(window, 'mousemove')
-      const mouseup$ = fromEvent<MouseEvent>(window, 'mouseup')
+      const pointerMove$ = fromEvent<MouseEvent | TouchEvent>(window, isTouchStart ? 'touchmove' : 'mousemove', { passive: false }).pipe(
+        map(event => {
+          try {
+            if (event.cancelable) {
+              event.preventDefault()
+            }
+          } catch (error) {
+            // 忽略passive event listener错误
+            console.warn('preventDefault failed in passive touch event listener')
+          }
+          return event
+        })
+      )
+      const pointerUp$ = fromEvent<MouseEvent | TouchEvent>(window, isTouchStart ? 'touchend' : 'mouseup', { passive: false })
 
       const scrollCallback = (event) => {
         // 在当前表格内滚动不处理
@@ -166,24 +181,25 @@ export function rowDrag (opt:RowDragFeatureOptions) {
 
         dragRange = getDragRange(tableBody, { startOffset, rowHeight })
 
-        const isOutOfRange = isOutOfDragRange(mousePosition, dragRange)
+        const isOutOfRange = isOutOfDragRange(pointerPosition, dragRange)
         updateCurSorStyle(isOutOfRange)
       }
       document.addEventListener('scroll', scrollCallback, true)
 
-      const rowDrag$ = mousemove$.pipe(
-        filter((mouseMoveEvent: MouseEvent) => {
-          const mouseMoveClientY = mouseMoveEvent.clientY
+      const rowDrag$ = pointerMove$.pipe(
+        filter((moveEvent: MouseEvent | TouchEvent) => {
+          const { clientY: moveClientY } = getEventCoordinates(moveEvent)
           // 上下移动偏移量大于5才是有效的拖拽
-          if (Math.abs(mouseMoveClientY - mouseDownClientY) > 5) {
+          if (Math.abs(moveClientY - downClientY) > 5) {
             isValidDrag = true
           }
 
           return isValidDrag
         }),
-        map((mouseMoveEvent: MouseEvent) => {
-          const { clientX, clientY } = mouseMoveEvent
-          const tagretRow = getTargetRowInfo(mouseMoveEvent.target, tableBody, dataSource)
+        map((moveEvent: MouseEvent | TouchEvent) => {
+          const { clientX, clientY } = getEventCoordinates(moveEvent)
+          const target = getEventTarget(moveEvent)
+          const tagretRow = getTargetRowInfo(target, tableBody, dataSource)
           if (tagretRow) {
             endRowInfo = tagretRow
           }
@@ -195,15 +211,15 @@ export function rowDrag (opt:RowDragFeatureOptions) {
 
           dragPosition = isMoveToTop ? 'top' : 'bottom'
           isOutOfRange = isOutOfDragRange({ x: clientX, y: clientY }, dragRange)
-          mousePosition = { x: clientX, y: clientY }
+          pointerPosition = { x: clientX, y: clientY }
 
-          updateScrollPosition(mouseMoveEvent) // 拖拽到底时让滚动条可以滚动
+          updateScrollPosition(moveEvent) // 拖拽到底时让滚动条可以滚动
           updateDragElementPosition(dragElement, dragRange, { x: clientX, y: clientY, startOffset })
           updateCurSorStyle(isOutOfRange)
 
           return { startRowInfo, endRowInfo, dragPosition }
         }),
-        takeUntil(mouseup$)
+        takeUntil(pointerUp$)
       )
 
       rowDrag$.subscribe({
@@ -211,7 +227,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
           const dragMoveEvent = getDragEvent(startRowInfo, endRowInfo, { isFinished: false, dragPosition })
           handleDragMove(dragMoveEvent)
         },
-        complete () {
+        complete() {
           const dragEndEvent = getDragEvent(startRowInfo, endRowInfo, { isFinished: true, dragPosition })
           const isValid = isValidDrag && !isOutOfRange
           handleDragEnd(dragEndEvent, isValid)
@@ -230,7 +246,7 @@ export function rowDrag (opt:RowDragFeatureOptions) {
     nextColumns.unshift(rowDragColumn)
     pipeline.columns(nextColumns)
 
-    pipeline.addTableProps({ onMouseDown })
+    pipeline.addTableProps({ onMouseDown: handlePointerDown, onTouchStart: handlePointerDown })
     pipeline.appendRowPropsGetter((row, rowIndex) => {
       const rowDragEvent = pipeline.getStateAtKey(rowDragKey) || {}
       const { startRowIndex, endRowIndex, isFinished, dragPosition } = rowDragEvent
@@ -253,7 +269,10 @@ export function rowDrag (opt:RowDragFeatureOptions) {
   }
 }
 
-function getTargetRowInfo (target, tableBody, record) {
+function getTargetRowInfo(target, tableBody, record) {
+  // 处理触摸事件可能返回的null目标
+  if (!target) return null
+
   while (target && tableBody.contains(target)) {
     if (target.getAttribute('data-role') === 'table-cell') {
       const code = target.getAttribute('data-code')
@@ -274,7 +293,7 @@ function getTargetRowInfo (target, tableBody, record) {
   return null
 }
 
-function isEleInFooter (target) {
+function isEleInFooter(target) {
   while (target && !target.classList.contains(Classes.artTable)) {
     if (target.classList.contains(Classes.tableFooter)) {
       return true
@@ -284,7 +303,7 @@ function isEleInFooter (target) {
   return false
 }
 
-function createDragElement (rects, tableWidth, rowHeight) {
+function createDragElement(rects, tableWidth, rowHeight) {
   const { x, y } = rects
 
   const dragMoveElement = document.createElement('div')
@@ -296,18 +315,18 @@ function createDragElement (rects, tableWidth, rowHeight) {
   return dragMoveElement
 }
 
-function updateDragElementPosition (element, dragRange, { x, y, startOffset }) {
+function updateDragElementPosition(element, dragRange, { x, y, startOffset }) {
   const validPosition = getValidPosition({ x, y }, dragRange)
   element.style.top = (validPosition.y - startOffset) + 'px'
 
   return element
 }
 
-function removeDragElement (element) {
+function removeDragElement(element) {
   document.body.removeChild(element)
 }
 
-function updateCurSorStyle (isOutOfRange) {
+function updateCurSorStyle(isOutOfRange) {
   if (isOutOfRange) {
     document.body.style.cursor = 'no-drop'
   } else {
@@ -315,11 +334,11 @@ function updateCurSorStyle (isOutOfRange) {
   }
 }
 
-function removeCurSorStyle () {
+function removeCurSorStyle() {
   document.body.style.cursor = 'default'
 }
 
-function getDragRange (tableBody, { startOffset, rowHeight }) {
+function getDragRange(tableBody, { startOffset, rowHeight }) {
   const tableBodyClientRect = tableBody.getBoundingClientRect()
   const { height, width, top, left } = tableBodyClientRect
   return {
@@ -330,7 +349,7 @@ function getDragRange (tableBody, { startOffset, rowHeight }) {
   }
 }
 
-function getValidPosition (position, dragRange) {
+function getValidPosition(position, dragRange) {
   const { x, y } = position
   const { minX, maxX, minY, maxY } = dragRange
 
@@ -342,7 +361,7 @@ function getValidPosition (position, dragRange) {
   }
 }
 
-function isOutOfDragRange (position, dragRange) {
+function isOutOfDragRange(position, dragRange) {
   const { x, y } = position
   const { minX, maxX, minY, maxY } = dragRange
 
