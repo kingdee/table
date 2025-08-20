@@ -678,7 +678,7 @@ export const StyledArtTableWrapper = styled.div`
       ${props => swapRTLDirection(props.direction, 'left')}:0;
     }
     .${Classes.fixedRight}{
-      rig${props => swapRTLDirection(props.direction, 'right')}ht:0;
+      ${props => swapRTLDirection(props.direction, 'right')}:0;
     }
 
     .${Classes.rowDetailContainer}{
