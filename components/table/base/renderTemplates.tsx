@@ -348,10 +348,19 @@ function RowDetail (props:RowDetailOptions) {
   }, [])
 
   useEffect(() => {
-    // 这时候行才渲染完，只能在这里设置偏移量
+  const updateTransform = () => {
     const offsetTop = domHelper.getRowTop(rowIndex) || 0
-    detailRef.current.style.transform = `translateY(${offsetTop + 'px'})`
+    if (detailRef.current) {
+      detailRef.current.style.transform = `translateY(${offsetTop + 'px'})`
+    }
+  }
+  // 使用requestAnimationFrame确保在下一个渲染帧执行
+  const rafId = window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(updateTransform) // 双重RAF确保IE渲染完成
   })
+
+  return () => cancelAnimationFrame(rafId)
+})
 
   return (
     <div ref = {detailRef} className={Classes.rowDetailItem}>
