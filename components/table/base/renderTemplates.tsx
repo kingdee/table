@@ -348,19 +348,13 @@ function RowDetail (props:RowDetailOptions) {
   }, [])
 
   useEffect(() => {
-  const updateTransform = () => {
     const offsetTop = domHelper.getRowTop(rowIndex) || 0
-    if (detailRef.current) {
-      detailRef.current.style.transform = `translateY(${offsetTop + 'px'})`
-    }
-  }
-  // 使用requestAnimationFrame确保在下一个渲染帧执行
-  const rafId = window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(updateTransform) // 双重RAF确保IE渲染完成
-  })
-
-  return () => cancelAnimationFrame(rafId)
-})
+    setTimeout(() => {
+      if (detailRef.current) {
+        detailRef.current.style.transform = `translateY(${offsetTop + 'px'})`
+      }
+    }, 0);
+  },[])
 
   return (
     <div ref = {detailRef} className={Classes.rowDetailItem}>
