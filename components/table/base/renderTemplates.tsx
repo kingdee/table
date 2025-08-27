@@ -350,7 +350,9 @@ function RowDetail (props:RowDetailOptions) {
   useEffect(() => {
     // 这时候行才渲染完，只能在这里设置偏移量
     const offsetTop = domHelper.getRowTop(rowIndex) || 0
-    detailRef.current.style.transform = `translateY(${offsetTop + 'px'})`
+    setTimeout(() => {
+      detailRef.current.style.transform = `translateY(${offsetTop + 'px'})`
+    }, 0);
   })
 
   return (
