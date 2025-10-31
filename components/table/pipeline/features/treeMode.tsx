@@ -8,6 +8,7 @@ import { TablePipeline } from '../pipeline'
 import { Classes } from '../../base/styles'
 
 export const treeMetaSymbol = Symbol('treeMetaSymbol')
+export const treeModeOptionsKey = 'treeModeOptions'
 
 interface ExpandIconProps extends React.DOMAttributes<Element> {
   expanded: boolean
@@ -60,6 +61,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
     const primaryKey = pipeline.ensurePrimaryKey('treeMode')
 
     const openKeys: string[] = opts.openKeys ?? pipeline.getStateAtKey(stateKey) ?? opts.defaultOpenKeys ?? []
+    const curSort = pipeline.getStateAtKey('sort')
     const openKeySet = new Set(openKeys)
     const onChangeOpenKeys: TreeModeFeatureOptions['onChangeOpenKeys'] = (nextKeys: string[], key, action) => {
       opts.onChangeOpenKeys?.(nextKeys, key, action)
@@ -89,32 +91,50 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
     const iconGap = opts.iconGap ?? ctx.indents.iconGap
     const indentSize = opts.indentSize ?? ctx.indents.indentSize
 
+    pipeline.setFeatureOptions(treeModeOptionsKey,{
+      iconWidth,
+      iconIndent,
+      iconGap,
+      indentSize,
+      treeMetaKey,
+      isExpanded: (rowKey) => {
+        return openKeySet.has(rowKey)
+      },
+      onExpand: (rowKey) => {
+        onChangeOpenKeys([...openKeys, rowKey], rowKey, 'expand')
+      },
+      onCollapse: (rowKey) => {
+        onChangeOpenKeys(openKeys.filter((key) => key !== rowKey),rowKey,'collapse')
+      }
+    })
+
     const Icon = opts.icon
 
     return pipeline.mapDataSource(processDataSource).mapColumns(processColumns)
 
     function processDataSource (input: any[]) {
-      if(pipeline.isSameInputDataSource() && openKeys === pipeline.getFeatureOptions('lastOpenKeys')){
-        return pipeline.getFeatureOptions('lastTreeMode');
-      }
-      pipeline.setFeatureOptions('lastOpenKeys', pipeline.getStateAtKey(stateKey) || openKeys)
-      const result: any[] = []
-      dfs(input, 0)
-
-      function dfs (nodes: any[], depth: number) {
+        if(pipeline.isSameInputDataSource() && openKeys === pipeline.getFeatureOptions('lastOpenKeys') && curSort === pipeline.getFeatureOptions('lastSort')){
+          return pipeline.getFeatureOptions('lastTreeMode');
+        }
+        pipeline.setFeatureOptions('lastOpenKeys', openKeys)
+        pipeline.setFeatureOptions('lastSort', curSort)
+        const result: any[] = []
+        dfs(input, 0)
+      function dfs (nodes: any[], depth: number, parentNode = null) {
         if (nodes == null) {
           return
         }
         for (const node of nodes) {
           const rowKey = internals.safeGetRowKey(primaryKey, node, -1)
+          const parentRowKey = parentNode ? internals.safeGetRowKey(primaryKey, parentNode, -1) : null
           const expanded = openKeySet.has(rowKey)
 
           const isLeaf = isLeafNode(node, { depth, expanded, rowKey })
-          const treeMeta = { depth, isLeaf, expanded, rowKey }
+          const treeMeta = { depth, isLeaf, expanded, rowKey, parentRowKey }
           result.push({ [treeMetaKey]: treeMeta, ...node })
 
           if (!isLeaf && expanded) {
-            dfs(node.children, depth + 1)
+            dfs(node.children, depth + 1, node)
           }
         }
       }
@@ -193,14 +213,14 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
 
       const getCellProps = (value: any, record: any, rowIndex: number) => {
         const prevProps = internals.safeGetCellProps(expandCol, record, rowIndex)
-        if (record[treeMetaKey] == null) {
+        if (record[treeMetaKey] == null || clickArea !== 'cell') {
           // 没有 treeMeta 信息的话，就返回原先的 cellProps
-          return prevProps
+          return mergeCellProps(prevProps, {className: Classes.tableExtendCell})
         }
 
         const { isLeaf, rowKey } = record[treeMetaKey]
         if (isLeaf) {
-          return prevProps
+          return mergeCellProps(prevProps, {className: Classes.tableExtendCell})
         }
 
         return mergeCellProps(prevProps, {
@@ -210,7 +230,8 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
             }
             toggle(rowKey)
           },
-          style: { cursor: 'pointer' }
+          style: { cursor: 'pointer' },
+          className: Classes.tableExtendCell
         })
       }
 
@@ -220,7 +241,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
           <span style={{ marginLeft: iconIndent + iconWidth + iconGap, display: 'flex' }}>{internals.safeRenderHeader(expandCol)}</span>
         ),
         render,
-        getCellProps: clickArea === 'cell' ? getCellProps : expandCol.getCellProps
+        getCellProps: getCellProps
       }
 
       return [...columns]

@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components'
+import styled, { css,  createGlobalStyle } from 'styled-components'
 
 export const LOCK_SHADOW_PADDING = 20
 
@@ -23,6 +23,7 @@ export const Classes = {
   tableHeaderRow: `${prefix}table-header-row`,
   /** 单元格 */
   tableCell: `${prefix}table-cell`,
+  tableExtendCell: `${prefix}table-extend-cell`,
   /** 表头的单元格 */
   tableHeaderCell: `${prefix}table-header-cell`,
   tableHeaderCellContent: `${prefix}table-header-cell-content`,
@@ -97,9 +98,18 @@ export const Classes = {
 
   rowDragStart: `${prefix}row-drag-start`,
   rowDragEnd: `${prefix}row-drag-end`,
+  rowDragEndParent:`${prefix}row-drag-end-parent`,
   rowDragEndToTop: `${prefix}row-drag-end-to-top`,
   rowDragEndToBottom: `${prefix}row-drag-end-to-bottom`,
+  rowDragEndInto:`${prefix}row-drag-end-into`,
   rowDragElement: `${prefix}row-drag-element`,
+  rowDragElementIcon: `${prefix}row-drag-element-icon`,
+  rowDragElementLabel: `${prefix}row-drag-element-label`,
+  rowDragLine: `${prefix}row-drag-line`,
+  rowDragNoData: `${prefix}row-drag-no-data`,
+  treeTableRowDragLine:`${prefix}tree-table-row-drag-line`,
+  iconNotAllowed: `${prefix}icon-not-allowed`,
+  iconMove:`${prefix}icon-move`,
   rowDragCell: `${prefix}row-drag-cell`
 
 } as const
@@ -182,6 +192,57 @@ export type BaseTableCSSVariables = Partial<{
   /** 表头单元格左右边框，默认为 1px solid #dfe3e8 */
   '--header-cell-border-vertical': string
 }>
+
+export const GlobalStyle = createGlobalStyle`
+  .${Classes.rowDragElement}{
+    position: absolute;
+    top:0;
+    left:0;
+    z-index: 9999;
+    pointer-events:none;
+    user-select: none;
+
+    display:flex;
+    opacity: 0.9;
+    align-items:center;
+    min-width:80px;
+    padding: 0px 8px;
+    border: 1px solid #d9d9d9;
+    box-shadow: 0px 6px 16px 3px rgba(0,0,0,0.08);
+    border-radius: 2px;
+    background: #fff;
+    max-height:48px;
+
+    .${Classes.rowDragElementLabel}{
+      font-size:12px;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space:nowrap;
+    }
+    
+  }
+
+  .${Classes.rowDragLine}{
+    position: absolute;
+    top:0;
+    left:0;
+    z-index: 9998;
+    pointer-events:none;
+    user-select: none;
+    height: 2px;
+    background: var(--primary-color);
+  }
+  .${Classes.treeTableRowDragLine}:before{
+    content: " ";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top:-4px;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    background:#fff;
+  }
+`
 
 const outerBorderStyleMixin = css`
   border-top: 1px solid #cccccc;
@@ -337,6 +398,9 @@ export const StyledArtTableWrapper = styled.div`
     display: flex;
     flex: none;
   }
+  .${Classes.tableBody}{
+    flex-grow:1;
+  }
   .${Classes.tableBody}, .${Classes.tableFooter} {
     background: var(--bgcolor);
     overflow: auto;
@@ -375,29 +439,58 @@ export const StyledArtTableWrapper = styled.div`
 
   .${Classes.rowDragging} {
     user-select:none;
-    .${Classes.tableBody} .${Classes.tableRow} >td{
-        cursor:move;
-    }
+    // .${Classes.tableBody} .${Classes.tableRow} >td{
+    //     cursor:move;
+    // }
 
-    .${Classes.tableFooter} .${Classes.tableRow} >td{
-        cursor:no-drop;
-    }
+    // .${Classes.tableFooter} .${Classes.tableRow} >td{
+    //     cursor:no-drop;
+    // }
     
   }
 
   .${Classes.rowDragStart}{
     opacity: 0.5;
   }
+  .${Classes.rowDragNoData}{
+    border: 1px solid var(--primary-color)
+  }
 
-
-  .${Classes.rowDragEndToTop} td{
+  .${Classes.rowDragEndParent} td{
     border-top: 1px solid var(--primary-color) !important;
+    border-bottom: 1px solid var(--primary-color) !important;
+    
+  }
+  .${Classes.rowDragEndParent} td:first-child{
+    border-left: 1px solid var(--primary-color) !important;
+    
+  }
+  .${Classes.rowDragEndParent} td:last-child{
+    border-right: 1px solid var(--primary-color) !important;
+    
   }
 
-  .${Classes.rowDragEndToBottom} td{
+
+  // .${Classes.rowDragEndToTop} td{
+  //   border-top: 1px solid var(--primary-color) !important;
+  // }
+
+  .${Classes.rowDragEndInto} td{
+    border-top: 1px solid var(--primary-color) !important;
     border-bottom: 1px solid var(--primary-color) !important;
-   
   }
+
+  .${Classes.rowDragEndInto} td:first-child{
+    border-left: 1px solid var(--primary-color) !important;
+  }
+
+  .${Classes.rowDragEndInto} td:last-child{
+    border-right: 1px solid var(--primary-color) !important;
+  }
+
+  // .${Classes.rowDragEndToBottom} td{
+  //   border-bottom: 1px solid var(--primary-color) !important;
+  // }
 
   .${Classes.rowDragCell} {
     cursor:pointer;
@@ -557,8 +650,8 @@ export const StyledArtTableWrapper = styled.div`
   }
   //#endregion
 
-  //#region IE兼容
-  &.ie-polyfill-wrapper {
+  //#region sticky兼容
+  &.sticky-polyfill-wrapper{
     //锁定列兼容 仅在锁定列的情况下生效
     .${Classes.virtual} {
       overflow-x: hidden;
@@ -606,7 +699,7 @@ export const StyledArtTableWrapper = styled.div`
       background: var(--hover-bgcolor);
     }
   }
-  //#endregion
+  //#endregion sticky兼容
 
   //#region 粘性滚动条
   .${Classes.horizontalStickyScrollContainer}{
@@ -707,7 +800,11 @@ export const StyledArtTableWrapper = styled.div`
 
   //#region 滚动条占位
   .${Classes.verticalScrollPlaceholder} {
-    visibility: hidden;
+    // visibility: hidden;
+    background: var(--header-bgcolor);
+    position:sticky;
+    z-index:5;
+    right:0px;
     flex-shrink: 0;
   }
   .${Classes.tableFooter} .${Classes.verticalScrollPlaceholder} {

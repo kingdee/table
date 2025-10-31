@@ -183,16 +183,6 @@ export function sort (opts: SortFeatureOptions = {}) {
 
     const dataSource = pipeline.getDataSource()
     const columns = pipeline.getColumns()
-
-    if (process.env.NODE_ENV !== 'production') {
-      if (!hasAnySortableColumns(columns)) {
-        console.warn(
-          'commonTransform.sort 缺少可排序的列，请通过 column.features.sortable 来指定哪些列可排序',
-          columns
-        )
-      }
-    }
-
     pipeline.dataSource(processDataSource(dataSource))
     pipeline.columns(processColumns(columns))
 

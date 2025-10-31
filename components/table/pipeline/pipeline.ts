@@ -3,6 +3,7 @@ import { TableProps, PrimaryKey } from '../base'
 import { ArtColumn, TableTransform, Transform } from '../interfaces'
 import { mergeCellProps } from '../utils'
 import { autoFillTableWidth, tableWidthKey } from './features/autoFill'
+import { createFeatureApi } from './features/featureApi/utils'
 
 type RowPropsGetter = TableProps['getRowProps']
 
@@ -159,6 +160,7 @@ export class TablePipeline {
     this._dataSource = input.dataSource
 
     this.ref.current._lastInputDataSource = input.dataSource
+    this.ref.current.lastPipeline = this
 
     this._columns = input.columns.map(col => ({ ...col, key: this.guid() }))
 
@@ -275,10 +277,24 @@ export class TablePipeline {
 
     return result
   }
+
+  getFeatureApi(featureName: string){
+    return this.ref.current.featureApi?.[featureName]
+  }
+  addFeatureApi(featureName:string){
+    if(!this.getFeatureApi(featureName)){
+      this.ref.current.featureApi[featureName] = createFeatureApi(featureName, this)
+    }
+    return this.ref.current.featureApi[featureName]
+  }
+
+  getLastPipeline(){
+    return this.ref.current.lastPipeline
+  }
 }
 
 export function useTablePipeline (ctx?: Partial<TablePipelineCtx>) {
   const [state, setState] = useState<any>({})
-  const ref = useRef<any>({ featureOptions: {} })
+  const ref = useRef<any>({ featureOptions: {}, featureApi:{} })
   return new TablePipeline({ state, setState, ctx, ref })
 }
