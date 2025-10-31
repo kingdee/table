@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArtColumn, CellProps } from '../../interfaces'
+import { ArtColumn, CellProps, selectRenderProps } from '../../interfaces'
 import { internals } from '../../internals'
 import { always, arrayUtils } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
@@ -47,6 +47,8 @@ export interface MultiSelectFeatureOptions {
 
   /** 是否对触发 onChange 的 click 事件调用 event.stopPropagation() */
   stopClickEventPropagation?: boolean
+
+  customRender?: (ctx: selectRenderProps) => React.ReactNode
 }
 
 export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
@@ -67,7 +69,6 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
       opts.onChange?.(nextValue, key, keys, action)
       pipeline.setStateAtKey(stateKey, { value: nextValue, lastKey: key }, { keys, action })
     }
-
 
     /** dataSource 中包含的所有 keys */
     let fullKeySet = new Set<string>()
@@ -97,7 +98,6 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
         }
       }
     })
-
 
     // todo: 暂使用hidden隐藏选择列 后续增加配置
     const hiddenSelectColumn = opts.checkboxColumn && opts.checkboxColumn.hidden === true
@@ -146,35 +146,56 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
           }
           return mergeCellProps(preCellProps, checkboxCellProps)
         },
-        render(_: any, row: any, rowIndex: number) {
+        render (_: any, row: any, rowIndex: number) {
           if (row[pipeline.getFeatureOptions('footerRowMetaKey')]) {
             return null
           }
           const key = internals.safeGetRowKey(primaryKey, row, rowIndex)
           const selectValueSet = pipeline.getFeatureOptions(selectValueSetKey) || new Set<string>()
           const checked = selectValueSet.has(key)
-          return (
+          const disabled = isDisabled(row, rowIndex)
+          const defaultOnChange =
+            clickArea === 'checkbox'
+              ? (arg1: any, arg2: any) => {
+                // 这里要同时兼容 antd 和 fusion 的用法
+                // fusion: arg2?.nativeEvent
+                // antd: arg1.nativeEvent
+                const nativeEvent: MouseEvent = arg2?.nativeEvent ?? arg1.nativeEvent
+                if (nativeEvent) {
+                  if (opts.stopClickEventPropagation) {
+                    nativeEvent.stopPropagation()
+                  }
+                  onCheckboxChange(checked, key, nativeEvent.shiftKey)
+                }
+              }
+              : undefined
+
+          const defaultElement = (
             <Checkbox
               checked={checked}
-              disabled={isDisabled(row, rowIndex)}
-              onChange={
-                clickArea === 'checkbox'
-                  ? (arg1: any, arg2: any) => {
-                    // 这里要同时兼容 antd 和 fusion 的用法
-                    // fusion: arg2?.nativeEvent
-                    // antd: arg1.nativeEvent
-                    const nativeEvent: MouseEvent = arg2?.nativeEvent ?? arg1.nativeEvent
-                    if (nativeEvent) {
-                      if (opts.stopClickEventPropagation) {
-                        nativeEvent.stopPropagation()
-                      }
-                      onCheckboxChange(checked, key, nativeEvent.shiftKey)
-                    }
-                  }
-                  : undefined
-              }
+              disabled={disabled}
+              onChange={defaultOnChange}
             />
           )
+
+          const ctx = {
+            type: 'multi' as const,
+            row,
+            rowIndex,
+            rowKey: key,
+            checked,
+            disabled,
+            defaultElement,
+            actions: {
+              select: () => { if (!checked) onCheckboxChange(false, key, false) },
+              toggle: (batch?: boolean) => onCheckboxChange(checked, key, !!batch)
+            }
+          }
+
+          if (opts.customRender) {
+            return opts.customRender(ctx)
+          }
+          return defaultElement
         },
         features: {
           ...opts.checkboxColumn?.features,
@@ -200,7 +221,7 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
         return
       }
 
-      let style: any = {}
+      const style: any = {}
       let className: string
       let onClick: any
 
@@ -236,7 +257,7 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
 
     return pipeline
 
-    function onCheckboxChange(prevChecked: boolean, key: string, batch: boolean) {
+    function onCheckboxChange (prevChecked: boolean, key: string, batch: boolean) {
       let batchKeys = [key]
 
       if (batch && lastKey) {
