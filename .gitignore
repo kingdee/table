@@ -11,4 +11,3 @@ package-lock.json
 .DS_store
 report.html
 /.history
-/node_modules.zip
