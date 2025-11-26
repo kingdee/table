@@ -67,11 +67,11 @@ function calculateLeveledAndFlat (inputNested: IndexedCol[], rowCount: number) {
   }
   const flat: ColWithRenderInfo[] = []
 
-  dfs(inputNested, 0)
+  dfs(inputNested, 0, false)
 
   return { flat, leveled }
 
-  function dfs (input: IndexedCol[], depth: number) {
+  function dfs (input: IndexedCol[], depth: number, suppressLeveled: boolean) {
     let leafCount = 0
     for (let i = 0; i < input.length; i++) {
       const indexedCol = input[i]
@@ -86,12 +86,15 @@ function calculateLeveledAndFlat (inputNested: IndexedCol[], rowCount: number) {
           colSpan: 1,
           isLeaf: true
         }
-        leveled[depth].push(wrapped)
+        if (!suppressLeveled) {
+          leveled[depth].push(wrapped)
+        }
         flat.push(wrapped)
       } else {
-        const dfsRes = dfs(indexedCol.children, depth + 1)
+        const mergeHeader = Boolean(indexedCol.col?.isHeaderMerge)
+        const dfsRes = dfs(indexedCol.children, depth + 1, suppressLeveled || mergeHeader)
         leafCount += dfsRes.leafCount
-        if (dfsRes.leafCount > 0) {
+        if (dfsRes.leafCount > 0 && !suppressLeveled) {
           leveled[depth].push({
             type: 'normal',
             width: indexedCol.col.width,
@@ -222,10 +225,10 @@ export default function TableHeader ({ info, theaderPosition, rowCount: _rowCoun
               [Classes.last]: colIndex + colSpan === fullFlatCount,
               [Classes.lockLeft]: colIndex < leftFlatCount || theaderPosition === 'left',
               [Classes.lockRight]: colIndex >= fullFlatCount - rightFlatCount || theaderPosition === 'right',
-              [Classes.leaf]: wrapped.isLeaf
+              [Classes.leaf]: wrapped.isLeaf || col.isHeaderMerge
             })}
             colSpan={colSpan}
-            rowSpan={isLeaf ? rowCount - level : undefined}
+            rowSpan={isLeaf || col.isHeaderMerge ? rowCount - level : undefined}
             style={{
               textAlign: col.align,
               verticalAlign: col.verticalAlign ?? 'middle',

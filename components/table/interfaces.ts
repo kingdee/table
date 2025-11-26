@@ -44,7 +44,10 @@ export interface ArtColumnStaticPart {
   features?: { [key: string]: any },
 
   /** 表头设置操作项到自定义操作区 */
-  renderHeader?:(title:ReactNode,opr:ReactNode) => ReactNode
+  renderHeader?: (title:ReactNode, opr:ReactNode) => ReactNode,
+
+  /** 在分组情况下是否需要合并表头 默认不合并 */
+  isHeaderMerge?: boolean
 }
 
 export interface Features {
