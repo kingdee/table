@@ -44,7 +44,10 @@ export interface ArtColumnStaticPart {
   features?: { [key: string]: any },
 
   /** 表头设置操作项到自定义操作区 */
-  renderHeader?:(title:ReactNode,opr:ReactNode) => ReactNode
+  renderHeader?: (title:ReactNode, opr:ReactNode) => ReactNode,
+
+  /** 在分组情况下是否需要合并表头 默认不合并 */
+  isHeaderMerge?: boolean
 }
 
 export interface Features {
@@ -173,13 +176,13 @@ export interface DragEvent {
 export interface RowDropZoneParams {
   // 获取拖拽响应容器
   getContainer: () => HTMLElement;
-  // 拖拽进入事件 
+  // 拖拽进入事件
   onDragEnter?: (params: DragEvent) => void;
   // 拖拽离开事件
   onDragLeave?: (params: DragEvent) => void;
   // 拖拽移动事件
   onDragging?: (params: DragEvent) => void;
-  // 拖拽结束事件 
+  // 拖拽结束事件
   onDragStop?: (params: DragEvent, source?:string) => void;
   isTable?: boolean,
   tableParams?: RowDropZoneTableParams
