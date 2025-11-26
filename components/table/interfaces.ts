@@ -6,6 +6,22 @@ export type ArtColumnVerticalAlign = 'top' | 'bottom' | 'middle'
 
 export type CellProps = React.TdHTMLAttributes<HTMLTableCellElement>
 
+export interface selectRenderProps {
+  type: 'multi' | 'single'
+  row: any
+  rowIndex: number
+  rowKey: string
+  checked: boolean
+  disabled: boolean
+  defaultElement: React.ReactNode
+  actions: {
+    /** 将当前行设置为选中（若已选中则不操作） */
+    select: () => void
+    /** 切换当前行选中状态 */
+    toggle: (batch?: boolean) => void
+  }
+}
+
 export interface ArtColumnStaticPart {
   /** 列的名称 */
   name: string
@@ -44,7 +60,13 @@ export interface ArtColumnStaticPart {
   features?: { [key: string]: any },
 
   /** 表头设置操作项到自定义操作区 */
-  renderHeader?:(title:ReactNode,opr:ReactNode) => ReactNode
+  renderHeader?: (title:ReactNode, opr:ReactNode) => ReactNode,
+
+  /** 自定义选择列渲染  **/
+  customRender?: selectRenderProps
+
+  /** 在分组情况下是否需要合并表头 默认不合并 */
+  isHeaderMerge?: boolean
 }
 
 export interface Features {
@@ -56,7 +78,6 @@ export interface Features {
   filterable?: boolean
 
   /** */
-
 
 }
 
@@ -103,7 +124,6 @@ export interface FilterItem {
 }
 export type Filters = FilterItem[]
 
-
 export type Transform<T> = (input: T) => T
 
 export type TableTransform = Transform<{
@@ -121,7 +141,7 @@ export interface ColumnResizeItem {
   index: number
 }
 
-export interface FilterPanelProps  {
+export interface FilterPanelProps {
   isFilterActive:boolean
   hidePanel():void
 }
@@ -136,9 +156,6 @@ export interface CustomeFilterPanelProps extends FilterPanelProps{
   setFilter(filter?: any[]):void
   filterModel:FilterItem
 }
-
-
-
 
 export type FilterPanel = React.ComponentType<DefaultFilterPanelProps|CustomeFilterPanelProps >
 
@@ -163,7 +180,7 @@ export interface DragEvent {
   startDropZoneTagret: Element // 起始拖拽区域,
   startCommonParams: any // 起始表格公共参数,
   commonParams?:any // 目标区域公共参数
-  dropZoneTarget:Element  // 拖拽放置区域,
+  dropZoneTarget:Element // 拖拽放置区域,
   dropZoneTableParams?: RowDropZoneTableParams, // 拖拽放置区域表格提供方法
   event:MouseEvent, // 鼠标事件,
   x: number, // 鼠标相对于拖拽区域的X位置
@@ -173,13 +190,13 @@ export interface DragEvent {
 export interface RowDropZoneParams {
   // 获取拖拽响应容器
   getContainer: () => HTMLElement;
-  // 拖拽进入事件 
+  // 拖拽进入事件
   onDragEnter?: (params: DragEvent) => void;
   // 拖拽离开事件
   onDragLeave?: (params: DragEvent) => void;
   // 拖拽移动事件
   onDragging?: (params: DragEvent) => void;
-  // 拖拽结束事件 
+  // 拖拽结束事件
   onDragStop?: (params: DragEvent, source?:string) => void;
   isTable?: boolean,
   tableParams?: RowDropZoneTableParams

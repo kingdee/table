@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArtColumn, CellProps } from '../../interfaces'
+import { ArtColumn, CellProps, selectRenderProps } from '../../interfaces'
 import { internals } from '../../internals'
 import { always } from '../../utils/others'
 import { TablePipeline } from '../pipeline'
@@ -31,6 +31,8 @@ export interface SingleSelectFeatureOptions {
 
   /** 是否对触发 onChange 的 click 事件调用 event.stopPropagation() */
   stopClickEventPropagation?: boolean
+
+  customRender?: (ctx: selectRenderProps) => React.ReactNode
 }
 
 export function singleSelect (opts: SingleSelectFeatureOptions = {}) {
@@ -80,23 +82,45 @@ export function singleSelect (opts: SingleSelectFeatureOptions = {}) {
           return null
         }
         const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
-        return (
-          <Radio
-            checked={value === rowKey}
-            disabled={isDisabled(row, rowIndex)}
-            onChange={
-              clickArea === 'radio'
-                ? (arg1: any, arg2: any) => {
-                  const nativeEvent: MouseEvent = arg2?.nativeEvent ?? arg1?.nativeEvent
-                  if (nativeEvent && opts.stopClickEventPropagation) {
-                    nativeEvent.stopPropagation()
-                  }
-                  onChange(rowKey)
-                }
-                : undefined
+        const checked = value === rowKey
+        const disabled = isDisabled(row, rowIndex)
+        const defaultOnChange =
+          clickArea === 'radio'
+            ? (arg1: any, arg2: any) => {
+              const nativeEvent: MouseEvent = arg2?.nativeEvent ?? arg1?.nativeEvent
+              if (nativeEvent && opts.stopClickEventPropagation) {
+                nativeEvent.stopPropagation()
+              }
+              onChange(rowKey)
             }
+            : undefined
+
+        const defaultElement = (
+          <Radio
+            checked={checked}
+            disabled={disabled}
+            onChange={defaultOnChange}
           />
         )
+
+        const ctx = {
+          type: 'single' as const,
+          row,
+          rowIndex,
+          rowKey,
+          checked,
+          disabled,
+          defaultElement,
+          actions: {
+            select: () => onChange(rowKey),
+            toggle: () => onChange(rowKey)
+          }
+        }
+
+        if (opts.customRender) {
+          return opts.customRender(ctx)
+        }
+        return defaultElement
       },
       features: {
         ...opts.radioColumn?.features,
