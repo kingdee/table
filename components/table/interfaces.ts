@@ -64,6 +64,9 @@ export interface ArtColumnStaticPart {
 
   /** 自定义选择列渲染  **/
   customRender?: selectRenderProps
+
+  /** 在分组情况下是否需要合并表头 默认不合并 */
+  isHeaderMerge?: boolean
 }
 
 export interface Features {
