@@ -1,19 +1,17 @@
-import React, { useState, useImperativeHandle, forwardRef, memo, useEffect } from 'react'
+import React, { useState, useImperativeHandle, forwardRef, memo } from 'react'
 import cx from 'classnames'
 import { Classes } from './styles'
 
 interface BlankProps {
   height: number
+  className?: string
 }
 
 export interface BlankRef {
   updateHeight: (newHeight: number) => void
 }
-const TopBlankComponent = forwardRef<BlankRef, BlankProps>(({ height: heightFromProps }, ref) => {
-  useEffect(() => {
-    setHeight(heightFromProps)
-  }, [heightFromProps])
-  const [height, setHeight] = useState(heightFromProps)
+const TopBlankComponent = forwardRef<BlankRef, BlankProps>(({ height: initialHeight }, ref) => {
+  const [height, setHeight] = useState(initialHeight)
   useImperativeHandle(ref, () => ({
     updateHeight: (newHeight: number) => {
       if (height !== newHeight) {
@@ -22,22 +20,13 @@ const TopBlankComponent = forwardRef<BlankRef, BlankProps>(({ height: heightFrom
     }
   }), [height])
 
-  return (
-    <div
-      key="top-blank"
-      className={cx(Classes.virtualBlank, 'bottom')}
-      style={{ height }}
-    />
-  )
+  return <div style={{ height }} />
 })
 
 TopBlankComponent.displayName = 'TopBlank'
 
-const BottomBlankComponent = forwardRef<BlankRef, BlankProps>(({ height: heightFromProps }, ref) => {
-  const [height, setHeight] = useState(heightFromProps)
-  useEffect(() => {
-    setHeight(heightFromProps)
-  }, [heightFromProps])
+const BottomBlankComponent = forwardRef<BlankRef, BlankProps>(({ height: initialHeight, className }, ref) => {
+  const [height, setHeight] = useState(initialHeight)
   useImperativeHandle(ref, () => ({
     updateHeight: (newHeight: number) => {
       if (height !== newHeight) {
@@ -53,7 +42,7 @@ const BottomBlankComponent = forwardRef<BlankRef, BlankProps>(({ height: heightF
   return (
     <div
       key="bottom-blank"
-      className={cx(Classes.virtualBlank, 'bottom')}
+      className={cx(Classes.virtualBlank, 'bottom', className)}
       style={{ height }}
     />
   )
@@ -63,9 +52,9 @@ BottomBlankComponent.displayName = 'BottomBlank'
 
 // 使用 memo 优化，只有当 height 或 className 改变时才重新渲染
 export const TopBlank = memo(TopBlankComponent, (prevProps, nextProps) => {
-  return prevProps.height === nextProps.height
+  return prevProps.height === nextProps.height && prevProps.className === nextProps.className
 })
 
 export const BottomBlank = memo(BottomBlankComponent, (prevProps, nextProps) => {
-  return prevProps.height === nextProps.height
+  return prevProps.height === nextProps.height && prevProps.className === nextProps.className
 })
