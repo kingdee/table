@@ -700,13 +700,11 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
   }
 
   private didMountOrUpdate (prevProps?: Readonly<BaseTableProps>, prevState?: Readonly<BaseTableState>) {
-    window.requestAnimationFrame(() => {
       this.syncHorizontalScrollFromTableBody()
       this.updateStickyScroll()
       this.adjustNeedRenderLock()
       this.updateRowHeightManager()
-    })
-    this.updateScrollLeftWhenLayoutChanged(prevProps, prevState)
+      this.updateScrollLeftWhenLayoutChanged(prevProps, prevState)
   }
 
   private updateScrollLeftWhenLayoutChanged (
