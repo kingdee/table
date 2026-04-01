@@ -64,30 +64,27 @@ export function columnRangeHover (opts: ColumnRangeHoverFeatureOptions = {}) {
 
         const prevGetCellProps = col.getCellProps
 
+        // 预构建 merge 用的 extra 对象，避免在每个 cell 里重复创建
+        const onMouseEnter = () => { onChangeHoverRange(colRange) }
+        const onMouseLeave = () => { onChangeHoverRange(EMPTY_RANGE) }
+        const cellExtra = {
+          onMouseEnter,
+          onMouseLeave,
+          style: { '--bgcolor': match ? hoverColor : undefined } as any
+        }
+
         return {
           ...col,
           headerCellProps: mergeCellProps(col.headerCellProps, {
-            onMouseEnter () {
-              onChangeHoverRange(colRange)
-            },
-            onMouseLeave () {
-              onChangeHoverRange(EMPTY_RANGE)
-            },
+            onMouseEnter,
+            onMouseLeave,
             style: { '--header-bgcolor': match ? headerHoverColor : undefined } as any,
           }),
 
           getCellProps (value: any, record: any, rowIndex: number): CellProps {
             const prevCellProps = prevGetCellProps?.(value, record, rowIndex)
-
-            return mergeCellProps(prevCellProps, {
-              onMouseEnter () {
-                onChangeHoverRange(colRange)
-              },
-              onMouseLeave () {
-                onChangeHoverRange(EMPTY_RANGE)
-              },
-              style: { '--bgcolor': match ? hoverColor : undefined } as any
-            })
+            if (!prevCellProps) return cellExtra
+            return mergeCellProps(prevCellProps, cellExtra)
           }
         }
       })

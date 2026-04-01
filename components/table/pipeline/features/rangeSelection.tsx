@@ -151,7 +151,7 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
 
       const startDragCell = getTargetCell(target, columns)
 
-      if(!startDragCell) return
+      if (!startDragCell) return
 
       // 每次点击时先确认初始生效的框选范围
       setStartSelectedCellRanges(isCtrlKey, isShiftKey)
@@ -161,7 +161,6 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
         return
       }
 
-      
       pipeline.setFeatureOptions(lastClickCellKey, startDragCell)
       let draggingCell = startDragCell
 
@@ -225,6 +224,9 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
 
     return pipeline.mapColumns(makeRecursiveMapper((col) => {
       const cellRanges = pipeline.getStateAtKey(rangeSelectionKey) || []
+
+      // 没有选区时，不包装 getCellProps，避免每个 cell 多一层函数调用和 isCellInRange 检查
+      if (cellRanges.length === 0) return col
 
       const prevGetCellProps = col.getCellProps
       return {
