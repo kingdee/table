@@ -37,20 +37,21 @@ export function columnHover (opts: ColumnHoverFeatureOptions = {}) {
 
         const prevGetCellProps = col.getCellProps
 
+        // 预构建 merge 用的 extra 对象，避免在每个 cell 里重复创建
+        const onMouseEnter = () => { onChangeHoverColIndex(range.start) }
+        const onMouseLeave = () => { onChangeHoverColIndex(-1) }
+        const cellExtra = {
+          style: { '--bgcolor': colIndexMatched ? hoverColor : undefined } as any,
+          onMouseEnter,
+          onMouseLeave
+        }
+
         return {
           ...col,
           getCellProps (value: any, record: any, rowIndex: number) {
             const prevCellProps = prevGetCellProps?.(value, record, rowIndex)
-
-            return mergeCellProps(prevCellProps, {
-              style: { '--bgcolor': colIndexMatched ? hoverColor : undefined } as any,
-              onMouseEnter () {
-                onChangeHoverColIndex(range.start)
-              },
-              onMouseLeave () {
-                onChangeHoverColIndex(-1)
-              }
-            })
+            if (!prevCellProps) return cellExtra
+            return mergeCellProps(prevCellProps, cellExtra)
           }
         }
       })

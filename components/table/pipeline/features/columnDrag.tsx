@@ -57,14 +57,39 @@ export function columnDrag (opts: ColumnDragOptions = {}) {
         const style: any = cloumnsTranslateData ? {
           transition: '.3s',
           transform: `translate3d(${cloumnsTranslateData[col.code]}px, 0px, 0px)`
-        } : {}
+        } : null
         const prevGetCellProps = col.getCellProps
         // !col.code: 选择列 col.lock: 固定列 不允许拖拽
         if (col.lock || !col.code) return col
+
+        // 没有拖拽进行时，不包装 getCellProps，避免每个 cell 多一层函数调用
+        if (style == null) {
+          return {
+            ...col,
+            headerCellProps: mergeCellProps(col.headerCellProps, {
+              ...((isLeaf && path.length === 1) ? {
+                onMouseDown: (e: React.MouseEvent<HTMLElement>) => {
+                  if (e.button !== 0 || !e.currentTarget.contains(e.target as HTMLElement)) {
+                    return
+                  }
+                  handlePointerDown(e.nativeEvent, false, e.currentTarget as HTMLElement)
+                },
+                onTouchStart: (e: React.TouchEvent<HTMLElement>) => {
+                  if (e.cancelable) {
+                    e.preventDefault()
+                  }
+                  handlePointerDown(e.nativeEvent, true, e.currentTarget as HTMLElement)
+                }
+              } : {})
+            })
+          }
+        }
+
         return {
           ...col,
           getCellProps (value: any, record: any, rowIndex: number): CellProps {
             const prevCellProps = prevGetCellProps?.(value, record, rowIndex)
+            if (style == null) return prevCellProps
             return mergeCellProps(prevCellProps, {
               style: style as any
             })
