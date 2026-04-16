@@ -77,6 +77,12 @@ export function HtmlTable ({
       visibleColumnDescriptor.push({ type: 'blank', blankSide: 'left', width: 0, isPlacehoder: true })
     }
 
+    // detail 行跳过水平虚拟化，渲染所有列，确保 column 0 的 getSpanRect 能正确执行
+    const isDetailRow = rowProps?.['data-row-detail-key'] != null
+    const rowDescriptors = isDetailRow
+      ? flat.full.map((col, i) => ({ type: 'normal' as const, col, colIndex: i }))
+      : visibleColumnDescriptor
+
     return (
       <tr
         {...rowProps}
@@ -85,7 +91,7 @@ export function HtmlTable ({
         data-rowindex={rowIndex}
         data-role={'table-row'}
       >
-        {visibleColumnDescriptor.map((descriptor) => {
+        {rowDescriptors.map((descriptor) => {
           if (descriptor.type === 'blank') {
             return (
               <td
@@ -94,13 +100,13 @@ export function HtmlTable ({
               />
             )
           }
-          return renderBodyCell(record, rowIndex, descriptor.col, descriptor.colIndex)
+          return renderBodyCell(record, rowIndex, descriptor.col, descriptor.colIndex, isDetailRow ? fullFlatCount : undefined)
         })}
       </tr>
     )
   }
 
-  function renderBodyCell (record: any, rowIndex: number, column: ArtColumn, colIndex: number) {
+  function renderBodyCell (record: any, rowIndex: number, column: ArtColumn, colIndex: number, colSpanLimit?: number) {
     if (spanManager.testSkip(rowIndex, colIndex)) {
       return null
     }
@@ -135,7 +141,7 @@ export function HtmlTable ({
 
     // rowSpan/colSpan 不能过大，避免 rowSpan/colSpan 影响因虚拟滚动而未渲染的单元格
     rowSpan = Math.min(rowSpan, verInfo.limit - rowIndex)
-    colSpan = Math.min(colSpan, hozInfo.visible.length - colIndex)
+    colSpan = Math.min(colSpan, (colSpanLimit ?? hozInfo.visible.length) - colIndex)
 
     // todo: 右侧有列固定的情况下colSpan计算不对，这里先限制一下
     rowSpan = Math.max(rowSpan, 1)
