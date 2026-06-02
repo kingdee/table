@@ -54,7 +54,7 @@
     "test:update": "jest --config .jest.js --cache=false -u",
     "test:ci": "jest --config .jest.js  --coverage --ci --update-snapshot",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --skip-unstable",
-    "pub": "npm run test:all && npm run build && cross-env PUB_ENV=pub np --no-cleanup --no-tests",
+    "pub": "npm run test:all && npm run build && cross-env PUB_ENV=pub np --no-cleanup --no-tests --no-publish && echo. && echo ======================================== && echo 已完成构建、版本更新、git commit/tag/push && echo 还需要手动执行发布到npm(因需要双因素验证脚本无法自动执行) && echo 请手动执行: npm publish && echo ========================================",
     "pub:canary": "npm run build && cross-env PUB_ENV=pub np --no-cleanup --anyBranch --no-tests --tag=canary --no-publish && echo. && echo ======================================== && echo 已完成构建、版本更新、git commit/tag/push && echo 还需要手动执行发布到npm(因需要双因素验证脚本无法自动执行) && echo 请手动执行: npm publish --tag canary && echo ========================================",
     "pub:canary-hotfix": "npm run build && cross-env PUB_ENV=pub np --no-cleanup --anyBranch --no-tests --tag=canaryHotFix --no-publish && echo. && echo ======================================== && echo 已完成构建、版本更新、git commit/tag/push && echo 还需要手动执行发布到npm(因需要双因素验证脚本无法自动执行) && echo 请手动执行: npm publish --tag canaryHotFix && echo ========================================",
     "new": "node scripts/create-component.js",
