@@ -75,10 +75,17 @@ export const colGroupExtendable = (opts: colGroupExtendOption = {}) => (pipeline
       return result
     }
     return makeRecursiveMapper((col: ArtColumn) => {
-      const { showExtendIcon } = col?.features || {}
+      const { showExtendIcon, collapseDisplayFields } = col?.features || {}
       if (showExtendIcon === true && col.children?.length > 1) {
         col = addIcon(col)
-        curState[col.code] === false && col.children.splice(1, col.children.length)
+        if (curState[col.code] === false) {
+          if (Array.isArray(collapseDisplayFields) && collapseDisplayFields.length > 0) {
+            const filtered = col.children.filter((child) => collapseDisplayFields.includes(child.code))
+            col.children = filtered.length > 0 ? filtered : col.children.slice(0, 1)
+          } else {
+            col.children = col.children.slice(0, 1)
+          }
+        }
       }
       return col
     })(columns)
