@@ -1,4 +1,4 @@
-import { rowGrouping } from '../rowGrouping'
+import { rowGroupingLegacy as rowGrouping } from '../rowGroupingLegacy'
 import { useTablePipeline } from '../../pipeline'
 import { ArtColumn } from '../../../interfaces'
 import { mount } from 'enzyme'
