@@ -7,6 +7,7 @@ import { fromEvent } from 'rxjs'
 import { map, takeUntil } from 'rxjs/operators'
 import { Classes } from '../../base/styles'
 import cx from 'classnames'
+import { isGroupRow } from './rowGrouping'
 
 export interface RangeSelectionFeatureOptions {
     /** 范围选中回调函数 */
@@ -239,6 +240,8 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
         ...col,
         getCellProps (value: any, record: any, rowIndex: number): CellProps {
           const prevCellProps = prevGetCellProps?.(value, record, rowIndex)
+          // 跳过分组行
+          if (isGroupRow(record)) return prevCellProps
           const isFooterCell = record[pipeline.getFeatureOptions('footerRowMetaKey')]
           if (!cellRanges.some(cellRange => isCellInRange(cellRange, rowIndex, col, isFooterCell))) return prevCellProps
           const className = getCellRangesClassName(cellRanges, { isFooterCell, rowIndex, col, record })
@@ -254,6 +257,11 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
 function getTargetCell (target, columns:ArtColumn[]) :DragCell {
   while (target) {
     if (target.getAttribute('data-role') === 'table-cell') {
+      // 跳过分组行的单元格
+      const row = target.closest('tr')
+      if (row && row.hasAttribute('data-group-key')) {
+        return null
+      }
       const columnCode = target.getAttribute('data-code')
       const column = findByTree(columns, (item, index) => item.code === columnCode)
       if (!column) return null

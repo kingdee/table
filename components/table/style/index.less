@@ -1,1 +1,21 @@
+// 分组行样式
+.kd-table-group-row {
+  user-select: none;
+  background-color: var(--bgcolor);
 
+  .expansion-cell {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .expansion-icon {
+    fill: #212121;
+    flex: 0 0 16px;
+    transition: transform 200ms;
+
+    &.kd-expanded {
+      transform-origin: center center;
+      transform: rotate(90deg);
+    }
+  }
+}
