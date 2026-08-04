@@ -31,6 +31,6 @@ export interface LeftCrossTreeNode extends CrossTreeNode {
 
 /** 交叉表上方树状结构的树节点
  * 列的名称现由 value 字段提供，故从 ArtColumnStaticPart 移除了 name 字段 */
-export interface TopCrossTreeNode extends CrossTreeNode, Omit<ArtColumnStaticPart, 'name'> {
+export interface TopCrossTreeNode extends CrossTreeNode, Omit<ArtColumnStaticPart, 'name' | 'title'> {
   children?: TopCrossTreeNode[]
 }
