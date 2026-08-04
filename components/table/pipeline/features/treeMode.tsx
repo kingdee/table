@@ -60,6 +60,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
     const primaryKey = pipeline.ensurePrimaryKey('treeMode')
 
     const openKeys: string[] = opts.openKeys ?? pipeline.getStateAtKey(stateKey) ?? opts.defaultOpenKeys ?? []
+    const curSort = pipeline.getStateAtKey('sort')
     const openKeySet = new Set(openKeys)
     const onChangeOpenKeys: TreeModeFeatureOptions['onChangeOpenKeys'] = (nextKeys: string[], key, action) => {
       opts.onChangeOpenKeys?.(nextKeys, key, action)
@@ -94,10 +95,11 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
     return pipeline.mapDataSource(processDataSource).mapColumns(processColumns)
 
     function processDataSource (input: any[]) {
-      if(pipeline.isSameInputDataSource() && openKeys === pipeline.getFeatureOptions('lastOpenKeys')){
-        return pipeline.getFeatureOptions('lastTreeMode');
+      if (pipeline.isSameInputDataSource() && openKeys === pipeline.getFeatureOptions('lastOpenKeys') && curSort === pipeline.getFeatureOptions('lastSort')) {
+        return pipeline.getFeatureOptions('lastTreeMode')
       }
-      pipeline.setFeatureOptions('lastOpenKeys', pipeline.getStateAtKey(stateKey))
+      pipeline.setFeatureOptions('lastOpenKeys', openKeys)
+      pipeline.setFeatureOptions('lastSort', curSort)
       const result: any[] = []
       dfs(input, 0)
 
@@ -118,7 +120,7 @@ export function treeMode (opts: TreeModeFeatureOptions = {}) {
           }
         }
       }
-      pipeline.setFeatureOptions('lastTreeMode', result);
+      pipeline.setFeatureOptions('lastTreeMode', result)
       return result
     }
 
