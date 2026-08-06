@@ -825,7 +825,11 @@ export class BaseTable extends React.Component<BaseTableProps, BaseTableState> {
         zeroHeightRowCount += 1
       } else {
         // 渲染出来的行高度为0，说明是display=none情况，行高不存在该种异常情况，不保存当前的高度
-        this.rowHeightManager.updateRow(rowIndex, offset, size)
+        // 过滤 1-2px 的微小抖动，避免拖拽文字等操作引起的 layout 微调导致行高缓存频繁变化
+        const cachedHeight = this.rowHeightManager.cache[rowIndex]
+        if (cachedHeight === undefined || Math.abs(size - cachedHeight) >= 3) {
+          this.rowHeightManager.updateRow(rowIndex, offset, size)
+        }
       }
       maxTrBottom = Math.max(maxTrBottom, offset + size)
     }
