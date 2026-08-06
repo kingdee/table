@@ -170,12 +170,6 @@ export function rangeSelection (opts:RangeSelectionFeatureOptions) {
 
       const rangeSelected$ = mousemove$.pipe(
         map((mouseMoveEvent:MouseEvent) => {
-          // 修复：存在文字选区时不更新 range selection，避免拖拽文字时选区缩小
-          const selection = window.getSelection()
-          if (selection && selection.toString().length > 0) {
-            return { startDragCell, draggingCell }
-          }
-
           const target = mouseMoveEvent.target || mouseMoveEvent.srcElement
           draggingCell = getTargetCell(target, columns)
           const client = {
