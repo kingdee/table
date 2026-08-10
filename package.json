@@ -56,7 +56,7 @@
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --skip-unstable",
     "pub": "npm run test:all && npm run build && cross-env PUB_ENV=pub np --no-cleanup --no-tests",
     "pub:canary": "npm run build && cross-env PUB_ENV=pub np --no-cleanup --anyBranch --no-tests --tag=canary --no-publish && echo. && echo ======================================== && echo 已完成构建、版本更新、git commit/tag/push && echo 请手动执行: npm publish --tag canary && echo ========================================",
-    "pub:canary-hotfix": "npm run build && cross-env PUB_ENV=pub np --no-cleanup --anyBranch --no-tests --tag=canaryHotFix",
+    "pub:canary-hotfix": "npm run build && cross-env PUB_ENV=pub np --no-cleanup --anyBranch --no-tests --tag=canaryHotFix --no-publish",
     "new": "node scripts/create-component.js",
     "kd-ui": "npm install @kingdee-ui/kui --registry http://npm.kingdee.com/"
   },
