@@ -107,7 +107,7 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
           checked={isAllChecked}
           indeterminate={!isAllChecked && isAnyChecked}
           onChange={(_: any) => {
-            const allKeys = pipeline.getFeatureOptions(allEnableKeys)
+            const allKeys = getEnableKeys()
             if (isAllChecked) {
               onChange(arrayUtils.diff(value, allKeys), '', allKeys, 'uncheck-all')
             } else {
@@ -255,17 +255,36 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
     allKeys = null
     set = null
 
+    // 基于终态数据源懒计算可用 keys，交互时调用，顺序 = 渲染显示顺序
+    // fullRowsSet 过滤后注入行（明细行/分组头行），只保留原始业务行
+    // 注意：不用 collectNodes，因为终态数据已是一维扁平数组（treeMode/rowGrouping/rowDetail
+    // 均逐行 push 进一维数组）。collectNodes 会按 children 递归，对 treeMode 展平后
+    // 仍残留 children 字段的行重复收集、且折叠子节点也会被纳入——导致重复 key 和不可见行混入。
+    function getEnableKeys () {
+      const fullRowsSet = pipeline.getFeatureOptions(fullRowsSetKey) || new Set<string>()
+      const keys: string[] = []
+      pipeline.getDataSource().forEach((row, rowIndex) => {
+        const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
+        if (fullRowsSet.has(rowKey) && !isDisabled(row, rowIndex)) {
+          keys.push(rowKey)
+        }
+      })
+      return keys
+    }
+
     return pipeline
 
     function onCheckboxChange (prevChecked: boolean, key: string, batch: boolean) {
       let batchKeys = [key]
 
       if (batch && lastKey) {
-        const allKeys = pipeline.getFeatureOptions(allEnableKeys)
+        const allKeys = getEnableKeys()
         const lastIdx = allKeys.indexOf(lastKey)
         const cntIdx = allKeys.indexOf(key)
-        const [start, end] = lastIdx < cntIdx ? [lastIdx, cntIdx] : [cntIdx, lastIdx]
-        batchKeys = allKeys.slice(start, end + 1)
+        if (lastIdx !== -1 && cntIdx !== -1) {
+          const [start, end] = lastIdx < cntIdx ? [lastIdx, cntIdx] : [cntIdx, lastIdx]
+          batchKeys = allKeys.slice(start, end + 1)
+        }
       }
 
       if (prevChecked) {
