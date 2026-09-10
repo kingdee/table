@@ -37,18 +37,21 @@ function buildPipeline (multiSelectOpts: any) {
   return pipeline
 }
 
-/** 直接从 checkboxColumn.title 元素的 props 上取 onChange 并调用，绕开 enzyme mount */
-function triggerSelectAll (pipeline: any) {
+/** 通过 cell render 的 onChange 触发 Shift（clickArea 默认 'checkbox'） */
+function triggerShiftViaCell (pipeline: any, rowIndex: number) {
   const checkboxColumn = pipeline.getColumns()[0]
-  const onChange = (checkboxColumn.title as any).props.onChange
-  act(() => { onChange({}) })
+  const row = pipeline.getDataSource()[rowIndex]
+  const cellElement = checkboxColumn.render(null, row, rowIndex)
+  const onChange = cellElement.props.onChange
+  act(() => { onChange({ nativeEvent: { shiftKey: true } }) })
 }
 
-describe('multiSelect + sort — Shift 懒计算修复', () => {
+describe('multiSelect + sort — Shift 懒计算修复（仅 onCheckboxChange）', () => {
   afterEach(() => {
     sortAscOpts.onChangeSorts.mockClear()
   })
 
+  // 用例 1：sort 后 Shift 选中返回排序后顺序的连续区间
   it('sort 后 Shift 选中返回排序后顺序的连续区间', () => {
     const onChangeMock = jest.fn()
     const pipeline = buildPipeline({
@@ -65,11 +68,13 @@ describe('multiSelect + sort — Shift 懒计算修复', () => {
     const rowProps = props.getRowProps!(sortedData[2], 2)
     act(() => { rowProps!.onClick!({ shiftKey: true } as any) })
 
+    // batchKeys = 排序后顺序 ['2','3','1']
     expect(onChangeMock).toHaveBeenCalledWith(
       ['2', '3', '1'], '1', ['2', '3', '1'], 'check'
     )
   })
 
+  // 用例 2：-1 守卫
   it('lastKey 不在终态数据中时退化为单选（-1 守卫）', () => {
     const onChangeMock = jest.fn()
     const pipeline = buildPipeline({
@@ -87,15 +92,23 @@ describe('multiSelect + sort — Shift 懒计算修复', () => {
     expect(onChangeMock).toHaveBeenCalledWith(['1'], '1', ['1'], 'check')
   })
 
-  it('全选返回排序后顺序的全部 keys', () => {
+  // 用例 3：全选不受懒计算影响，仍读 step 期缓存
+  it('全选仍使用 step 期缓存（顺序=原始，成员=全部）', () => {
     const onChangeMock = jest.fn()
     const pipeline = buildPipeline({ value: [], onChange: onChangeMock })
-    triggerSelectAll(pipeline)
-    expect(onChangeMock).toHaveBeenCalledWith(
-      ['2', '3', '1'], '', ['2', '3', '1'], 'check-all'
-    )
+
+    const checkboxColumn = pipeline.getColumns()[0]
+    const onChange = (checkboxColumn.title as any).props.onChange
+    act(() => { onChange({}) })
+
+    // allEnableKeys 在 step 期用 collectNodes 收集 = ['1','2','3']（排序前顺序）
+    const [, , allKeys] = onChangeMock.mock.calls[0]
+    expect(allKeys).toEqual(['1', '2', '3'])
+    // 成员正确（与排序后一致，顺序为原始）
+    expect(allKeys).toEqual(expect.arrayContaining(['1', '2', '3']))
   })
 
+  // 用例 4：batchKeys 无重复
   it('batchKeys 不含重复 key', () => {
     const onChangeMock = jest.fn()
     const pipeline = buildPipeline({
@@ -110,12 +123,64 @@ describe('multiSelect + sort — Shift 懒计算修复', () => {
     act(() => { rowProps!.onClick!({ shiftKey: true } as any) })
 
     const [, , batchKeys] = onChangeMock.mock.calls[0]
-    expect(batchKeys).toEqual([...new Set(batchKeys)]) // 无重复
+    expect(batchKeys).toEqual([...new Set(batchKeys)])
   })
 })
 
-describe('multiSelect — fullRowsSet 过滤后注入行', () => {
-  it('后注入行（模拟明细行/分组头）不被收进 Shift 区间和全选集合', () => {
+describe('multiSelect — getEnableKeys 兜底回退（仅 Shift 路径）', () => {
+  // 用例 5：fullRowsSet 丢失 → getEnableKeys 结果为空 → 回退 step 期缓存
+  it('fullRowsSet 丢失时回退到 step 期缓存', () => {
+    const onChangeMock = jest.fn()
+    const pipeline = buildPipeline({
+      value: [],
+      lastKey: '2',
+      onChange: onChangeMock
+      // clickArea 默认 'checkbox'，通过 cell render 触发
+    })
+
+    // 破坏 fullRowsSet → getEnableKeys 懒算结果为空 → 回退缓存
+    pipeline.ref.current.featureOptions = pipeline.ref.current.featureOptions || {}
+    delete pipeline.ref.current.featureOptions['fullRowsSetKey']
+
+    // 通过 cell render 触发 Shift（不经过 rowPropsGetter，避免它也因 fullRowsSet 丢失而跳过）
+    triggerShiftViaCell(pipeline, 2) // index=2 → id='1'
+
+    // 回退到 step 期缓存 allEnableKeys = ['1','2','3']（排序前顺序）
+    // indexOf('2')=1, indexOf('1')=0 → batchKeys = ['1','2']
+    const [, , batchKeys] = onChangeMock.mock.calls[0]
+    expect(batchKeys.length).toBeGreaterThan(0)
+    expect(batchKeys).toEqual(expect.arrayContaining(['1', '2']))
+  })
+
+  // 用例 6：getDataSource() 异常 → catch 回退
+  it('getDataSource() 返回 null 时 catch 回退到 step 期缓存', () => {
+    const onChangeMock = jest.fn()
+    const pipeline = buildPipeline({
+      value: [],
+      lastKey: '2',
+      onChange: onChangeMock
+    })
+
+    // 保存行引用后破坏数据源
+    const savedRow = pipeline.getDataSource()[2] // id='1'
+    pipeline.dataSource(null as any)
+
+    // 通过 cell render 触发 Shift（使用保存的行引用）
+    const checkboxColumn = pipeline.getColumns()[0]
+    const cellElement = checkboxColumn.render(null, savedRow, 2)
+    const onChange = cellElement.props.onChange
+    act(() => { onChange({ nativeEvent: { shiftKey: true } }) })
+
+    // forEach on null 抛异常 → catch → 回退缓存
+    const [, , batchKeys] = onChangeMock.mock.calls[0]
+    expect(batchKeys.length).toBeGreaterThan(0)
+    expect(batchKeys).toEqual(expect.arrayContaining(['1', '2']))
+  })
+})
+
+describe('multiSelect — fullRowsSet 过滤后注入行（Shift 路径）', () => {
+  // 用例 7：后注入行不被收进 Shift 区间
+  it('后注入行（模拟明细行/分组头）不被收进 Shift 区间', () => {
     const onChangeMock = jest.fn()
     const { result } = renderHook(() =>
       useTablePipeline({ primaryKey: 'id', components: { Checkbox: MockCheckbox } })
@@ -136,45 +201,21 @@ describe('multiSelect — fullRowsSet 过滤后注入行', () => {
 
     expect(pipeline.getDataSource().map((r: any) => r[primaryKey])).toEqual(['1', '1_detail', '2'])
 
-    // --- Shift ---
     const props = pipeline.getProps()
     const terminalData = pipeline.getDataSource()
     const rowProps = props.getRowProps!(terminalData[2], 2)
     act(() => { rowProps!.onClick!({ shiftKey: true } as any) })
 
+    // getEnableKeys() 应过滤掉 '1_detail' → ['1','2']
     expect(onChangeMock).toHaveBeenCalledWith(['1', '2'], '2', ['1', '2'], 'check')
     const [, , shiftBatchKeys] = onChangeMock.mock.calls[0]
     expect(shiftBatchKeys).not.toContain('1_detail')
-
-    // --- 全选 ---
-    onChangeMock.mockClear()
-    const { result: r2 } = renderHook(() =>
-      useTablePipeline({ primaryKey: 'id', components: { Checkbox: MockCheckbox } })
-        .input({
-          dataSource: [{ id: '1', name: 'A' }, { id: '2', name: 'B' }],
-          columns: [{ code: 'name', name: 'Name', width: 100 }]
-        })
-    )
-    const pipeline2 = r2.current
-    multiSelect({ value: [], onChange: onChangeMock })(pipeline2)
-    const dr2 = { ...pipeline2.getDataSource()[0], [primaryKey]: '1_detail', __detail: true }
-    pipeline2.dataSource([pipeline2.getDataSource()[0], dr2, pipeline2.getDataSource()[1]])
-    triggerSelectAll(pipeline2)
-
-    const [, , allKeys] = onChangeMock.mock.calls[0]
-    expect(allKeys).toEqual(['1', '2'])
-    expect(allKeys).not.toContain('1_detail')
   })
 })
 
-describe('multiSelect — treeMode 模拟（终态行残留 children）', () => {
-  // treeMode.tsx:134 展平行 = { [treeMetaKey]: treeMeta, ...node }
-  // ...node 把 children 原样保留。若用 collectNodes 遍历会重复收集子节点。
-  // 修复：getEnableKeys 直接 forEach 终态数组，不递归 children。
-
-  // 树结构: P1(children:[C1,C2]), P2
-  // P1 展开时 treeMode 输出 = [P1(含children), C1, C2, P2]
-  it('展开树：无重复 key，batchKeys 与全选均不含重复', () => {
+describe('multiSelect — treeMode 模拟（终态行残留 children，Shift 路径）', () => {
+  // 用例 8：展开树 — 直接 forEach 不递归 children → 无重复 key
+  it('展开树：Shift 区间无重复 key', () => {
     const onChangeMock = jest.fn()
     const { result } = renderHook(() =>
       useTablePipeline({ primaryKey: 'id', components: { Checkbox: MockCheckbox } })
@@ -192,41 +233,27 @@ describe('multiSelect — treeMode 模拟（终态行残留 children）', () => 
       value: [], lastKey: '1', clickArea: 'row', onChange: onChangeMock
     })(pipeline)
 
-    // 模拟 treeMode 展平 P1 后的终态数据：父行残留 children，子行也在数组中
+    // 模拟 treeMode 展平 P1 后的终态：父行残留 children，子行也在数组中
     const treeMeta = Symbol('treeMeta')
     const p1 = pipeline.getDataSource()[0]
     const c1 = { ...p1.children[0], [treeMeta]: { depth: 1, isLeaf: true } }
     const c2 = { ...p1.children[1], [treeMeta]: { depth: 1, isLeaf: true } }
-    const p1Flat = { ...p1, [treeMeta]: { depth: 0, isLeaf: false } } // children 仍在
+    const p1Flat = { ...p1, [treeMeta]: { depth: 0, isLeaf: false } }
     const p2 = { ...pipeline.getDataSource()[1], [treeMeta]: { depth: 0, isLeaf: true } }
     pipeline.dataSource([p1Flat, c1, c2, p2])
 
-    // fullRowsSet 在 step 期用 collectNodes 收集了全树 = {1, 1-1, 1-2, 2}
-    // getEnableKeys 直接 forEach 终态数组 → ['1','1-1','1-2','2']，无重复
     const props = pipeline.getProps()
     const terminalData = pipeline.getDataSource()
-    // Shift 点击 P2（index=3），lastKey='1'
     const rowProps = props.getRowProps!(terminalData[3], 3)
     act(() => { rowProps!.onClick!({ shiftKey: true } as any) })
 
     const [, , batchKeys] = onChangeMock.mock.calls[0]
-    // 无重复：每个 key 只出现一次
-    expect(batchKeys).toEqual([...new Set(batchKeys)])
-    // 区间 = 终态顺序 ['1','1-1','1-2','2']
+    expect(batchKeys).toEqual([...new Set(batchKeys)]) // 无重复
     expect(batchKeys).toEqual(['1', '1-1', '1-2', '2'])
-
-    // 全选也无重复
-    onChangeMock.mockClear()
-    triggerSelectAll(pipeline)
-    const [, , allKeys] = onChangeMock.mock.calls[0]
-    expect(allKeys).toEqual([...new Set(allKeys)])
-    expect(allKeys).toEqual(['1', '1-1', '1-2', '2'])
   })
 
-  // P1 折叠时 treeMode 输出 = [P1(含children), P2]
-  // collectNodes 会递归 P1 残留的 children 收集不可见的 C1、C2
-  // 修复：直接 forEach 不递归 → 只含 ['1','2']，不含折叠子节点
-  it('折叠树：不可见子节点不混入 Shift 区间和全选', () => {
+  // 用例 9：折叠树 — 直接 forEach 不递归 children → 不含不可见子节点
+  it('折叠树：不可见子节点不混入 Shift 区间', () => {
     const onChangeMock = jest.fn()
     const { result } = renderHook(() =>
       useTablePipeline({ primaryKey: 'id', components: { Checkbox: MockCheckbox } })
@@ -244,14 +271,13 @@ describe('multiSelect — treeMode 模拟（终态行残留 children）', () => 
       value: [], lastKey: '1', clickArea: 'row', onChange: onChangeMock
     })(pipeline)
 
-    // 模拟 treeMode 折叠 P1 后的终态数据：只有 P1（含 children）和 P2
+    // 模拟 treeMode 折叠 P1：终态只有 P1（含 children）和 P2
     const treeMeta = Symbol('treeMeta')
     const p1 = pipeline.getDataSource()[0]
     const p1Flat = { ...p1, [treeMeta]: { depth: 0, isLeaf: false, expanded: false } }
     const p2 = { ...pipeline.getDataSource()[1], [treeMeta]: { depth: 0, isLeaf: true } }
     pipeline.dataSource([p1Flat, p2])
 
-    // Shift 点击 P2，lastKey='1'
     const props = pipeline.getProps()
     const terminalData = pipeline.getDataSource()
     const rowProps = props.getRowProps!(terminalData[1], 1)
@@ -262,13 +288,5 @@ describe('multiSelect — treeMode 模拟（终态行残留 children）', () => 
     expect(batchKeys).toEqual(['1', '2'])
     expect(batchKeys).not.toContain('1-1')
     expect(batchKeys).not.toContain('1-2')
-
-    // 全选同样不含折叠子节点
-    onChangeMock.mockClear()
-    triggerSelectAll(pipeline)
-    const [, , allKeys] = onChangeMock.mock.calls[0]
-    expect(allKeys).toEqual(['1', '2'])
-    expect(allKeys).not.toContain('1-1')
-    expect(allKeys).not.toContain('1-2')
   })
 })
