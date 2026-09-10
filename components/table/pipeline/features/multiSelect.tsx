@@ -107,7 +107,7 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
           checked={isAllChecked}
           indeterminate={!isAllChecked && isAnyChecked}
           onChange={(_: any) => {
-            const allKeys = getEnableKeys()
+            const allKeys = pipeline.getFeatureOptions(allEnableKeys)
             if (isAllChecked) {
               onChange(arrayUtils.diff(value, allKeys), '', allKeys, 'uncheck-all')
             } else {
@@ -260,16 +260,22 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
     // 注意：不用 collectNodes，因为终态数据已是一维扁平数组（treeMode/rowGrouping/rowDetail
     // 均逐行 push 进一维数组）。collectNodes 会按 children 递归，对 treeMode 展平后
     // 仍残留 children 字段的行重复收集、且折叠子节点也会被纳入——导致重复 key 和不可见行混入。
+    // 兜底：懒计算异常或结果为空时回退到 step 期缓存（旧逻辑），避免未知数据结构导致选中不可用
     function getEnableKeys () {
-      const fullRowsSet = pipeline.getFeatureOptions(fullRowsSetKey) || new Set<string>()
-      const keys: string[] = []
-      pipeline.getDataSource().forEach((row, rowIndex) => {
-        const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
-        if (fullRowsSet.has(rowKey) && !isDisabled(row, rowIndex)) {
-          keys.push(rowKey)
-        }
-      })
-      return keys
+      const fallback = pipeline.getFeatureOptions(allEnableKeys) || []
+      try {
+        const fullRowsSet = pipeline.getFeatureOptions(fullRowsSetKey) || new Set<string>()
+        const keys: string[] = []
+        pipeline.getDataSource().forEach((row, rowIndex) => {
+          const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
+          if (fullRowsSet.has(rowKey) && !isDisabled(row, rowIndex)) {
+            keys.push(rowKey)
+          }
+        })
+        return keys.length > 0 ? keys : fallback
+      } catch (e) {
+        return fallback
+      }
     }
 
     return pipeline
