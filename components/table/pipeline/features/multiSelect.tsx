@@ -257,18 +257,20 @@ export function multiSelect (opts: MultiSelectFeatureOptions = {}) {
 
     // 基于终态数据源懒计算可用 keys，交互时调用，顺序 = 渲染显示顺序
     // fullRowsSet 过滤后注入行（明细行/分组头行），只保留原始业务行
-    // 注意：不用 collectNodes，因为终态数据已是一维扁平数组（treeMode/rowGrouping/rowDetail
-    // 均逐行 push 进一维数组）。collectNodes 会按 children 递归，对 treeMode 展平后
-    // 仍残留 children 字段的行重复收集、且折叠子节点也会被纳入——导致重复 key 和不可见行混入。
+    // 用 collectNodes 遍历：treeMode 展平后父行残留 children，折叠子节点不在终态数组中
+    // 但通过 collectNodes 递归 children 可收集到——Shift 能选到折叠子节点（与原行为一致）
+    // 加 seenSet 去重：展开树的子行既在顶层数组又在父行 children 中，collectNodes 会重复收集
     // 兜底：懒计算异常或结果为空时回退到 step 期缓存（旧逻辑），避免未知数据结构导致选中不可用
     function getEnableKeys () {
       const fallback = pipeline.getFeatureOptions(allEnableKeys) || []
       try {
         const fullRowsSet = pipeline.getFeatureOptions(fullRowsSetKey) || new Set<string>()
         const keys: string[] = []
-        pipeline.getDataSource().forEach((row, rowIndex) => {
+        const seen = new Set<string>()
+        collectNodes(pipeline.getDataSource()).forEach((row, rowIndex) => {
           const rowKey = internals.safeGetRowKey(primaryKey, row, rowIndex)
-          if (fullRowsSet.has(rowKey) && !isDisabled(row, rowIndex)) {
+          if (fullRowsSet.has(rowKey) && !seen.has(rowKey) && !isDisabled(row, rowIndex)) {
+            seen.add(rowKey)
             keys.push(rowKey)
           }
         })
