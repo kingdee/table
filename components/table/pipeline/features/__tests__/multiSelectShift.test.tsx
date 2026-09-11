@@ -252,8 +252,8 @@ describe('multiSelect — treeMode 模拟（终态行残留 children，Shift 路
     expect(batchKeys).toEqual(['1', '1-1', '1-2', '2'])
   })
 
-  // 用例 9：折叠树 — 直接 forEach 不递归 children → 不含不可见子节点
-  it('折叠树：不可见子节点不混入 Shift 区间', () => {
+  // 用例 9：折叠树 — collectNodes 递归残留 children → 折叠子节点可被 Shift 选到（与原行为一致）
+  it('折叠树：折叠子节点可被 Shift 选中', () => {
     const onChangeMock = jest.fn()
     const { result } = renderHook(() =>
       useTablePipeline({ primaryKey: 'id', components: { Checkbox: MockCheckbox } })
@@ -283,10 +283,10 @@ describe('multiSelect — treeMode 模拟（终态行残留 children，Shift 路
     const rowProps = props.getRowProps!(terminalData[1], 1)
     act(() => { rowProps!.onClick!({ shiftKey: true } as any) })
 
-    // getEnableKeys 直接 forEach → ['1','2']，不含折叠的 '1-1'、'1-2'
+    // collectNodes 递归 P1 残留的 children → 收集到折叠的 '1-1'、'1-2'
+    // 与原行为一致：折叠子节点 Shift 也能选到
     const [, , batchKeys] = onChangeMock.mock.calls[0]
-    expect(batchKeys).toEqual(['1', '2'])
-    expect(batchKeys).not.toContain('1-1')
-    expect(batchKeys).not.toContain('1-2')
+    expect(batchKeys).toEqual(['1', '1-1', '1-2', '2'])
+    expect(batchKeys).toEqual([...new Set(batchKeys)]) // 无重复
   })
 })
