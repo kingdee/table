@@ -16,7 +16,7 @@ const ExpandSpan = styled.span`
   cursor: pointer;
 
   .icon {
-    fill: #212121;
+    fill: #999;
     margin-right: 4px;
 
     &.${Classes.expanded} {
