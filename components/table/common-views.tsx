@@ -14,7 +14,7 @@ export const ExpansionCell = styled(props => <InlineFlexCell {...props}/>)`
   }
 
   .expansion-icon {
-    fill: #212121;
+    fill: #999;
     flex: 0 0 16px;
     transition: transform 200ms;
 
@@ -73,29 +73,13 @@ function CaretRightIcon(props: IconProps) {
     <svg
       focusable="false"
       preserveAspectRatio="xMidYMid meet"
-      fill="#212121"
+      fill="currentColor"
       width="16"
       height="16"
       viewBox="0 0 32 32"
       {...props}
     >
       <path d="M12 8L22 16 12 24z" />
-    </svg>
-  )
-}
-
-function GroupExpandIcon(props: IconProps) {
-  return (
-    <svg
-      focusable="false"
-      preserveAspectRatio="xMidYMid meet"
-      fill="#212121"
-      width="16"
-      height="16"
-      viewBox="0 0 1024 1024"
-      {...props}
-    >
-      <path d="M810.604369 294.97937L500 605.583741L189.39563 294.97937C171.089804 276.673543 141.410196 276.673543 123.10437 294.97937C104.798543 313.285197 104.798543 342.964803 123.10437 361.270631L466.854369 705.020631C485.160197 723.326456 514.839803 723.326456 533.145631 705.020631L876.895631 361.270631C895.201456 342.964803 895.201456 313.285197 876.895631 294.97937C858.589803 276.673543 828.910197 276.673543 810.604369 294.97937z" />
     </svg>
   )
 }
@@ -113,7 +97,6 @@ export const icons = {
   CaretDown: CaretDownIcon,
   CaretRight: CaretRightIcon,
   Info: InfoIcon,
-  GroupExpand: GroupExpandIcon,
 }
 
 
