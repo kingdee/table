@@ -12,3 +12,6 @@ package-lock.json
 report.html
 /.history
 /proposals/
+
+/.kiro
+/.qoder
